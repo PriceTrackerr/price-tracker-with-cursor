@@ -1,0 +1,193 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary-color: #2D44AE;
+  --primary-color-dark: #5766C3;
+}
+
+/* Test style to see if CSS is loading */
+body {
+  background: #DBDCDE !important;
+  min-height: 100vh;
+}
+
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+  
+  body {
+    @apply text-gray-900;
+    background-color: #DBDCDE !important;
+  }
+}
+
+@layer components {
+  .header, .bg-white.shadow, .shadow.bg-white, .shadow.bg-white.dark\:bg-\[\#2A3440\] {
+    border-radius: 16px !important;
+  }
+  .btn-primary, .btn-secondary, .btn-modern {
+    background-color: var(--primary-color) !important;
+    color: #fff !important;
+    @apply px-4 py-2 rounded-lg font-medium shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200 border-none;
+  }
+  .btn-modern:hover, .btn-modern:active, .btn-modern:focus {
+    background-color: var(--primary-color-dark) !important;
+    color: #fff !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.10) !important;
+    transform: translateY(-2px) !important;
+  }
+  .card {
+    @apply bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200;
+  }
+  
+  .card-hover {
+    @apply bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-lg hover:border-blue-200 transition-all duration-200 transform hover:scale-[1.02];
+  }
+  
+  .input-field {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200;
+  }
+  
+  .stat-card {
+    @apply bg-white overflow-hidden shadow-sm rounded-xl border border-gray-200 hover:shadow-md transition-all duration-200;
+  }
+  
+  .stat-card:hover {
+    @apply transform scale-[1.02] shadow-lg;
+  }
+  
+  .gradient-bg {
+    background: #DBDCDE !important;
+  }
+  
+  .sidebar-item, .sidebar-item-active, .sidebar-item-inactive {
+    background-color: #F3F5F7 !important;
+    color: #111 !important;
+    border-radius: 12px !important;
+    padding: 12px 18px !important;
+    box-shadow: none !important;
+    transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease !important;
+    display: flex;
+    align-items: center;
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+  
+  .sidebar-item:hover, .sidebar-item-inactive:hover {
+    background-color: #ADB5C7 !important;
+    color: #111 !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.04) !important;
+    transform: translateY(-2px) !important;
+  }
+  
+  .sidebar-item-active {
+    background-color: #3e58c9e5 !important;
+    color: #fff !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
+    transform: translateY(-2px) !important;
+  }
+  
+  .sidebar-item-inactive {
+    opacity: 0.85;
+  }
+  
+  .chart-container {
+    @apply bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200;
+  }
+  
+  .product-card {
+    background-color: #fff !important;
+    @apply shadow-sm rounded-xl overflow-hidden border border-gray-200 hover:shadow-lg hover:border-blue-200 transition-all duration-200 transform hover:scale-[1.02];
+  }
+  
+  .loading-spinner {
+    @apply animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600;
+  }
+  
+  .fade-in {
+    @apply animate-fade-in;
+  }
+  
+  .slide-up {
+    @apply animate-slide-up;
+  }
+  
+  select, option {
+    color: #111 !important;
+    background: #DBDCDE !important;
+  }
+  
+  .toggle-modern {
+    background-color: #D7D8D8 !important;
+    color: var(--primary-color) !important;
+    border-radius: 12px !important;
+    border: 1.5px solid var(--primary-color) !important;
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  }
+  
+  .toggle-modern.active, .toggle-modern[aria-checked="true"], .toggle-modern:checked {
+    background-color: var(--primary-color-dark) !important;
+    color: #fff !important;
+    border-color: var(--primary-color-dark) !important;
+  }
+  
+  .toggle-modern.active:hover, .toggle-modern[aria-checked="true"]:hover, .toggle-modern:checked:hover {
+    background-color: #2D44AE !important;
+    border-color: #2D44AE !important;
+  }
+  
+  /* Popup highlight effect for extension navigation */
+  .popup-highlight {
+    animation: popupHighlight 3s ease-in-out;
+    box-shadow: 0 0 20px rgba(37, 99, 235, 0.5) !important;
+    border: 2px solid #2563eb !important;
+  }
+  
+  @keyframes popupHighlight {
+    0% {
+      box-shadow: 0 0 20px rgba(37, 99, 235, 0.8);
+      transform: scale(1.02);
+    }
+    50% {
+      box-shadow: 0 0 30px rgba(37, 99, 235, 0.6);
+      transform: scale(1.05);
+    }
+    100% {
+      box-shadow: 0 0 20px rgba(37, 99, 235, 0.5);
+      transform: scale(1);
+    }
+  }
+  
+  /* Custom animations for auth page */
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+  
+  .animation-delay-1000 {
+    animation-delay: 1s;
+  }
+  
+  .animation-delay-2000 {
+    animation-delay: 2s;
+  }
+  
+  .animation-delay-3000 {
+    animation-delay: 3s;
+  }
+  
+  .animation-delay-4000 {
+    animation-delay: 4s;
+  }
+  
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+} 

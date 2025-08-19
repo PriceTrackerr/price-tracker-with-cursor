@@ -1,0 +1,227 @@
+/* Real Price Tracker Content Styles */
+
+.real-price-tracker-button {
+  position: fixed !important;
+  top: 20px !important;
+  right: 20px !important;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: white !important;
+  padding: 12px 20px !important;
+  border-radius: 25px !important;
+  cursor: pointer !important;
+  z-index: 10000 !important;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2) !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  transition: all 0.3s ease !important;
+  border: none !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.real-price-tracker-button:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.3) !important;
+}
+
+.tracker-button-content {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.tracker-icon {
+  font-size: 16px !important;
+}
+
+.tracker-text {
+  white-space: nowrap !important;
+}
+
+/* Price History Widget */
+.real-price-tracker-widget {
+  position: fixed !important;
+  top: 80px !important;
+  right: 20px !important;
+  width: 320px !important;
+  background: white !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.1) !important;
+  z-index: 9999 !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  border: 1px solid #e1e5e9 !important;
+  overflow: hidden !important;
+}
+
+.widget-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: white !important;
+  padding: 15px 20px !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+}
+
+.widget-header h3 {
+  margin: 0 !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+}
+
+.widget-close {
+  background: none !important;
+  border: none !important;
+  color: white !important;
+  font-size: 20px !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  width: 24px !important;
+  height: 24px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 50% !important;
+  transition: background-color 0.2s ease !important;
+}
+
+.widget-close:hover {
+  background: rgba(255,255,255,0.2) !important;
+}
+
+.widget-content {
+  padding: 20px !important;
+}
+
+.price-chart-placeholder {
+  min-height: 120px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: #f8f9fa !important;
+  border-radius: 8px !important;
+  margin-bottom: 15px !important;
+}
+
+.price-chart-placeholder p {
+  margin: 0 !important;
+  color: #666 !important;
+  text-align: center !important;
+}
+
+.price-alert-section {
+  display: flex !important;
+  gap: 10px !important;
+  align-items: center !important;
+}
+
+.target-price-input {
+  flex: 1 !important;
+  padding: 8px 12px !important;
+  border: 1px solid #ddd !important;
+  border-radius: 6px !important;
+  font-size: 14px !important;
+  font-family: inherit !important;
+}
+
+.target-price-input:focus {
+  outline: none !important;
+  border-color: #667eea !important;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2) !important;
+}
+
+.set-alert-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: white !important;
+  border: none !important;
+  padding: 8px 16px !important;
+  border-radius: 6px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.set-alert-btn:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4) !important;
+}
+
+/* Notifications */
+.real-price-tracker-notification {
+  position: fixed !important;
+  top: 20px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  padding: 12px 24px !important;
+  border-radius: 6px !important;
+  z-index: 10001 !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+  animation: slideIn 0.3s ease !important;
+}
+
+.real-price-tracker-notification.success {
+  background: #4CAF50 !important;
+  color: white !important;
+}
+
+.real-price-tracker-notification.error {
+  background: #f44336 !important;
+  color: white !important;
+}
+
+.real-price-tracker-notification.info {
+  background: #2196F3 !important;
+  color: white !important;
+}
+
+/* Animations */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@keyframes slideOut {
+  from {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .real-price-tracker-button {
+    top: 10px !important;
+    right: 10px !important;
+    padding: 10px 16px !important;
+    font-size: 12px !important;
+  }
+  
+  .real-price-tracker-widget {
+    top: 60px !important;
+    right: 10px !important;
+    width: calc(100vw - 20px) !important;
+    max-width: 320px !important;
+  }
+}
+
+/* Hide on mobile if screen is too small */
+@media (max-width: 480px) {
+  .real-price-tracker-button {
+    display: none !important;
+  }
+} 
