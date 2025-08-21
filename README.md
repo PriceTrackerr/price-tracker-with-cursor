@@ -51,6 +51,6 @@ Questions, feedback, or partnership inquiries? Reach out:
 ✉️ realpricetracker94@gmail.com
 
 🔗 Links
-GitHub repo: https://github.com/PriceTrackerr/price-tracker
+GitHub repo: https://github.com/PriceTrackerr/price-tracker-with-cursor
 
 Real Price Tracker — Helping you shop smarter and save more, every time.
