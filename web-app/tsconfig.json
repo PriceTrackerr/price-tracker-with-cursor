@@ -17,7 +17,8 @@
     "noImplicitAny": true,
     "strictNullChecks": true,
     "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "types": ["chrome", "react", "node"]
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"]
