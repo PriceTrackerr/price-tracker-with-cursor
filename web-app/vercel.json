@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "http://localhost:3001/api/$1"
+      "destination": "/api/$1"
     }
   ],
   "headers": [
@@ -28,6 +28,6 @@
     }
   ],
   "env": {
-    "VITE_API_URL": "https://your-backend-domain.vercel.app"
+    "VITE_API_URL": "/api"
   }
 }
