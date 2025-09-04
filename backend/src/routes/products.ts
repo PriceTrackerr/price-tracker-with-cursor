@@ -1,33 +1,14 @@
 import express, { Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
-import db from '../config/storage';
+import { getDb } from '../config/database';
+const db = getDb();
 import { authMiddleware, AuthRequest } from '../middleware/auth';
-import stringSimilarity from 'string-similarity';
+
 
 const router = express.Router();
 
-// Define interfaces for better type safety
-interface Product {
-  id: string;
-  url: string;
-  title: string;
-  price: number;
-  currency: string;
-  platform: 'amazon' | 'aliexpress' | 'ebay' | 'walmart' | 'shein' | 'bestbuy' | 'target';
-  imageUrl: string;
-  createdAt: string;
-  updatedAt: string;
-  userId: string;
-  stockStatus?: 'in_stock' | 'out_of_stock' | 'unknown';
-  discountInfo?: string | undefined;
-  matchedProducts?: string[]; // Array of product IDs that match this product
-  previousStockStatus?: 'in_stock' | 'out_of_stock' | 'unknown';
-  // Price drop properties (added dynamically)
-  hasPriceDrop?: boolean;
-  priceDrop?: number;
-  priceDropPercent?: number;
-  previousPrice?: number;
-}
+// Import Product interface from storage
+import type { Product } from '../config/storage';
 
 // Product matching interfaces
 interface ProductMatch {
@@ -39,18 +20,7 @@ interface ProductMatch {
   priceDifferencePercent: number;
 }
 
-interface ProductIdentifiers {
-  brand: string;
-  model: string;
-  color: string;
-  size: string;
-  keywords: string[];
-  features: string[];
-  sku: string;
-  condition?: 'new' | 'refurbished' | 'used' | 'open_box' | undefined;
-  isBundle?: boolean | undefined;
-  accessories?: string[] | undefined;
-}
+
 
 // Extended User interface to include role
 interface UserWithRole {
@@ -157,653 +127,19 @@ router.get('/search', authMiddleware, async (req: AuthRequest, res: Response) =>
 
 // ===== PRODUCT MATCHING ALGORITHM =====
 
-/**
- * Extract product identifiers from title
- */
-function extractProductIdentifiers(title: string): ProductIdentifiers {
-  const normalizedTitle = title.toLowerCase();
-  
-  const identifiers: ProductIdentifiers = {
-    brand: '',
-    model: '',
-    color: '',
-    size: '',
-    keywords: [],
-    features: [],
-    sku: '',
-    condition: undefined,
-    isBundle: undefined,
-    accessories: []
-  };
-  
-  // Enhanced brand detection with gaming laptop focus
-  const brands = [
-    // Tech/Laptop brands (priority order)
-    'asus', 'dell', 'hp', 'acer', 'msi', 'razer', 'lenovo', 'alienware', 'origin', 'clevo',
-    'apple', 'samsung', 'xiaomi', 'huawei', 'sony', 'microsoft', 'google', 'surface',
-    // Gaming brands
-    'corsair', 'steelseries', 'logitech', 'hyperx', 'roccat', 'cooler master',
-    // Audio brands
-    'bose', 'jbl', 'beats', 'sennheiser', 'audio-technica', 'sony', 'skullcandy',
-    // Phone brands
-    'oneplus', 'oppo', 'vivo', 'realme', 'motorola', 'nokia', 'blackberry',
-    // Other electronics
-    'lg', 'panasonic', 'philips', 'canon', 'nikon', 'gopro', 'dji', 'fitbit', 'garmin',
-    // Fashion brands
-    'nike', 'adidas', 'puma', 'under armour', 'new balance',
-    // Car brands (less priority)
-    'toyota', 'honda', 'ford', 'bmw', 'mercedes', 'audi', 'volkswagen', 'nissan',
-    'chevrolet', 'hyundai', 'kia', 'mazda', 'subaru', 'lexus', 'infiniti',
-    'acura', 'buick', 'cadillac', 'chrysler', 'dodge', 'jeep', 'ram'
-  ];
-  
-  // Special handling for AirPods
-  if (normalizedTitle.includes('airpods') || normalizedTitle.includes('air pods')) {
-    identifiers.brand = 'apple';
-    identifiers.model = 'airpods';
-  }
-  
-  for (const brand of brands) {
-    if (normalizedTitle.includes(brand)) {
-      identifiers.brand = brand;
-      break;
-    }
-  }
-  
-  // Model detection patterns
-  const modelPatterns = [
-    // Apple products
-    /iphone\s*(\d+)/i,
-    /ipad\s*(pro|air|mini)?\s*(\d+)?/i,
-    /macbook\s*(pro|air)?\s*(\d+)?/i,
-    /airpods\s*(pro|max|gen|generation)?/i,
-    /apple\s*watch\s*series\s*(\d+)/i,
-    
-    // Gaming Laptop patterns (specific models)
-    /rog\s*(zephyrus|strix|flow|scar)\s*(g\d+|m\d+|x\d+)?/i,
-    /(predator|nitro|aspire)\s*(helios|triton|5|7)?\s*(\d+)?/i,
-    /(legion|ideapad)\s*(5|7|y\d+)?/i,
-    /(alienware|inspiron|xps|precision)\s*(m\d+|x\d+|\d+)?/i,
-    /(gaming|republic)\s*(laptop|notebook)/i,
-    
-    // Laptop patterns - More flexible matching
-    /(hp|dell|lenovo|asus|acer|msi|razer|toshiba|samsung|lg)\s*(\d+\.?\d*)/i,
-    /(intel|amd)\s*(core|ryzen|athlon|pentium|celeron)\s*(i\d|r\d|a\d|p\d|c\d)/i,
-    /(\d+\.?\d*)\s*(inch|")\s*(laptop|notebook|computer)/i,
-    /(\d+)\s*(gb|tb)\s*(ram|memory|ssd|storage)/i,
-    
-    // Graphics card patterns (for gaming laptops)
-    /(rtx|gtx|radeon|rx)\s*(\d+)/i,
-    
-    // Samsung products - Improved patterns
-    /galaxy\s*(s|note|a|m|tab)\s*(\d+)/i,
-    /galaxy\s*(s|note|a|m|tab)\s*(\d+)\s*(ultra|plus|fe|5g)/i,
-    /s(\d+)\s*(ultra|plus|fe|5g)/i,
-    /note\s*(\d+)/i,
-    /galaxy\s*buds\s*(\d+)?/i,
-    /galaxy\s*watch\s*(\d+)?/i,
-    
-    // Xiaomi products
-    /redmi\s*(note|airdots|buds)\s*(\d+)?/i,
-    /mi\s*(note|mix|max)\s*(\d+)?/i,
-    /xiaomi\s*(redmi|mi)\s*(\d+)?/i,
-    
-    // OnePlus products
-    /oneplus\s*(\d+)/i,
-    /oneplus\s*(\d+)\s*(pro|t|r)/i,
-    
-    // Google products
-    /pixel\s*(\d+)/i,
-    /pixel\s*(\d+)\s*(pro|a)/i,
-    
-    // Logitech products
-    /logitech\s*(mx|g|k|m|h|z|b|c|s)\s*(\d+)?/i,
-    /(mx|g|k|m|h|z|b|c|s)\s*(\d+)\s*(master|pro|ultra|wireless|bluetooth)/i,
-    /(mx master|g pro|k\d+|m\d+|h\d+|z\d+|b\d+|c\d+|s\d+)/i,
-    
-    // Generic patterns
-    /(\d+)\s*(gb|tb|mb)/i,
-    /(\d+)\s*inch/i,
-    /(\d+)\s*mm/i,
-    /(\d+)\s*w/i,
-    /(\d+)\s*mah/i,
-    
-    // Car-specific patterns
-    /yaris\s*(\d{4})/i,
-    /prius\s*(\d{4})/i,
-    /civic\s*(\d{4})/i,
-    /accord\s*(\d{4})/i,
-    /camry\s*(\d{4})/i,
-    /corolla\s*(\d{4})/i,
-    /focus\s*(\d{4})/i,
-    /fiesta\s*(\d{4})/i,
-    /mustang\s*(\d{4})/i,
-    /escape\s*(\d{4})/i,
-    /explorer\s*(\d{4})/i,
-    /side\s*mirror/i,
-    /rear\s*mirror/i,
-    /side\s*view/i,
-    /wing\s*mirror/i
-  ];
-  
-  for (const pattern of modelPatterns) {
-    const match = normalizedTitle.match(pattern);
-    if (match) {
-      identifiers.model = match[0];
-      break;
-    }
-  }
-  
-  // Color detection
-  const colors = [
-    'black', 'white', 'blue', 'red', 'green', 'yellow', 'pink', 'purple', 'gold', 'silver',
-    'gray', 'grey', 'brown', 'orange', 'navy', 'maroon', 'teal', 'lime', 'cyan', 'magenta'
-  ];
-  
-  for (const color of colors) {
-    if (normalizedTitle.includes(color)) {
-      identifiers.color = color;
-      break;
-    }
-  }
-  
-  // Size detection
-  const sizePatterns = [
-    /128gb/i, /256gb/i, /512gb/i, /1tb/i, /2tb/i, /4tb/i,
-    /small/i, /medium/i, /large/i, /xl/i, /xxl/i,
-    /(\d+)\s*inch/i, /(\d+)\s*cm/i
-  ];
-  
-  for (const pattern of sizePatterns) {
-    const match = normalizedTitle.match(pattern);
-    if (match) {
-      identifiers.size = match[0];
-      break;
-    }
-  }
-  
-  // Enhanced feature detection with gaming laptop focus
-  const features = [
-    // Gaming laptop features
-    'gaming', 'rog', 'zephyrus', 'strix', 'rtx', 'gtx', 'nvidia', 'geforce', 'radeon',
-    'core i7', 'core i5', 'core i9', 'ryzen 5', 'ryzen 7', 'ryzen 9',
-    '165hz', '144hz', '120hz', '240hz', 'high refresh', 'gaming laptop',
-    '16gb ram', '32gb ram', '8gb ram', '512gb ssd', '1tb ssd', 'nvme',
-    // Display features
-    'fhd', '4k', 'uhd', 'qhd', '1080p', '1440p', '2160p', 'ips', 'oled', 'amoled', 'lcd', 'retina',
-    // Connectivity
-    'wireless', 'bluetooth', 'wifi', '4g', '5g', 'nfc', 'gps',
-    'hdmi', 'usb', 'type c', 'thunderbolt', 'ethernet', 'vga', 'displayport',
-    // Protection
-    'waterproof', 'dustproof', 'shockproof', 'antishock',
-    // Charging
-    'fast charging', 'wireless charging', 'quick charge',
-    // Audio
-    'stereo', 'surround', 'noise cancelling', 'active noise cancellation',
-    // Laptop-specific features
-    'touch screen', 'touchscreen', 'backlit', 'backlit keyboard', 'fingerprint', 'webcam',
-    'ssd', 'hdd', 'hybrid', 'dual core', 'quad core', 'octa core', 'hexa core',
-    'intel', 'amd', 'core i3', 'core i5', 'core i7', 'core i9', 'ryzen', 'athlon'
-  ];
-  
-  for (const feature of features) {
-    if (normalizedTitle.includes(feature)) {
-      identifiers.features.push(feature);
-    }
-  }
-  
-  // Condition detection
-  if (/(renewed|refurb|refurbished|re\-certified|recertified)/i.test(normalizedTitle)) {
-    identifiers.condition = 'refurbished';
-  } else if (/(used|pre\-owned|preowned|open box|open\-box)/i.test(normalizedTitle)) {
-    identifiers.condition = /open box|open\-box/i.test(normalizedTitle) ? 'open_box' : 'used';
-  } else if (/(brand new|sealed|new)/i.test(normalizedTitle)) {
-    identifiers.condition = 'new';
-  }
-  
-  // Bundle and accessories detection
-  const accessoryKeywords = [
-    'case','charger','cable','earbuds','headphones','screen protector','protector','bundle','kit','mouse','keyboard','controller','dock','cover','strap','adapter','power bank','sd card','memory card','stand','tripod'
-  ];
-  for (const word of accessoryKeywords) {
-    if (normalizedTitle.includes(word)) {
-      identifiers.accessories!.push(word);
-    }
-  }
-  identifiers.isBundle = normalizedTitle.includes('bundle') || normalizedTitle.includes('with ') || identifiers.accessories!.length >= 2;
-  
-  // Extract keywords (important words)
-  const stopWords = [
-    'the', 'and', 'for', 'with', 'new', 'original', 'genuine', 'official',
-    'brand', 'product', 'item', 'best', 'top', 'quality', 'premium'
-  ];
-  
-  identifiers.keywords = normalizedTitle
-    .split(/\s+/)
-    .filter(word => 
-      word.length > 2 && 
-      !stopWords.includes(word) &&
-      !identifiers.brand.includes(word) &&
-      !identifiers.model.includes(word) &&
-      !identifiers.color.includes(word) &&
-      !identifiers.size.includes(word)
-    );
-  
-  // SKU detection (alphanumeric patterns)
-  const skuPattern = /[A-Z]{2,}\d{3,}/i;
-  const skuMatch = normalizedTitle.match(skuPattern);
-  if (skuMatch) {
-    identifiers.sku = skuMatch[0];
-  }
-  
-  return identifiers;
-}
 
-/**
- * Calculate similarity between two product titles
- */
-function calculateTitleSimilarity(title1: string, title2: string): number {
-  // Basic string similarity
-  const basicSimilarity = stringSimilarity.compareTwoStrings(title1.toLowerCase(), title2.toLowerCase());
-  
-  // Word-based similarity with improved matching
-  const words1 = title1.toLowerCase().split(/\s+/).filter(word => word.length > 2);
-  const words2 = title2.toLowerCase().split(/\s+/).filter(word => word.length > 2);
-  
-  const commonWords = words1.filter(word => words2.includes(word));
-  const wordSimilarity = commonWords.length / Math.max(words1.length, words2.length);
-  
-  // Character-based similarity
-  const charSimilarity = stringSimilarity.compareTwoStrings(
-    title1.toLowerCase().replace(/\s+/g, ''),
-    title2.toLowerCase().replace(/\s+/g, '')
-  );
-  
-  // Special handling for Samsung Galaxy models
-  const samsungPattern1 = /(galaxy\s*s\d+|s\d+)/i;
-  const samsungPattern2 = /(galaxy\s*s\d+|s\d+)/i;
-  const isSamsung1 = samsungPattern1.test(title1);
-  const isSamsung2 = samsungPattern2.test(title2);
-  
-  let samsungBonus = 0;
-  if (isSamsung1 && isSamsung2) {
-    // Extract model numbers and check if they match
-    const model1 = title1.match(/(s\d+)/i)?.[1] || '';
-    const model2 = title2.match(/(s\d+)/i)?.[1] || '';
-    if (model1 && model2 && model1.toLowerCase() === model2.toLowerCase()) {
-      samsungBonus = 0.3; // Bonus for matching Samsung models
-    }
-  }
-  
-  // Weighted average with Samsung bonus
-  return Math.min(1, (basicSimilarity * 0.3 + wordSimilarity * 0.4 + charSimilarity * 0.2 + samsungBonus));
-}
 
-/**
- * Calculate similarity between product identifiers
- */
-function calculateIdentifierSimilarity(identifiers1: ProductIdentifiers, identifiers2: ProductIdentifiers): number {
-  let score = 0;
-  let totalChecks = 0;
-  
-  // Brand similarity (exact match)
-  if (identifiers1.brand && identifiers2.brand) {
-    totalChecks++;
-    if (identifiers1.brand === identifiers2.brand) {
-      score += 1;
-    }
-  }
-  
-  // Model similarity (exact match)
-  if (identifiers1.model && identifiers2.model) {
-    totalChecks++;
-    if (identifiers1.model === identifiers2.model) {
-      score += 1;
-    }
-  }
-  
-  // Color similarity (exact match)
-  if (identifiers1.color && identifiers2.color) {
-    totalChecks++;
-    if (identifiers1.color === identifiers2.color) {
-      score += 1;
-    }
-  }
-  
-  // Size similarity (exact match)
-  if (identifiers1.size && identifiers2.size) {
-    totalChecks++;
-    if (identifiers1.size === identifiers2.size) {
-      score += 1;
-    }
-  }
-  
-  // Condition similarity (exact match)
-  if (identifiers1.condition && identifiers2.condition) {
-    totalChecks++;
-    if (identifiers1.condition === identifiers2.condition) {
-      score += 1;
-    }
-  }
-  
-  // SKU similarity (exact match)
-  if (identifiers1.sku && identifiers2.sku) {
-    totalChecks++;
-    if (identifiers1.sku === identifiers2.sku) {
-      score += 1;
-    }
-  }
-  
-  // Feature similarity (partial match)
-  if (identifiers1.features.length > 0 && identifiers2.features.length > 0) {
-    const commonFeatures = identifiers1.features.filter(f => identifiers2.features.includes(f));
-    const featureSimilarity = commonFeatures.length / Math.max(identifiers1.features.length, identifiers2.features.length);
-    score += featureSimilarity;
-    totalChecks++;
-  }
-  
-  // Keyword similarity
-  if (identifiers1.keywords.length > 0 && identifiers2.keywords.length > 0) {
-    const commonKeywords = identifiers1.keywords.filter(k => identifiers2.keywords.includes(k));
-    const keywordSimilarity = commonKeywords.length / Math.max(identifiers1.keywords.length, identifiers2.keywords.length);
-    score += keywordSimilarity;
-    totalChecks++;
-  }
-  
-  // Bundle alignment (bonus if both are bundles or both are not)
-  if (typeof identifiers1.isBundle === 'boolean' && typeof identifiers2.isBundle === 'boolean') {
-    totalChecks++;
-    if (identifiers1.isBundle === identifiers2.isBundle) {
-      score += 1;
-    }
-  }
-  
-  // Laptop-specific similarity improvements
-  const isLaptop1 = identifiers1.keywords.some(k => k.toLowerCase().includes('laptop') || k.toLowerCase().includes('notebook') || k.toLowerCase().includes('computer'));
-  const isLaptop2 = identifiers2.keywords.some(k => k.toLowerCase().includes('laptop') || k.toLowerCase().includes('notebook') || k.toLowerCase().includes('computer'));
-  
-  if (isLaptop1 && isLaptop2) {
-    totalChecks++;
-    score += 0.5; // Bonus for both being laptops
-    
-    // Additional bonus for same brand laptops
-    if (identifiers1.brand && identifiers2.brand && identifiers1.brand === identifiers2.brand) {
-      score += 0.3;
-    }
-    
-    // Bonus for similar screen sizes
-    if (identifiers1.size && identifiers2.size) {
-      const size1 = identifiers1.size.match(/(\d+\.?\d*)/)?.[1];
-      const size2 = identifiers2.size.match(/(\d+\.?\d*)/)?.[1];
-      if (size1 && size2) {
-        const diff = Math.abs(parseFloat(size1) - parseFloat(size2));
-        if (diff <= 1) score += 0.2; // Same or very close screen size
-        else if (diff <= 2) score += 0.1; // Close screen size
-      }
-    }
-  }
-  
-  return totalChecks > 0 ? score / totalChecks : 0;
-}
 
-/**
- * Calculate price similarity
- */
-function calculatePriceSimilarity(price1: number, price2: number): number {
-  const priceDiff = Math.abs(price1 - price2);
-  const avgPrice = (price1 + price2) / 2;
-  const priceRatio = priceDiff / avgPrice;
-  
-  // Higher similarity for smaller price differences
-  // Allow up to 50% difference for similar products
-  return Math.max(0, 1 - (priceRatio * 2));
-}
 
-/**
- * Find matching products using robust algorithm
- */
-function findProductMatches(targetProduct: Product, allProducts: Product[]): ProductMatch[] {
-  console.log(`🔍 [Product Matching] Finding matches for: ${targetProduct.title} (${targetProduct.platform})`);
-  console.log(`🔍 [Product Matching] Total products to check: ${allProducts.length}`);
-  
-  // Determine if this is a laptop for special handling
-  const isLaptop = targetProduct.title.toLowerCase().includes('laptop') || 
-                   targetProduct.title.toLowerCase().includes('notebook') ||
-                   targetProduct.title.toLowerCase().includes('computer');
-  
-  console.log(`🔍 [Product Matching] Is laptop: ${isLaptop}`);
-  
-  const matches: ProductMatch[] = [];
-  const targetIdentifiers = extractProductIdentifiers(targetProduct.title);
-  
-  console.log(`🔍 [Product Matching] Target identifiers:`, targetIdentifiers);
-  
-  // Debug: Show keywords for laptops
-  if (isLaptop) {
-    console.log(`🔍 [Product Matching] Laptop keywords:`, targetIdentifiers.keywords);
-    console.log(`🔍 [Product Matching] Laptop features:`, targetIdentifiers.features);
-  }
-  
-  for (const product of allProducts) {
-    // Skip same product
-    if (product.id === targetProduct.id) {
-      continue;
-    }
-    
-    // Apply platform penalty for same-platform matches (but don't skip them)
-    let platformPenalty = 0;
-    if (product.platform === targetProduct.platform) {
-      platformPenalty = 0.15; // Reduce similarity for same platform
-    }
-    
-    const productIdentifiers = extractProductIdentifiers(product.title);
-    
-    // Calculate multiple similarity scores
-    const titleSimilarity = calculateTitleSimilarity(targetProduct.title, product.title);
-    const identifierSimilarity = calculateIdentifierSimilarity(targetIdentifiers, productIdentifiers);
-    const priceSimilarity = calculatePriceSimilarity(targetProduct.price, product.price);
-    
-    // CRITICAL: Category mismatch check - prevent laptops from matching with completely different products
-    const targetCategory = getProductCategory(targetProduct.title);
-    const productCategory = getProductCategory(product.title);
-    
-    console.log(`🔍 [Product Matching] Category check: ${targetCategory} vs ${productCategory}`);
-    
-    if (targetCategory !== productCategory) {
-      console.log(`🚫 [Product Matching] Category mismatch: ${targetCategory} vs ${productCategory} - Skipping`);
-      continue; // Skip completely different product categories
-    }
-    
-    console.log(`✅ [Product Matching] Category match: ${targetCategory}`);
-    
-    // Debug similarity scores for laptops
-    if (isLaptop && titleSimilarity > 0.2) {
-      console.log(`🔍 [Product Matching] Laptop candidate: ${product.title}`);
-      console.log(`🔍 [Product Matching] Scores - Title: ${titleSimilarity.toFixed(3)}, Identifiers: ${identifierSimilarity.toFixed(3)}, Price: ${priceSimilarity.toFixed(3)}`);
-    }
-    
-    // Weighted similarity score - Adjust weights for laptops
-    let overallSimilarity;
-    if (isLaptop) {
-      // For laptops, give more weight to brand and category matches
-      overallSimilarity = (
-        titleSimilarity * 0.30 +
-        identifierSimilarity * 0.50 +
-        priceSimilarity * 0.20
-      );
-    } else {
-      // For other products, use standard weights
-      overallSimilarity = (
-        titleSimilarity * 0.35 +
-        identifierSimilarity * 0.45 +
-        priceSimilarity * 0.20
-      );
-    }
-    
-    // Apply platform penalty
-    overallSimilarity -= platformPenalty;
-    
-    // Variant adjustments: penalize mismatched storage, condition, bundle status
-    if (targetIdentifiers.size && productIdentifiers.size && targetIdentifiers.size !== productIdentifiers.size) {
-      overallSimilarity -= 0.10;
-    }
-    if (targetIdentifiers.condition && productIdentifiers.condition && targetIdentifiers.condition !== productIdentifiers.condition) {
-      overallSimilarity -= 0.15;
-    }
-    if (typeof targetIdentifiers.isBundle === 'boolean' && typeof productIdentifiers.isBundle === 'boolean') {
-      if (targetIdentifiers.isBundle !== productIdentifiers.isBundle) {
-        overallSimilarity -= 0.05;
-      } else if (targetIdentifiers.isBundle && productIdentifiers.isBundle) {
-        overallSimilarity += 0.05;
-      }
-    }
-    
-    overallSimilarity = Math.max(0, Math.min(1, overallSimilarity));
-    
-    // Lower threshold for better matching (similarity > 0.25 for laptops, 0.35 for others)
-    const threshold = isLaptop ? 0.25 : 0.35;
-    
-    // Debug final similarity for laptops
-    if (isLaptop && overallSimilarity > 0.2) {
-      console.log(`🔍 [Product Matching] Final similarity: ${overallSimilarity.toFixed(3)} (threshold: ${threshold})`);
-    }
-    
-    if (overallSimilarity > threshold) {
-      const priceDifference = Math.abs(targetProduct.price - product.price);
-      const priceDifferencePercent = (priceDifference / targetProduct.price) * 100;
-      
-      const confidence = overallSimilarity > 0.65 ? 'high' : overallSimilarity > 0.5 ? 'medium' : 'low';
-      const matchReason = generateMatchReason(targetIdentifiers, productIdentifiers, overallSimilarity);
-      
-      matches.push({
-        product,
-        similarity: overallSimilarity,
-        confidence,
-        matchReason,
-        priceDifference,
-        priceDifferencePercent
-      });
-    }
-  }
-  
-  console.log(`🔍 [Product Matching] Found ${matches.length} matches`);
-  if (matches.length > 0) {
-    console.log(`🔍 [Product Matching] Top match: ${matches[0].product.title} (${matches[0].similarity.toFixed(2)})`);
-  }
-  
-  return matches.sort((a, b) => b.similarity - a.similarity);
-}
 
-/**
- * Determine product category from title with enhanced categorization
- */
-function getProductCategory(title: string): string {
-  const normalizedTitle = title.toLowerCase();
-  
-  // Gaming Laptop/Computer category (more specific)
-  if ((normalizedTitle.includes('laptop') || normalizedTitle.includes('notebook')) && 
-      (normalizedTitle.includes('gaming') || normalizedTitle.includes('rog') || 
-       normalizedTitle.includes('zephyrus') || normalizedTitle.includes('nitro') ||
-       normalizedTitle.includes('alienware') || normalizedTitle.includes('legion') ||
-       normalizedTitle.includes('rtx') || normalizedTitle.includes('gtx'))) {
-    return 'gaming_laptop';
-  }
-  
-  // Regular Laptop/Computer category
-  if (normalizedTitle.includes('laptop') || normalizedTitle.includes('notebook') || 
-      normalizedTitle.includes('computer') || normalizedTitle.includes('pc') ||
-      normalizedTitle.includes('macbook') || normalizedTitle.includes('chromebook')) {
-    return 'laptop';
-  }
-  
-  // Phone category
-  if (normalizedTitle.includes('phone') || normalizedTitle.includes('smartphone') || 
-      normalizedTitle.includes('iphone') || normalizedTitle.includes('galaxy') ||
-      normalizedTitle.includes('android') || normalizedTitle.includes('mobile')) {
-    return 'phone';
-  }
-  
-  // Gaming Console category
-  if (normalizedTitle.includes('xbox') || normalizedTitle.includes('playstation') || 
-      normalizedTitle.includes('nintendo') || normalizedTitle.includes('ps5') ||
-      normalizedTitle.includes('ps4') || normalizedTitle.includes('switch')) {
-    return 'gaming_console';
-  }
-  
-  // TV/Monitor category
-  if (normalizedTitle.includes('tv') || normalizedTitle.includes('television') || 
-      normalizedTitle.includes('monitor') || normalizedTitle.includes('display') ||
-      normalizedTitle.includes('screen')) {
-    return 'display';
-  }
-  
-  // Appliances category (to prevent ice maker matches)
-  if (normalizedTitle.includes('ice maker') || normalizedTitle.includes('refrigerator') || 
-      normalizedTitle.includes('microwave') || normalizedTitle.includes('dishwasher') ||
-      normalizedTitle.includes('washer') || normalizedTitle.includes('dryer') ||
-      normalizedTitle.includes('appliance')) {
-    return 'appliance';
-  }
-  
-  // Headphones/Audio category
-  if (normalizedTitle.includes('headphone') || normalizedTitle.includes('earbud') || 
-      normalizedTitle.includes('airpod') || normalizedTitle.includes('speaker') ||
-      normalizedTitle.includes('audio') || normalizedTitle.includes('sound')) {
-    return 'audio';
-  }
-  
-  // Jewelry/Accessories category
-  if (normalizedTitle.includes('necklace') || normalizedTitle.includes('bracelet') || 
-      normalizedTitle.includes('ring') || normalizedTitle.includes('earring') ||
-      normalizedTitle.includes('jewelry') || normalizedTitle.includes('accessory')) {
-    return 'jewelry';
-  }
-  
-  // Clothing category
-  if (normalizedTitle.includes('shirt') || normalizedTitle.includes('dress') || 
-      normalizedTitle.includes('pants') || normalizedTitle.includes('jacket') ||
-      normalizedTitle.includes('shoes') || normalizedTitle.includes('boots')) {
-    return 'clothing';
-  }
-  
-  // Default to 'other' for unknown categories
-  return 'other';
-}
 
-/**
- * Generate human-readable match reason
- */
-function generateMatchReason(targetIdentifiers: ProductIdentifiers, productIdentifiers: ProductIdentifiers, similarity: number): string {
-  if (targetIdentifiers.brand && productIdentifiers.brand && targetIdentifiers.brand === productIdentifiers.brand) {
-    return `Same brand (${targetIdentifiers.brand})`;
-  }
-  if (targetIdentifiers.model && productIdentifiers.model && targetIdentifiers.model === productIdentifiers.model) {
-    return `Same model (${targetIdentifiers.model})`;
-  }
-  if (targetIdentifiers.size && productIdentifiers.size && targetIdentifiers.size === productIdentifiers.size) {
-    return `Same storage/size (${targetIdentifiers.size})`;
-  }
-  if (targetIdentifiers.color && productIdentifiers.color && targetIdentifiers.color === productIdentifiers.color) {
-    return `Same color (${targetIdentifiers.color})`;
-  }
-  if (targetIdentifiers.condition && productIdentifiers.condition && targetIdentifiers.condition === productIdentifiers.condition) {
-    return `Same condition (${targetIdentifiers.condition})`;
-  }
-  if (typeof targetIdentifiers.isBundle === 'boolean' && typeof productIdentifiers.isBundle === 'boolean') {
-    if (targetIdentifiers.isBundle && productIdentifiers.isBundle) return 'Both are bundles';
-    if (targetIdentifiers.isBundle !== productIdentifiers.isBundle) return 'Bundle vs standalone';
-  }
-  if (targetIdentifiers.sku && productIdentifiers.sku && targetIdentifiers.sku === productIdentifiers.sku) {
-    return `Same SKU (${targetIdentifiers.sku})`;
-  }
-  if (similarity > 0.8) {
-    return 'Very similar product names';
-  }
-  if (similarity > 0.7) {
-    return 'Similar product characteristics';
-  }
-  return 'Partial match based on keywords';
-}
+
+
+
+
+
+
+
 
 // Track a new product
 router.post('/track', authMiddleware, validateProduct, async (req: AuthRequest, res: Response) => {
@@ -847,7 +183,8 @@ router.post('/track', authMiddleware, validateProduct, async (req: AuthRequest, 
       imageUrl: imageUrl || '', 
       userId, 
       stockStatus: stockStatus || 'unknown', 
-      discountInfo 
+      discountInfo,
+      totalMatches: 0 // Initialize with 0 matches
     });
     
     await db.addPriceHistory({ 
@@ -862,16 +199,22 @@ router.post('/track', authMiddleware, validateProduct, async (req: AuthRequest, 
     
     if (newProduct) {
       console.log(`[PRODUCT MATCHING] Looking for matches for: ${newProduct.title}`);
-      const matches = findProductMatches(newProduct, allProducts);
-      const matchedProductIds = matches.map(match => match.product.id);
-      
+      // Use the consolidated product matching service
+      const { matchProducts } = require('../services/productMatchingService');
+      const candidateProducts = allProducts.filter((p: any) => p.id !== id);
+      const matches = matchProducts(newProduct, candidateProducts);
+      const matchedProductIds = matches.map((match: any) => match.id);
+
       console.log(`[PRODUCT MATCHING] Found ${matches.length} matches:`);
-      matches.forEach(match => {
-        console.log(`  - ${match.product.title} (${match.product.platform}) - Similarity: ${match.similarity.toFixed(2)} - Reason: ${match.matchReason}`);
+      matches.forEach((match: any) => {
+        console.log(`  - ${match.title} (${match.platform}) - Confidence: ${match.confidence.toFixed(2)}`);
       });
       
-      // Update the new product with matches
-      await db.updateProduct(id, { matchedProducts: matchedProductIds });
+      // Update the new product with matches and total count
+      await db.updateProduct(id, { 
+        matchedProducts: matchedProductIds,
+        totalMatches: matches.length
+      });
       
       // Update existing products to include this new product as a match
       for (const match of matches) {
@@ -880,7 +223,11 @@ router.post('/track', authMiddleware, validateProduct, async (req: AuthRequest, 
           const currentMatches = existingProduct.matchedProducts || [];
           if (!currentMatches.includes(id)) {
             currentMatches.push(id);
-            await db.updateProduct(match.product.id, { matchedProducts: currentMatches });
+            // Update both matchedProducts and totalMatches
+            await db.updateProduct(match.product.id, { 
+              matchedProducts: currentMatches,
+              totalMatches: currentMatches.length
+            });
           }
         }
       }
@@ -937,7 +284,7 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
     } = req.query;
     
     // Add price history and calculate price drops
-    let productsWithHistory = await Promise.all(products.map(async (product: any) => {
+    let productsWithHistory = await Promise.all(products.map(async (product: Product) => {
       const history = await db.getPriceHistory(product.id);
       const priceHistory = history || [];
       
@@ -1171,22 +518,22 @@ router.get('/filters', authMiddleware, async (req: AuthRequest, res: Response) =
     const seenPriceDropIds = user?.seenPriceDropIds || [];
     
     // Calculate price ranges
-    const prices = products.map(p => p.price).filter(p => p > 0);
+    const prices = products.map((p: Product) => p.price).filter((p: number) => p > 0);
     const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
     const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
-    
+
     // Get unique platforms
-    const platforms = [...new Set(products.map(p => p.platform))];
-    
+    const platforms = [...new Set(products.map((p: Product) => p.platform))];
+
     // Get stock status counts
-    const stockStatuses = products.reduce((acc, product) => {
+    const stockStatuses = products.reduce((acc: Record<string, number>, product: Product) => {
       const status = product.stockStatus || 'unknown';
       acc[status] = (acc[status] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
     
     // Calculate price drop statistics (only unseen drops)
-    const productsWithHistory = await Promise.all(products.map(async (product) => {
+    const productsWithHistory = await Promise.all(products.map(async (product: Product) => {
       const history = await db.getPriceHistory(product.id);
       if (history.length > 1) {
         const previousEntry = history[history.length - 2];
@@ -1281,7 +628,7 @@ router.get('/price-drops', authMiddleware, async (req: AuthRequest, res: Respons
       const history = await db.getPriceHistory(product.id);
       if (history.length > 1) {
         // Sort history by timestamp to ensure chronological order
-        const sortedHistory = history.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+        const sortedHistory = history.sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
         const last = sortedHistory[sortedHistory.length - 1];
         const prev = sortedHistory[sortedHistory.length - 2];
         if (last && prev && last.price < prev.price) {
@@ -1297,124 +644,7 @@ router.get('/price-drops', authMiddleware, async (req: AuthRequest, res: Respons
   }
 });
 
-// Get product matches
-router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: Response) => {
-  try {
-    const { productId } = req.params;
-    if (!productId) {
-      return res.status(400).json({
-        success: false,
-        error: 'Product ID is required'
-      });
-    }
-    const userId = req.user!.uid;
-    
-    // Get the target product
-    const allProducts = await db.getProducts();
-    const targetProduct = allProducts.find((p: any) => p.id === productId);
-    
-    if (!targetProduct) {
-      return res.status(404).json({
-        success: false,
-        error: 'Product not found'
-      });
-    }
 
-    console.log(`[MATCHING] Looking for matches for: "${targetProduct.title}"`);
-    console.log(`[MATCHING] Total products in database: ${allProducts.length}`);
-    
-    // Find product matches
-    const allMatches = findProductMatches(targetProduct, allProducts);
-    
-    console.log(`[MATCHING] Found ${allMatches.length} total matches`);
-    
-    // Filter to get 2 cheapest products from each supported platform
-    const platformGroups = new Map<string, ProductMatch[]>();
-    const supportedPlatforms = ['amazon', 'ebay', 'walmart', 'target', 'aliexpress', 'shein', 'bestbuy'];
-    
-    // Group by platform (exclude the original platform to avoid duplicates)
-    allMatches.forEach(match => {
-      const platform = match.product.platform.toLowerCase();
-      if (supportedPlatforms.includes(platform) && platform !== targetProduct.platform.toLowerCase()) {
-        if (!platformGroups.has(platform)) {
-          platformGroups.set(platform, []);
-        }
-        platformGroups.get(platform)!.push(match);
-      }
-    });
-    
-    // Get the 2 cheapest from each supported platform
-    const matches: ProductMatch[] = [];
-    
-    console.log(`[MATCHING] Processing ${platformGroups.size} platforms (excluding ${targetProduct.platform})`);
-    
-    supportedPlatforms.forEach(platform => {
-      if (platform === targetProduct.platform.toLowerCase()) return; // Skip the original platform
-      
-      const platformMatches = platformGroups.get(platform) || [];
-      
-      if (platformMatches.length > 0) {
-        // Sort by price (ascending) and take the 2 cheapest
-        const sortedByPrice = platformMatches.sort((a, b) => a.product.price - b.product.price);
-        
-        // Add up to 2 cheapest from this platform
-        const cheapestFromPlatform = sortedByPrice.slice(0, 2);
-        matches.push(...cheapestFromPlatform);
-        
-        console.log(`[MATCHING] ${platform}: Added ${cheapestFromPlatform.length} products (${cheapestFromPlatform.map(m => `$${m.product.price}`).join(', ')})`);
-      } else {
-        console.log(`[MATCHING] ${platform}: No matches found`);
-      }
-    });
-    
-    console.log(`[MATCHING] Final ${matches.length} cheapest matches across platforms:`);
-    matches.forEach((match, index) => {
-      console.log(`[MATCHING] ${index + 1}. "${match.product.title}" (${match.product.platform}) - $${match.product.price} - Similarity: ${match.similarity.toFixed(3)}`);
-    });
-    
-    // Update the stored matchedProducts to match the algorithm results
-    const matchedProductIds = matches.map(match => match.product.id);
-    await db.updateProduct(productId, { matchedProducts: matchedProductIds });
-    
-    // Format response
-    const formattedMatches = matches.map(match => ({
-      product: {
-        id: match.product.id,
-        title: match.product.title,
-        price: match.product.price,
-        platform: match.product.platform,
-        url: match.product.url,
-        imageUrl: match.product.imageUrl,
-        stockStatus: match.product.stockStatus,
-        discountInfo: match.product.discountInfo
-      },
-      similarity: match.similarity,
-      confidence: match.confidence,
-      matchReason: match.matchReason,
-      priceDifference: match.priceDifference,
-      priceDifferencePercent: match.priceDifferencePercent
-    }));
-    
-    return res.json({
-      success: true,
-      data: {
-        targetProduct: {
-          id: targetProduct.id,
-          title: targetProduct.title,
-          price: targetProduct.price,
-          platform: targetProduct.platform
-        },
-        matches: formattedMatches
-      }
-    });
-  } catch (error: unknown) {
-    console.error('Error finding product matches:', error);
-    return res.status(500).json({
-      success: false,
-      error: 'Internal server error'
-    });
-  }
-});
 
 // Link products manually
 router.post('/:productId/link/:targetProductId', authMiddleware, async (req: AuthRequest, res: Response) => {
@@ -1648,20 +878,17 @@ router.post('/debug/match', authMiddleware, async (req: AuthRequest, res: Respon
       });
     }
     
-    const identifiers1 = extractProductIdentifiers(title1);
-    const identifiers2 = extractProductIdentifiers(title2);
-    
-    const titleSimilarity = calculateTitleSimilarity(title1, title2);
-    const identifierSimilarity = calculateIdentifierSimilarity(identifiers1, identifiers2);
+    // Use simple string similarity for debugging
+    const stringSimilarity = require('string-similarity');
+    const titleSimilarity = stringSimilarity.compareTwoStrings(title1.toLowerCase(), title2.toLowerCase());
+    const identifierSimilarity = titleSimilarity; // Simplified for debugging
     const overallSimilarity = (titleSimilarity * 0.4 + identifierSimilarity * 0.4 + 0.2);
-    
+
     return res.json({
       success: true,
       data: {
         title1,
         title2,
-        identifiers1,
-        identifiers2,
         titleSimilarity,
         identifierSimilarity,
         overallSimilarity,
@@ -1690,15 +917,17 @@ router.get('/:productId/predict', authMiddleware, async (req: AuthRequest, res: 
     }
 
     // Get alternatives to compare pricing
-    const alternatives = findProductMatches(targetProduct, allProducts)
-      .filter(m => m.similarity > 0.5 && m.product.id !== productId)
+    const { matchProducts } = require('../services/productMatchingService');
+    const candidateProducts = allProducts.filter((p: any) => p.id !== productId);
+    const alternatives = matchProducts(targetProduct, candidateProducts)
+      .filter((m: any) => m.confidence > 0.5)
       .slice(0, 10);
 
     // Calculate price positioning
     const targetPrice = targetProduct.price;
-    const cheaperAlternatives = alternatives.filter(a => a.product.price < targetPrice);
-    const avgAlternativePrice = alternatives.length > 0 
-      ? alternatives.reduce((sum, a) => sum + a.product.price, 0) / alternatives.length 
+    const cheaperAlternatives = alternatives.filter((a: any) => a.price < targetPrice);
+    const avgAlternativePrice = alternatives.length > 0
+      ? alternatives.reduce((sum: number, a: any) => sum + a.price, 0) / alternatives.length
       : targetPrice;
     
     // Price positioning score (0 = overpriced, 1 = underpriced)
@@ -1743,8 +972,8 @@ router.get('/:productId/predict', authMiddleware, async (req: AuthRequest, res: 
         trendScore = Math.max(-1, Math.min(1, trend / Math.max(1, olderAvg)));
         
         // Volatility calculation
-        const avg = sorted.reduce((sum, p) => sum + Number(p.price || 0), 0) / n;
-        const variance = sorted.reduce((acc, p) => acc + Math.pow((Number(p.price || 0) - avg), 2), 0) / n;
+        const avg = sorted.reduce((sum: number, p: any) => sum + Number(p.price || 0), 0) / n;
+        const variance = sorted.reduce((acc: number, p: any) => acc + Math.pow((Number(p.price || 0) - avg), 2), 0) / n;
         volatility = Math.sqrt(variance) / Math.max(1, avg);
         
         if (Math.abs(trend) > 0.05) {
@@ -1829,32 +1058,28 @@ router.get('/:productId/alternatives', authMiddleware, async (req: AuthRequest, 
     const allProducts = await db.getProducts();
     const target = allProducts.find((p: any) => p.id === productId);
     if (!target) return res.status(404).json({ success: false, message: 'Product not found' });
-    const targetIds = extractProductIdentifiers(target.title);
-    const matches = findProductMatches(target, allProducts);
+    // Use simplified alternative generation
+    const { matchProducts } = require('../services/productMatchingService');
+    const candidateProducts = allProducts.filter((p: any) => p.id !== productId);
+    const matches = matchProducts(target, candidateProducts);
     const alts = matches
-      .filter(m => m.product.price <= target.price || m.similarity > 0.6)
-      .map(m => {
-        // Prior-gen heuristic: if model numbers exist and differ by 1
-        const altIds = extractProductIdentifiers(m.product.title);
-        const modelNum = (targetIds.model.match(/\d+/)?.[0]) || '';
-        const altModelNum = (altIds.model.match(/\d+/)?.[0]) || '';
-        let reason = m.matchReason;
-        if (modelNum && altModelNum && parseInt(altModelNum) === parseInt(modelNum) - 1) {
-          reason = `Previous generation alternative (${altIds.model})`;
-        } else if (m.product.price < target.price) {
-          reason = `Cheaper by $${(target.price - m.product.price).toFixed(2)}`;
+      .filter((m: any) => m.price <= target.price || m.confidence > 0.6)
+      .map((m: any) => {
+        let reason = 'Similar product found';
+        if (m.price < target.price) {
+          reason = `Cheaper by $${(target.price - m.price).toFixed(2)}`;
         }
         return {
           product: {
-            id: m.product.id,
-            title: m.product.title,
-            price: m.product.price,
-            platform: m.product.platform,
-            url: m.product.url,
-            imageUrl: m.product.imageUrl
+            id: m.id,
+            title: m.title,
+            price: m.price,
+            platform: m.platform,
+            url: m.url,
+            imageUrl: m.imageUrl
           },
           reason,
-          similarity: m.similarity
+          similarity: m.confidence
         };
       })
       .slice(0, 10);
@@ -1871,40 +1096,237 @@ router.get('/:productId/bundle', authMiddleware, async (req: AuthRequest, res: R
     const allProducts = await db.getProducts();
     const target = allProducts.find((p: any) => p.id === productId);
     if (!target) return res.status(404).json({ success: false, message: 'Product not found' });
-    const ids = extractProductIdentifiers(target.title);
+    // Simplified bundle calculation
     const estAccessoryValue: Record<string, number> = {
       'case': 10, 'charger': 20, 'cable': 7, 'earbuds': 20, 'headphones': 25, 'screen protector': 8,
       'protector': 8, 'mouse': 15, 'keyboard': 25, 'controller': 35, 'dock': 20, 'cover': 10, 'strap': 12,
       'adapter': 12, 'power bank': 25, 'sd card': 15, 'memory card': 15, 'stand': 12, 'tripod': 18
     };
-    const targetBundleValue = (ids.accessories || []).reduce((sum, a) => sum + (estAccessoryValue[a] || 0), 0);
+    const targetBundleValue = 0; // Simplified
 
-    const matches = findProductMatches(target, allProducts).slice(0, 20);
-    const bundleComparisons = matches.map(m => {
-      const mid = extractProductIdentifiers(m.product.title);
-      const val = (mid.accessories || []).reduce((sum, a) => sum + (estAccessoryValue[a] || 0), 0);
-      const netValue = val - (m.product.price - target.price);
+    const { matchProducts } = require('../services/productMatchingService');
+    const candidateProducts = allProducts.filter((p: any) => p.id !== productId);
+    const matches = matchProducts(target, candidateProducts).slice(0, 20);
+    const bundleComparisons = matches.map((m: any) => {
+      const val = 0; // Simplified accessory value calculation
+      const netValue = val - (m.price - target.price);
       return {
         product: {
-          id: m.product.id,
-          title: m.product.title,
-          price: m.product.price,
-          platform: m.product.platform,
-          url: m.product.url,
-          imageUrl: m.product.imageUrl
+          id: m.id,
+          title: m.title,
+          price: m.price,
+          platform: m.platform,
+          url: m.url,
+          imageUrl: m.imageUrl
         },
-        accessories: mid.accessories,
+        accessories: [] as string[],
         estimatedAccessoryValue: val,
-        priceDifference: m.product.price - target.price,
+        priceDifference: m.price - target.price,
         netValue
       };
-    }).sort((a, b) => (b.netValue - a.netValue));
+    }).sort((a: any, b: any) => (b.netValue - a.netValue));
 
-    return res.json({ success: true, data: { target: { id: target.id, accessories: ids.accessories, estimatedAccessoryValue: targetBundleValue }, bundles: bundleComparisons } });
+    return res.json({ success: true, data: { target: { id: target.id, accessories: [], estimatedAccessoryValue: targetBundleValue }, bundles: bundleComparisons } });
   } catch (e) {
     return res.status(500).json({ success: false, message: 'Failed to compute bundle value' });
   }
 });
+
+// Get product matches (Buyhatke-style)
+router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const { productId } = req.params;
+    const widen = String((req.query as any)?.widen || '').toLowerCase() === '1' || String((req.query as any)?.widen || '').toLowerCase() === 'true';
+    const userId = req.user!.uid;
+    
+    if (!productId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Product ID is required'
+      });
+    }
+
+    // Get the source product
+    const sourceProduct = await db.getProductById(productId);
+    if (!sourceProduct) {
+      return res.status(404).json({
+        success: false,
+        error: 'Product not found'
+      });
+    }
+
+    // Verify user owns the product or is admin
+    const user = await db.getUserById(userId) as any;
+    const isAdmin = user?.role === 'admin';
+    if (sourceProduct.userId !== userId && !isAdmin) {
+      return res.status(403).json({
+        success: false,
+        error: 'Not authorized'
+      });
+    }
+
+    console.log(`🎯 Finding enhanced matches for: ${sourceProduct.title}`);
+
+    // Get all products for matching (exclude the source product)
+    const allProducts = await db.getProducts();
+    const candidateProducts = allProducts.filter((p: any) => p.id !== productId);
+
+    console.log(`📊 Database stats: ${allProducts.length} total products, ${candidateProducts.length} candidates`);
+
+    // Use the enhanced product matching service
+    const { matchProducts } = require('../services/productMatchingService');
+    let matches = matchProducts(sourceProduct, candidateProducts);
+
+    console.log(`🎯 Found ${matches.length} initial matches`);
+
+    // If user requested widened search or we found no/very few matches, try external shopping search (SerpAPI)
+    if ((widen || matches.length < 3)) {
+      try {
+        const externalCandidates = await widenSearchAcrossPlatforms(sourceProduct);
+        if (externalCandidates.length > 0) {
+          const externalMatches = matchProducts(sourceProduct, externalCandidates);
+
+          // Merge and deduplicate by URL
+          const byUrl: Record<string, any> = {};
+          for (const m of [...matches, ...externalMatches]) {
+            const urlKey = (m.url || m.product?.url || '').split('#')[0];
+            if (!urlKey) continue;
+            const confidence = (m.confidence ?? m.similarity ?? 0) as number;
+            if (!byUrl[urlKey] || confidence > (byUrl[urlKey].confidence ?? byUrl[urlKey].similarity ?? 0)) {
+              byUrl[urlKey] = m;
+            }
+          }
+          matches = Object.values(byUrl);
+          console.log(`🌐 Widen search added ${Math.max(0, matches.length - candidateProducts.length)} web candidates`);
+        } else {
+          console.log('🌐 Widen search returned no external candidates');
+        }
+      } catch (extErr) {
+        console.warn('🌐 Widen search failed:', extErr instanceof Error ? extErr.message : extErr);
+      }
+    }
+    
+    if (matches.length === 0) {
+      console.warn(`⚠️ No matches found for "${sourceProduct.title}". This could indicate:`);
+      console.warn(`   - High accuracy threshold (75%+) - only very similar products match`);
+      console.warn(`   - No similar products in database`);
+      console.warn(`   - Brand/model extraction differences`);
+      console.warn(`   - Category mismatch or price range issues`);
+    }
+
+    // Update the source product's total matches count
+    await db.updateProduct(productId, { 
+      totalMatches: matches.length
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        algorithm: 'buyhatke-enhanced',
+        targetProduct: {
+          id: sourceProduct.id,
+          title: sourceProduct.title,
+          price: sourceProduct.price,
+          currency: sourceProduct.currency || 'USD',
+          platform: sourceProduct.platform,
+          imageUrl: sourceProduct.imageUrl || '',
+          url: sourceProduct.url
+        },
+        matches: matches.map((match: any) => ({
+          product: {
+            id: (match.product?.id ?? match.id) as string,
+            title: (match.product?.title ?? match.title) as string,
+            price: Number(match.product?.price ?? match.price ?? 0),
+            currency: (match.product?.currency ?? match.currency ?? 'USD') as string,
+            platform: (match.product?.platform ?? match.platform ?? 'unknown') as string,
+            imageUrl: (match.product?.imageUrl ?? match.imageUrl ?? '') as string,
+            url: (match.product?.url ?? match.url) as string,
+            stockStatus: (match.product?.stockStatus ?? match.stockStatus ?? 'unknown') as string
+          },
+          confidence: Number(match.confidence ?? match.similarity ?? 0),
+          similarity: Number(match.similarity ?? match.confidence ?? 0),
+          matchReason: (match.matchReason ?? 'Similarity-based match') as string,
+          priceDifference: Number(match.priceDifference ?? Math.abs(Number(sourceProduct.price) - Number(match.product?.price ?? match.price ?? 0))),
+          priceDifferencePercent: Number(match.priceDifferencePercent ?? (Math.abs(Number(sourceProduct.price) - Number(match.product?.price ?? match.price ?? 0)) / Math.max(1, Number(sourceProduct.price)) * 100)),
+          savings: match.savings as string | undefined
+        })),
+        totalMatches: matches.length,
+        bestMatch: matches.length > 0 ? {
+          product: {
+            id: (matches[0].product?.id ?? matches[0].id) as string,
+            title: (matches[0].product?.title ?? matches[0].title) as string,
+            price: Number(matches[0].product?.price ?? matches[0].price ?? 0),
+            currency: (matches[0].product?.currency ?? matches[0].currency ?? 'USD') as string,
+            platform: (matches[0].product?.platform ?? matches[0].platform ?? 'unknown') as string,
+            imageUrl: (matches[0].product?.imageUrl ?? matches[0].imageUrl ?? '') as string,
+            url: (matches[0].product?.url ?? matches[0].url) as string
+          },
+          confidence: Number(matches[0].similarity ?? matches[0].confidence ?? 0),
+          priceDifference: Number(matches[0].priceDifference ?? Math.abs(Number(sourceProduct.price) - Number(matches[0].product?.price ?? matches[0].price ?? 0)))
+        } : null
+      }
+    });
+
+  } catch (error) {
+    console.error('🚨 Product matching error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to find product matches'
+    });
+  }
+});
+
+// Helper: map URL host to platform key
+function urlToPlatform(url: string): Product['platform'] | 'unknown' {
+  try {
+    const u = new URL(url);
+    const h = u.hostname.toLowerCase();
+    if (h.includes('amazon')) return 'amazon';
+    if (h.includes('aliexpress')) return 'aliexpress';
+    if (h.includes('ebay')) return 'ebay';
+    if (h.includes('walmart')) return 'walmart';
+    if (h.includes('shein')) return 'shein';
+    if (h.includes('bestbuy')) return 'bestbuy';
+    if (h.includes('target')) return 'target';
+    return 'unknown';
+  } catch {
+    return 'unknown';
+  }
+}
+
+// External widen search using SerpAPI (Google Shopping). Returns lightweight candidate products
+async function widenSearchAcrossPlatforms(sourceProduct: any): Promise<any[]> {
+  const serpKey = process.env.SERPAPI_KEY || process.env.SERP_API_KEY;
+  if (!serpKey || typeof fetch !== 'function') {
+    return [];
+  }
+  const q = encodeURIComponent(sourceProduct.title);
+  const url = `https://serpapi.com/search.json?engine=google_shopping&q=${q}&hl=en&gl=us&api_key=${serpKey}`;
+  const resp = await fetch(url);
+  if (!resp.ok) return [];
+  const data: any = await resp.json();
+  const items: any[] = data?.shopping_results || [];
+  const supported = new Set(['amazon', 'aliexpress', 'ebay', 'walmart', 'shein', 'bestbuy', 'target']);
+  const candidates: any[] = [];
+  for (const it of items) {
+    const link: string = it?.link || '';
+    const title: string = it?.title || '';
+    const priceStr: string = (it?.price || '').replace(/[^0-9.]/g, '');
+    const price = Number(priceStr || 0);
+    const platform = urlToPlatform(link);
+    if (!link || !title || !price || platform === 'unknown' || !supported.has(platform)) continue;
+    candidates.push({
+      id: link,
+      title,
+      price,
+      currency: 'USD',
+      platform,
+      url: link,
+      imageUrl: it?.thumbnail || it?.product_link || ''
+    });
+  }
+  return candidates;
+}
 
 // Place generic product fetch after specific routes to avoid route shadowing
 router.get('/:productId', authMiddleware, async (req: AuthRequest, res: Response) => {
@@ -1927,6 +1349,61 @@ router.get('/:productId', authMiddleware, async (req: AuthRequest, res: Response
     return res.json({ success: true, data: product });
   } catch (e) {
     return res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+// Test matching endpoint for debugging
+router.get('/debug/test-matching', async (req: Request, res: Response) => {
+  try {
+    const { matchProducts } = require('../services/productMatchingService');
+    
+    // Create test products
+    const testSource = {
+      id: 'test1',
+      title: 'Apple AirPods Pro 2nd Generation',
+      price: 249.99,
+      platform: 'amazon',
+      url: 'test-url',
+      imageUrl: '',
+      currency: 'USD'
+    };
+    
+    const testCandidates = [
+      {
+        id: 'test2',
+        title: 'AirPods Pro (2nd generation) with MagSafe Charging',
+        price: 239.99,
+        platform: 'bestbuy',
+        url: 'test-url-2',
+        imageUrl: '',
+        currency: 'USD'
+      },
+      {
+        id: 'test3',
+        title: 'Apple AirPods Pro Second Gen Active Noise Cancellation',
+        price: 229.99,
+        platform: 'walmart',
+        url: 'test-url-3',
+        imageUrl: '',
+        currency: 'USD'
+      }
+    ];
+    
+    const matches = matchProducts(testSource, testCandidates);
+    
+    return res.json({
+      success: true,
+      data: {
+        source: testSource,
+        candidates: testCandidates,
+        matches,
+        matchCount: matches.length,
+        algorithm: 'enhanced-buyhatke'
+      }
+    });
+  } catch (error) {
+    console.error('Test matching error:', error);
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 

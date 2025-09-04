@@ -48,6 +48,7 @@ export interface Product {
   stockStatus?: 'in_stock' | 'out_of_stock' | 'unknown';
   discountInfo?: string | undefined;
   matchedProducts?: string[]; // Array of product IDs that match this product
+  totalMatches?: number; // Total number of matches found
   previousStockStatus?: 'in_stock' | 'out_of_stock' | 'unknown';
   
   // Enhanced features

@@ -31,7 +31,8 @@
         "1754930877472fczb6",
         "1755186147249ev7uj",
         "1755186551750g8wu2",
-        "1755270799160aqj3e"
+        "1755270799160aqj3e",
+        "1755964133274kyw2g"
       ]
     },
     {
@@ -63,7 +64,10 @@
       "discountInfo": "US $10.23US $23.2556% off",
       "createdAt": "2025-07-29T20:00:56.854Z",
       "updatedAt": "2025-08-05T15:32:09.171Z",
-      "previousStockStatus": "unknown"
+      "previousStockStatus": "unknown",
+      "matchedProducts": [
+        "1755965233405rtn38"
+      ]
     },
     {
       "id": "1753819269725arlrh",
@@ -131,7 +135,9 @@
         "1754930877472fczb6",
         "1755186147249ev7uj",
         "1755186551750g8wu2",
-        "1755270799160aqj3e"
+        "1755270799160aqj3e",
+        "1755964133274kyw2g",
+        "1756216759170nzhld"
       ]
     },
     {
@@ -258,7 +264,8 @@
       "createdAt": "2025-07-30T15:10:55.440Z",
       "updatedAt": "2025-07-30T15:10:55.440Z",
       "matchedProducts": [
-        "1754930758544keb9m"
+        "1754930758544keb9m",
+        "1756635297188mp17t"
       ]
     },
     {
@@ -313,7 +320,8 @@
       "updatedAt": "2025-07-30T15:11:17.285Z",
       "matchedProducts": [
         "1754337697806zcas3",
-        "175467626670207g25"
+        "175467626670207g25",
+        "1756635297188mp17t"
       ]
     },
     {
@@ -366,7 +374,8 @@
       "matchedProducts": [
         "1754670079178dc68d",
         "1754670085619n4k07",
-        "1754670093527yixfe"
+        "1754670093527yixfe",
+        "1756217318217bpka1"
       ]
     },
     {
@@ -592,7 +601,8 @@
         "1754935455436hyd6a",
         "1754935495640wg2lo",
         "1754935700258sktw0"
-      ]
+      ],
+      "totalMatches": 0
     },
     {
       "id": "1754002340205yvnku",
@@ -622,7 +632,10 @@
       "stockStatus": "unknown",
       "discountInfo": "Extra 1% off with coins",
       "createdAt": "2025-07-31T22:52:33.026Z",
-      "updatedAt": "2025-07-31T22:52:33.026Z"
+      "updatedAt": "2025-07-31T22:52:33.026Z",
+      "matchedProducts": [
+        "1755965233405rtn38"
+      ]
     },
     {
       "id": "1754045495827rvopy",
@@ -673,7 +686,8 @@
       "updatedAt": "2025-08-01T18:59:58.670Z",
       "matchedProducts": [
         "1754930753725nh0cq",
-        "1754930758544keb9m"
+        "1754930758544keb9m",
+        "1756635297188mp17t"
       ]
     },
     {
@@ -690,7 +704,9 @@
       "updatedAt": "2025-08-01T21:20:46.611Z",
       "matchedProducts": [
         "1754337697806zcas3",
-        "175467626670207g25"
+        "175467626670207g25",
+        "1756635297188mp17t",
+        "1756636803565qo9vo"
       ]
     },
     {
@@ -744,7 +760,9 @@
       "updatedAt": "2025-08-02T16:04:21.314Z",
       "matchedProducts": [
         "1754337697806zcas3",
-        "1754930863030hv6kk"
+        "1754930863030hv6kk",
+        "1756635297188mp17t",
+        "1756636803565qo9vo"
       ]
     },
     {
@@ -761,7 +779,8 @@
       "updatedAt": "2025-08-02T16:11:17.288Z",
       "matchedProducts": [
         "1754930753725nh0cq",
-        "1754930758544keb9m"
+        "1754930758544keb9m",
+        "1756635297188mp17t"
       ]
     },
     {
@@ -825,7 +844,8 @@
         "1754083246611hvbi5",
         "1753889060103eurlb",
         "1753888277285828sw",
-        "1753888271448x0ocz"
+        "1753888271448x0ocz",
+        "1756217318217bpka1"
       ],
       "previousStockStatus": "in_stock"
     },
@@ -855,7 +875,9 @@
       "stockStatus": "in_stock",
       "createdAt": "2025-08-06T17:00:57.315Z",
       "updatedAt": "2025-08-06T17:00:57.315Z",
-      "matchedProducts": []
+      "matchedProducts": [
+        "1756217273018obcwx"
+      ]
     },
     {
       "id": "1754663943771i7nge",
@@ -887,7 +909,9 @@
       "stockStatus": "in_stock",
       "createdAt": "2025-08-08T14:50:09.088Z",
       "updatedAt": "2025-08-08T14:50:09.088Z",
-      "matchedProducts": []
+      "matchedProducts": [
+        "1756217370910hr6s3"
+      ]
     },
     {
       "id": "1754665073290l35xj",
@@ -901,7 +925,9 @@
       "stockStatus": "in_stock",
       "createdAt": "2025-08-08T14:57:53.290Z",
       "updatedAt": "2025-08-08T14:57:53.290Z",
-      "matchedProducts": []
+      "matchedProducts": [
+        "1756217370910hr6s3"
+      ]
     },
     {
       "id": "1754665080766m1pbs",
@@ -951,7 +977,8 @@
       "matchedProducts": [
         "1754670079178dc68d",
         "1754670085619n4k07",
-        "1754670093527yixfe"
+        "1754670093527yixfe",
+        "1756217318217bpka1"
       ]
     },
     {
@@ -991,7 +1018,8 @@
         "1754670072254s1obi",
         "1754670079178dc68d",
         "1753978906273nguuu",
-        "1754670093527yixfe"
+        "1754670093527yixfe",
+        "1756217318217bpka1"
       ]
     },
     {
@@ -1082,7 +1110,8 @@
       "matchedProducts": [
         "1754670276748bha9d",
         "17546704093693snvf",
-        "1754755699441zp9y0"
+        "1754755699441zp9y0",
+        "1756635221752s9ukh"
       ]
     },
     {
@@ -1176,7 +1205,11 @@
       "finalPrice": 849,
       "stockVelocity": 45,
       "priceVolatility": 0.15,
-      "previousStockStatus": "in_stock"
+      "previousStockStatus": "in_stock",
+      "matchedProducts": [
+        "1756217318217bpka1",
+        "1756636803565qo9vo"
+      ]
     },
     {
       "id": "product-2",
@@ -1266,7 +1299,10 @@
       "isVerified": false,
       "finalPrice": 499,
       "stockVelocity": 12,
-      "priceVolatility": 0.23
+      "priceVolatility": 0.23,
+      "matchedProducts": [
+        "1756636803565qo9vo"
+      ]
     },
     {
       "id": "product-5",
@@ -1883,9 +1919,11 @@
       "createdAt": "2025-08-15T15:13:19.160Z",
       "updatedAt": "2025-08-15T15:13:19.160Z",
       "matchedProducts": [
-        "17538194494928s2fs",
         "1755186551750g8wu2",
-        "1753819222533ygm41"
+        "1753819222533ygm41",
+        "17538194494928s2fs",
+        "1755964133274kyw2g",
+        "1756216759170nzhld"
       ]
     },
     {
@@ -1902,11 +1940,7 @@
       "createdAt": "2025-08-16T15:08:22.576Z",
       "updatedAt": "2025-08-16T15:08:22.576Z",
       "matchedProducts": [
-        "1753978597100sd3vb",
-        "1754663943771i7nge",
-        "1754665080766m1pbs",
         "1753978906273nguuu",
-        "1753889060103eurlb",
         "1753888262760d67n0"
       ]
     },
@@ -1952,9 +1986,598 @@
       "createdAt": "2025-08-16T16:57:13.285Z",
       "updatedAt": "2025-08-16T16:57:13.285Z",
       "matchedProducts": [
-        "1754926234088l9wli",
-        "175432683361195xpp"
+        "175432683361195xpp",
+        "1754926234088l9wli"
       ]
+    },
+    {
+      "id": "1755964133274kyw2g",
+      "url": "https://www.amazon.com/Generic-Christian-Friendship-JewelryDeft-Professional/dp/B0D1G737ZR/ref=pd_sim_hxwPM1_sspa_dk_detail_d_sccl_3_4/130-8846991-1590527?pd_rd_w=YBnde&content-id=amzn1.sym.3a852a98-d65f-4301-9bd0-9b589b14d1ef&pf_rd_p=3a852a98-d65f-4301-9bd0-9b589b14d1ef&pf_rd_r=FQ8TNPD1DRTQPG7VM7CK&pd_rd_wg=jeXJD&pd_rd_r=30b4d4e0-e95f-4d69-b0c6-1ff63fe4731a&pd_rd_i=B0D1G737ZR&psc=1&sp_csd=d2lkZ2V0TmFtZT1zcF9kZXRhaWxfdGhlbWF0aWM=",
+      "title": "Generic Charm 6mm Stone Beads Braided Bracelet Prayer Men Women Christian Jesus Bless Cross Bracelets Bangles Friendship JewelryDeft and Professional",
+      "price": 0.99,
+      "currency": "$",
+      "platform": "amazon",
+      "imageUrl": "https://m.media-amazon.com/images/I/41godQGyrXL._AC_SY695_.jpg",
+      "userId": "1753818521609lw3h2",
+      "stockStatus": "in_stock",
+      "discountInfo": "$0.99",
+      "createdAt": "2025-08-23T15:48:53.274Z",
+      "updatedAt": "2025-08-23T15:48:53.274Z",
+      "matchedProducts": [
+        "1755270799160aqj3e",
+        "1753819222533ygm41",
+        "17538194494928s2fs"
+      ]
+    },
+    {
+      "id": "1755965233405rtn38",
+      "url": "https://www.amazon.com/dp/B07MWSXPT1/ref=sspa_dk_detail_3?pd_rd_i=B07MWSXPT1&pd_rd_w=2gXRZ&content-id=amzn1.sym.8c2f9165-8e93-42a1-8313-73d3809141a2&pf_rd_p=8c2f9165-8e93-42a1-8313-73d3809141a2&pf_rd_r=J4HPM28ZN107QAM3FWX3&pd_rd_wg=OErPv&pd_rd_r=2d5ae255-7365-4dc8-98ee-db75ca78e137&sp_csd=d2lkZ2V0TmFtZT1zcF9kZXRhaWw&th=1",
+      "title": "e.l.f. No Budge Retractable Eyeliner, Creamy, Ultra-Pigmented & Waterproof, Creates Bold & Defined Lines, Vegan & Cruelty-Free, Black",
+      "price": 5.99,
+      "currency": "$",
+      "platform": "amazon",
+      "imageUrl": "https://m.media-amazon.com/images/I/517k6X8fHLL._SX679_.jpg",
+      "userId": "1753818521609lw3h2",
+      "stockStatus": "in_stock",
+      "discountInfo": "$0.99",
+      "createdAt": "2025-08-23T16:07:13.405Z",
+      "updatedAt": "2025-08-23T16:07:13.405Z",
+      "matchedProducts": [
+        "1753819256854qiukv",
+        "175400235302652awv"
+      ]
+    },
+    {
+      "id": "17562165998447uyq4",
+      "url": "https://www.amazon.com/dp/B0FFSGZLS7/ref=sspa_dk_detail_3?pd_rd_i=B0FFSGZLS7&pd_rd_w=VpfIz&content-id=amzn1.sym.8c2f9165-8e93-42a1-8313-73d3809141a2&pf_rd_p=8c2f9165-8e93-42a1-8313-73d3809141a2&pf_rd_r=NVA9MG9VPC1W3E1C0MD9&pd_rd_wg=zozId&pd_rd_r=a93bec2b-880f-4489-87d7-63247f443052&sp_csd=d2lkZ2V0TmFtZT1zcF9kZXRhaWw&th=1",
+      "title": "Orthodox Prayer Rope Bracelet, 2-Pack Black Chotki Komboskini, Christian Prayer Beads with Cross",
+      "price": 0.99,
+      "currency": "$",
+      "platform": "amazon",
+      "imageUrl": "https://m.media-amazon.com/images/I/61eGUm9leWL._AC_SY695_.jpg",
+      "userId": "1753818521609lw3h2",
+      "stockStatus": "in_stock",
+      "discountInfo": "$0.99",
+      "createdAt": "2025-08-26T13:56:39.844Z",
+      "updatedAt": "2025-08-26T13:56:39.844Z",
+      "matchedProducts": []
+    },
+    {
+      "id": "1756216746745ekwh2",
+      "url": "https://www.amazon.com/dp/B0CYSXQH1Z/ref=sspa_dk_detail_1?pd_rd_i=B0CYSXQH1Z&pd_rd_w=WBFpa&content-id=amzn1.sym.f2f1cf8f-cab4-44dc-82ba-0ca811fb90cc&pf_rd_p=f2f1cf8f-cab4-44dc-82ba-0ca811fb90cc&pf_rd_r=M7KEGD1T52XHG4AEDXWM&pd_rd_wg=OqwUM&pd_rd_r=43229f0d-7bc5-4ffe-8071-84cec1b9b0c3&sp_csd=d2lkZ2V0TmFtZT1zcF9kZXRhaWxfdGhlbWF0aWM&th=1&psc=1",
+      "title": "RANKEEF 2 Pcs Chain Bracelet for Men - Silver Plated 7-9inch Figaro Rope Cuban Link Bracelet Set - Gifts for Men Dad Husband Boyfriend",
+      "price": 0.99,
+      "currency": "$",
+      "platform": "amazon",
+      "imageUrl": "https://m.media-amazon.com/images/I/51wfOQk-99L._AC_SY575_.jpg",
+      "userId": "1753818521609lw3h2",
+      "stockStatus": "in_stock",
+      "discountInfo": "-18%",
+      "createdAt": "2025-08-26T13:59:06.745Z",
+      "updatedAt": "2025-08-26T13:59:06.745Z",
+      "matchedProducts": []
+    },
+    {
+      "id": "1756216759170nzhld",
+      "url": "https://www.aliexpress.com/item/1005008310584301.html?spm=a2g0o.detail.pcDetailTopMoreOtherSeller.2.1e78uoS1uoS10U&gps-id=pcDetailTopMoreOtherSeller&scm=1007.40050.354490.0&scm_id=1007.40050.354490.0&scm-url=1007.40050.354490.0&pvid=86841b5f-037d-4a86-b510-438b69a375e6&_t=gps-id:pcDetailTopMoreOtherSeller,scm-url:1007.40050.354490.0,pvid:86841b5f-037d-4a86-b510-438b69a375e6,tpp_buckets:668%232846%238107%231934&pdp_ext_f=%7B%22order%22%3A%2284%22%2C%22eval%22%3A%221%22%2C%22sceneId%22%3A%2230050%22%7D&pdp_npi=6%40dis%21USD%211.12%210.58%21%21%218.00%214.16%21%4021039a5b17562166182043287ee025%2112000044573148034%21rec%21ET%216275286788%21XZ%211%210%21n_tag%3A-29919%3Bd%3A607e5600%3Bm03_new_user%3A-29895&utparam-url=scene%3ApcDetailTopMoreOtherSeller%7Cquery_from%3A%7Cx_object_id%3A1005008310584301%7C_p_origin_prod%3A",
+      "title": "2025 New European and American Fashion Top Gothic Punk Scorpion Men's Retro Ring Men's Pattern Ring Men's Jewelry Wholesale",
+      "price": 0.58,
+      "currency": "$",
+      "platform": "aliexpress",
+      "imageUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S76a4d5766da74fe7aa3519c105a15c08m.jpg",
+      "userId": "1753818521609lw3h2",
+      "stockStatus": "in_stock",
+      "discountInfo": "Recommended hot deals",
+      "createdAt": "2025-08-26T13:59:19.170Z",
+      "updatedAt": "2025-08-26T13:59:19.170Z",
+      "matchedProducts": [
+        "1755270799160aqj3e",
+        "17538194494928s2fs"
+      ]
+    },
+    {
+      "id": "1756216844538f23ok",
+      "url": "https://www.ebay.com/itm/297563862664?_skw=Men%27s+Collectible+Sneakers&itmmeta=01K3KAW1WFWZV64YP38SW8EZ4H&hash=item4548303688:g:UE8AAeSwZ-toq2lC&itmprp=enc%3AAQAKAAAA0MHg7L1Zz0LA5DYYmRTS30n9MGfYmQnn1%2FXqKgMtSwDdomETve4bfcuYsXGPY26vtlTxOC8no4Ly%2BqmPDf%2FUpJfzRX2UpfnOADGzqOHgkm1mn6%2BNDVRHOWsMig4%2B6dqxNLc3A%2BQrGCmUjwwXeqvKflw8B0mscfGN7wusSfs1Z499guHBK15pL9%2FWwAfNAtogzH8KBLIAZp4AHu0XdZUVm6bZRji4Qj5RMyfRBZGBLxNGePte3gsjMhnPadHfZ6pxvnrY%2FEyZp3ReYGpQO%2Bbcsc4%3D%7Ctkp%3ABk9SR7Ce8OqcZg",
+      "title": "Coach C201 Low Top Sneaker in signature canvas & leather- NIB- Men's 9.5 | eBay",
+      "price": 82,
+      "currency": "$",
+      "platform": "ebay",
+      "imageUrl": "https://i.ebayimg.com/images/g/UE8AAeSwZ-toq2lC/s-l1600.webp",
+      "userId": "1753818521609lw3h2",
+      "stockStatus": "unknown",
+      "createdAt": "2025-08-26T14:00:44.538Z",
+      "updatedAt": "2025-08-26T14:00:44.538Z",
+      "matchedProducts": []
+    },
+    {
+      "id": "1756217273018obcwx",
+      "url": "https://www.bestbuy.com/product/sony-wh1000xm4-wireless-noise-cancelling-over-the-ear-headphones-black/J7XSRH44JK",
+      "title": "Sony - WH1000XM4 Wireless Noise-Cancelling Over-the-Ear Headphones - Black",
+      "price": 3,
+      "currency": "$",
+      "platform": "bestbuy",
+      "imageUrl": "https://pisces.bbystatic.com/image2/BestBuy_US/images/products/6408/6408356_rd.jpg;maxHeight=1920;maxWidth=900?format=webp",
+      "userId": "1753818521609lw3h2",
+      "stockStatus": "unknown",
+      "createdAt": "2025-08-26T14:07:53.018Z",
+      "updatedAt": "2025-08-26T14:07:53.018Z",
+      "matchedProducts": [
+        "1754499657315z39l1"
+      ]
+    },
+    {
+      "id": "1756217318217bpka1",
+      "url": "https://www.bestbuy.com/product/beats-studio-pro-wireless-noise-cancelling-over-the-ear-headphones-black/JJ8ZHR9K2T",
+      "title": "Beats - Studio Pro - Wireless Noise Cancelling Over-the-Ear Headphones - Black",
+      "price": 223.99,
+      "currency": "$",
+      "platform": "bestbuy",
+      "imageUrl": "https://pisces.bbystatic.com/image2/BestBuy_US/images/products/6501/6501017_sd.jpg;maxHeight=1920;maxWidth=900?format=webp",
+      "userId": "1753818521609lw3h2",
+      "stockStatus": "unknown",
+      "createdAt": "2025-08-26T14:08:38.217Z",
+      "updatedAt": "2025-08-26T14:08:38.217Z",
+      "matchedProducts": [
+        "1754337697806zcas3",
+        "product-1",
+        "product-1",
+        "1754670072254s1obi",
+        "175397865379934t6o",
+        "1754670085619n4k07"
+      ]
+    },
+    {
+      "id": "1756217370910hr6s3",
+      "url": "https://www.bestbuy.com/product/lg-65-class-c5-series-oled-evo-ai-4k-uhd-smart-webos-tv-2025/JJ8VPZTRG6",
+      "title": "LG - 65\" Class C5 Series OLED evo AI 4K UHD Smart webOS TV (2025)",
+      "price": 1846.98,
+      "currency": "$",
+      "platform": "bestbuy",
+      "imageUrl": "https://pisces.bbystatic.com/image2/BestBuy_US/images/products/180a34c7-337b-4f52-827e-294d5cc718c2.jpg;maxHeight=1920;maxWidth=900?format=webp",
+      "userId": "1753818521609lw3h2",
+      "stockStatus": "unknown",
+      "createdAt": "2025-08-26T14:09:30.910Z",
+      "updatedAt": "2025-08-26T14:09:30.910Z",
+      "matchedProducts": [
+        "1754664609088mcaku",
+        "1754665073290l35xj"
+      ]
+    },
+    {
+      "id": "1756635221752s9ukh",
+      "url": "https://www.walmart.com/ip/Samsung-Galaxy-Watch7-40mm-Smart-Watch-Aluminum-Bluetooth-Cream/6214656451?classType=VARIANT&athbdg=L1600&adsRedirect=true",
+      "title": "Samsung Galaxy Watch7 40mm Bluetooth and WiFi Aluminum Smart Watch, Cream - Walmart.com",
+      "price": 199.99,
+      "currency": "$",
+      "platform": "walmart",
+      "imageUrl": "https://i5.walmartimages.com/dfw/63fd9f59-14e2/9d304ce6-96de-4331-b8ec-c5191226d378/v1/spark-icon.svg",
+      "userId": "1753818521609lw3h2",
+      "stockStatus": "in_stock",
+      "createdAt": "2025-08-31T10:13:41.752Z",
+      "updatedAt": "2025-08-31T10:13:41.752Z",
+      "matchedProducts": [
+        "1754670419399nnpog"
+      ]
+    },
+    {
+      "id": "1756635297188mp17t",
+      "url": "https://www.walmart.com/ip/Like-New-Apple-iPhone-14-Pro-Max-256GB-Unlocked/5193722702?conditionGroupCode=3&classType=VARIANT&from=/search",
+      "title": "Pre-Owned Apple iPhone 14 Pro Max 256GB Unlocked - Walmart.com",
+      "price": 649,
+      "currency": "$",
+      "platform": "walmart",
+      "imageUrl": "https://i5.walmartimages.com/dfw/63fd9f59-14e2/9d304ce6-96de-4331-b8ec-c5191226d378/v1/spark-icon.svg",
+      "userId": "1753818521609lw3h2",
+      "stockStatus": "in_stock",
+      "createdAt": "2025-08-31T10:14:57.189Z",
+      "updatedAt": "2025-08-31T10:14:57.189Z",
+      "matchedProducts": [
+        "1754150661314xjejl",
+        "1754083246611hvbi5",
+        "1753888277285828sw",
+        "1753888255440non7c",
+        "1754074798670la8kx",
+        "1754151077288amo7m",
+        "1756636803565qo9vo"
+      ]
+    },
+    {
+      "id": "1756636803565qo9vo",
+      "url": "https://www.walmart.com/ip/Pre-Owned-Restored-Apple-iPhone-16-Carrier-Unlocked-128GB-Black/16940363457?conditionGroupCode=3&athcpid=16940363457&athpgid=AthenaItempage&athcgid=null&athznid=siext&athieid=v0&athstid=CS055~CS004&athguid=_DPk0fn0B6BBvKmNsVXYVpA7YBV6adnnyzvo&athancid=5193722702&athposb=1&athena=true",
+      "title": "Pre-Owned Apple iPhone 16 - Carrier Unlocked - 128GB Black - Walmart.com",
+      "price": 649.95,
+      "currency": "$",
+      "platform": "walmart",
+      "imageUrl": "https://i5.walmartimages.com/dfw/63fd9f59-14e2/9d304ce6-96de-4331-b8ec-c5191226d378/v1/spark-icon.svg",
+      "userId": "1753818521609lw3h2",
+      "stockStatus": "in_stock",
+      "createdAt": "2025-08-31T10:40:03.565Z",
+      "updatedAt": "2025-08-31T10:40:03.565Z",
+      "matchedProducts": [
+        "1754150661314xjejl",
+        "product-4",
+        "product-4",
+        "1756635297188mp17t",
+        "product-1",
+        "product-1",
+        "1754083246611hvbi5"
+      ]
+    },
+    {
+      "id": "1756659094014fn5o9",
+      "url": "https://www.walmart.com/ip/Hisense-75-Class-4K-UHD-LED-LCD-Roku-Smart-TV-HDR-R6-Series-75R6E4/953460510?classType=REGULAR&athbdg=L1102&adsRedirect=true",
+      "title": "\"Hisense 75\"\" 4K UHD LED Roku Smart TV HDR R6 Series with Motion Rate 120 and Google Assistant Compatibility\" - Walmart.com",
+      "price": 448,
+      "currency": "$",
+      "platform": "walmart",
+      "imageUrl": "https://i5.walmartimages.com/dfw/63fd9f59-14e2/9d304ce6-96de-4331-b8ec-c5191226d378/v1/spark-icon.svg",
+      "userId": "1753818521609lw3h2",
+      "stockStatus": "in_stock",
+      "totalMatches": 0,
+      "createdAt": "2025-08-31T16:51:34.014Z",
+      "updatedAt": "2025-08-31T16:51:34.014Z",
+      "matchedProducts": []
+    },
+    {
+      "id": "1756659381291x1tec",
+      "url": "https://www.walmart.com/ip/AKG-EO-IG955-In-Ear-Headphones-with-Built-in-Microphone-Extra-Ear-Gels/1588589725?classType=REGULAR&from=/search",
+      "title": "AKG OEM Android Galaxy S8, S8+, S9, S9+ Ear Buds Headphones Headset EO-IG955 with Extra Ear Gels - Walmart.com",
+      "price": 8.99,
+      "currency": "$",
+      "platform": "walmart",
+      "imageUrl": "https://i5.walmartimages.com/dfw/63fd9f59-b3e1/7a569e53-f29a-4c3d-bfaf-6f7a158bfadd/v1/walmartLogo.svg",
+      "userId": "1753818521609lw3h2",
+      "stockStatus": "in_stock",
+      "totalMatches": 0,
+      "createdAt": "2025-08-31T16:56:21.291Z",
+      "updatedAt": "2025-08-31T16:56:21.291Z",
+      "matchedProducts": []
+    },
+    {
+      "id": "1756659566041p2dix",
+      "url": "https://www.amazon.com/Apple-Bluetooth-Headphones-Personalized-Effortless/dp/B0DGHMNQ5Z/ref=sr_1_1_sspa?crid=W25OIPYWE78V&dib=eyJ2IjoiMSJ9.ilo9fkrYdOqmSNlTL9iUbv3iuUYrHKLr-rTzMR2udu5zunjjBWPIbLSuYb3Xo5zP4911bc7hIUWltpaHxlhIq63dbdYLrPScZcmPLZNHquSRlGiEq5keIyDlCOS58OrIB7Z42V-IY3_D4KMkbcTYfJx8QKfgHYlfRsx3OiUPo3pdg2cSFizL2OIgX3UIZ-917WZoRhIFP8KezZZhXcZ3MlfzB6Dy3xU88NFFZh1xA54.1_Umk0XHSzlSPVGnReyodB2MIryYsEW4pec5uXlYZCY&dib_tag=se&keywords=airpods%2B4&qid=1756659481&sprefix=airpod%2Caps%2C765&sr=8-1-spons&sp_csd=d2lkZ2V0TmFtZT1zcF9hdGY&th=1",
+      "title": "Apple AirPods 4 Wireless Earbuds, Bluetooth Headphones, Personalized Spatial Audio, Sweat and Water Resistant, USB-C Charging Case, H2 Chip, Up to 30 Hours of Battery Life, Effortless Setup for iPhone",
+      "price": 89.99,
+      "currency": "$",
+      "platform": "amazon",
+      "imageUrl": "https://m.media-amazon.com/images/I/61iBtxCUabL._AC_SX679_.jpg",
+      "userId": "1753818521609lw3h2",
+      "stockStatus": "in_stock",
+      "discountInfo": "-30%",
+      "totalMatches": 0,
+      "createdAt": "2025-08-31T16:59:26.041Z",
+      "updatedAt": "2025-08-31T16:59:26.041Z",
+      "matchedProducts": []
+    },
+    {
+      "id": "1756659811327m2mum",
+      "url": "https://www.ebay.com/itm/286456558824?_skw=airpods+4&itmmeta=01K40H6Q25XGTD33TA895E6N3E&hash=item42b22434e8:g:8WwAAeSwp8ZoZquU&itmprp=enc%3AAQAKAAAA8FkggFvd1GGDu0w3yXCmi1do5RsufztT2PYROjXuV%2B0V98DfDHfc49gbQL3Vdcq%2B6XY8QKFUWt9EkwWZjC%2B%2FWO1Udvgo4hNcpxhCFLAvUW2itu1lloVULhkXUvAHN70n9badCzoMsh24GBpHntOJkIqs1pYRxPI8GxaT5YoddNEYkZbpbRO5viiUWig13%2BERv78AzW0K9q%2FMaj%2B9WVKdGFaka%2BSolH8dpreLf%2B2arzaOx%2F1uBwKY9oVTAKSPo%2BQoA47lOE4V6uQnO6NHKqXhXIcgwRTeMZA7MxZGoVQtmeOw10ocUVn5U1CYjZMmX06yfQ%3D%3D%7Ctkp%3ABFBMovGakaBm&pfm=0",
+      "title": "Apple AirPods 4 with Active Noise Cancellation | eBay",
+      "price": 125.75,
+      "currency": "$",
+      "platform": "ebay",
+      "imageUrl": "https://i.ebayimg.com/images/g/8WwAAeSwp8ZoZquU/s-l1600.webp",
+      "userId": "1753818521609lw3h2",
+      "stockStatus": "unknown",
+      "totalMatches": 0,
+      "createdAt": "2025-08-31T17:03:31.327Z",
+      "updatedAt": "2025-08-31T17:03:31.327Z",
+      "matchedProducts": []
+    },
+    {
+      "id": "17566599897724atyu",
+      "url": "https://www.ebay.com/itm/157286223013?_skw=airpods+4&itmmeta=01K40H6Q251Q27MQ6FCP680ZGB&hash=item249efd4ca5:g:MyQAAeSwf4VotG7i&itmprp=enc%3AAQAKAAAAwFkggFvd1GGDu0w3yXCmi1fQTgFAhPChVG798HQe9qtWfSL6iJ5eSJkJXcYKucWa9Z9UTOnF074kd95ln6QVRujy32rkTOViYKOktShaRN1wCnSpn%2BgvBTipw1D0BK%2FwcHIoNVYpDDQ1zs8MUpRWGfhrp4AzfBy%2BaY0RqzwKi0iQs%2BBnramsDDeX6ZaCkJ7nHun8Td8Wu6H%2BpIlXVP7xHbtTs6ecf%2BDJoCdm4LonhIJwkQSGiHHfy1R4r5hQCooBjw%3D%3D%7Ctkp%3ABk9SR6LxmpGgZg&pfm=0",
+      "title": "Apple AirPods 4 Generazione ANC Cancellazione Del Rumore USB-C | eBay",
+      "price": 80,
+      "currency": "$",
+      "platform": "ebay",
+      "imageUrl": "https://i.ebayimg.com/images/g/MyQAAeSwf4VotG7i/s-l1600.webp",
+      "userId": "1753818521609lw3h2",
+      "stockStatus": "unknown",
+      "totalMatches": 0,
+      "createdAt": "2025-08-31T17:06:29.772Z",
+      "updatedAt": "2025-08-31T17:06:29.772Z",
+      "matchedProducts": []
+    },
+    {
+      "id": "17567358325837dkwh",
+      "url": "https://www.amazon.com/dp/B0B8RWZ1TD/ref=sspa_dk_detail_4?pd_rd_w=leweM&content-id=amzn1.sym.85ceacba-39b1-4243-8f28-2e014f9512c7&pf_rd_p=85ceacba-39b1-4243-8f28-2e014f9512c7&pf_rd_r=0W4PDWHY1HNKB79ACZH6&pd_rd_wg=GyLaZ&pd_rd_r=f81d93cd-c38b-49c2-9ba5-090e9968233d&sp_csd=d2lkZ2V0TmFtZT1zcF9kZXRhaWxfdGhlbWF0aWM&th=1",
+      "title": "2 Pack Waterproof Lighter Outdoor Windproof Torch Lighters Dual Arc Butane Electric Lighters USB Rechargeable Lighters Flameless Plasma Lighter Camping Hiking Adventure Survival Tactical Gear",
+      "price": 11.98,
+      "currency": "$",
+      "platform": "amazon",
+      "imageUrl": "https://m.media-amazon.com/images/I/712onnVvv-L._AC_SX679_PIbundle-2,TopRight,0,0_SH20_.jpg",
+      "userId": "1753818521609lw3h2",
+      "stockStatus": "in_stock",
+      "discountInfo": "-25%",
+      "totalMatches": 0,
+      "createdAt": "2025-09-01T14:10:32.583Z",
+      "updatedAt": "2025-09-01T14:10:32.583Z",
+      "matchedProducts": []
+    },
+    {
+      "id": "1756735939771p9kuu",
+      "url": "https://www.amazon.com/Apple-iPhone-14-128GB-Midnight/dp/B0BN72FYFG/ref=sr_1_7?dib=eyJ2IjoiMSJ9.RfPsR4K-EUfLt1z_eH2BDBM6nxv6ERRNfrcaMBAv1m-TrkZUPMJdtsi5D061hsmr9KdvYS5VZM44c201p0FC3Vprh_Gi416jNl0RMA9ktdLFQCyNuf9kBwTfAb6SHvxb40w3Bxd6oP_7jQWIm1AEhU7Z5cnlvYEt1N_7HVsC3BR1lq8aWbTAmqCi1D60r2-M4gOUnppmqanDAdtH2YG-ucdS-mmG8rJbWcpC7r8tj4k.FDVdlJhnBN6qYnA18eRAFqxnvCR1pW-y-dWQPa9d-S0&dib_tag=se&keywords=iphone&qid=1756735901&sr=8-7&th=1",
+      "title": "Apple iPhone 14, 128GB, Midnight - Unlocked (Renewed)",
+      "price": 364.29,
+      "currency": "$",
+      "platform": "amazon",
+      "imageUrl": "https://m.media-amazon.com/images/I/41dhmioffWL._AC_SX679_.jpg",
+      "userId": "1753818521609lw3h2",
+      "stockStatus": "in_stock",
+      "discountInfo": "-6%",
+      "totalMatches": 0,
+      "createdAt": "2025-09-01T14:12:19.771Z",
+      "updatedAt": "2025-09-01T14:12:19.771Z"
+    },
+    {
+      "id": "1756737510520sccpv",
+      "url": "https://www.amazon.com/Apple-iPhone-13-128GB-Midnight/dp/B09LNW3CY2/ref=pd_sbs_d_sccl_2_3/130-8846991-1590527?pd_rd_w=4ZVMS&content-id=amzn1.sym.2cd14f8d-eb5c-4042-b934-4a05eafd2874&pf_rd_p=2cd14f8d-eb5c-4042-b934-4a05eafd2874&pf_rd_r=7EAB4NESC3PCSH26307H&pd_rd_wg=uKIpN&pd_rd_r=4ff34135-1653-4599-835e-462f39a7e9eb&pd_rd_i=B09LNW3CY2&th=1",
+      "title": "Apple iPhone 13, 128GB, Midnight - Unlocked (Renewed)",
+      "price": 322.95,
+      "currency": "$",
+      "platform": "amazon",
+      "imageUrl": "https://m.media-amazon.com/images/I/61VuVU94RnL._AC_SX679_.jpg",
+      "userId": "1753818521609lw3h2",
+      "stockStatus": "in_stock",
+      "discountInfo": "-5%",
+      "totalMatches": 2,
+      "createdAt": "2025-09-01T14:38:30.520Z",
+      "updatedAt": "2025-09-01T14:38:30.520Z",
+      "matchedProducts": []
+    },
+    {
+      "id": "175673904522276bmg",
+      "url": "https://www.ebay.com/itm/236197281359?_skw=iphone&itmmeta=01K42WFTDQ69CXPZ3CR4BYZS5Q&hash=item36fe747e4f:g:CaoAAeSw9xFocxdR&itmprp=enc%3AAQAKAAAA4FkggFvd1GGDu0w3yXCmi1ctpaa4m1d7rs70eSjv1qClWIMD0qj5sehNrj7%2FHZIh3ZdstIUth8hNx9vSQGp4ImZAHPvd1cXYLoXa7%2BM3q%2BALssNGV7DoxoT4z0%2FNgOeiV%2BjHt%2FQkkr7kSXIPVO5miNp9xFSZaMw3%2FMCnP2QUZL6g45eQlebRwMVskZZKgkpeUVvNiBA3KVPjCZVL8wwRsGsHRjY5bvAqfJqEKHZlZFa09ofD%2F8WRHucXyRCBRRnJDKQ3rp6EsJYIDumUKUmgdv1BthwMB79b18Ny6RWkebGO%7Ctkp%3ABFBMuKe_3KBm&pfm=0",
+      "title": "Apple iPhone 12 Pro - 128 GB/256GB/512GB - Unlocked 6.1\" Face ID Smartphone | eBay",
+      "price": 258,
+      "currency": "$",
+      "platform": "ebay",
+      "imageUrl": "https://i.ebayimg.com/images/g/CaoAAeSw9xFocxdR/s-l1600.webp",
+      "userId": "1753818521609lw3h2",
+      "stockStatus": "unknown",
+      "totalMatches": 1,
+      "createdAt": "2025-09-01T15:04:05.222Z",
+      "updatedAt": "2025-09-01T15:04:05.222Z",
+      "matchedProducts": []
+    },
+    {
+      "id": "1756739220798e5jai",
+      "url": "https://www.ebay.com/itm/397014434548?_skw=iphone&itmmeta=01K42WFTDQ4PS9F3MN7GZZ91WF&hash=item5c6fe782f4:g:JI0AAeSwk1RotDzR&itmprp=enc%3AAQAKAAAA4FkggFvd1GGDu0w3yXCmi1d1LaH6ToHJOObRD64l1tUPqnlq6JO4rLb8%2BdT1sU0ZnXnQvk6s5ASVxZ18atItTaUIE3lUkUJTbInN%2FBOBuM6Rqet%2Bs29z0Ic%2F7zRql49%2BZFs1CaRskNs3nccM5TToM35vDT4VuIus3idjyBLuBD2%2BGOAC00draDSFyDGgQzXTQ8%2FsoW%2BVoDh9wsumkOXdu%2Bs6lR88VS80jBmFEpZXI8WaE7QEt%2FZ57Y4iYi57%2BVVEeHj%2BuP17PPeH2ipKIfckLEre0r534xZ3qKftGSES4T3f%7Ctkp%3ABFBMtqe_3KBm&pfm=0",
+      "title": "iphone 14 pro max 500gb | eBay",
+      "price": 310,
+      "currency": "$",
+      "platform": "ebay",
+      "imageUrl": "https://i.ebayimg.com/images/g/JI0AAeSwk1RotDzR/s-l1600.webp",
+      "userId": "1753818521609lw3h2",
+      "stockStatus": "unknown",
+      "totalMatches": 2,
+      "createdAt": "2025-09-01T15:07:00.798Z",
+      "updatedAt": "2025-09-01T15:07:00.798Z",
+      "matchedProducts": []
+    },
+    {
+      "id": "1756741497606q1zxj",
+      "url": "https://www.ebay.com/itm/236167858459?_trkparms=amclksrc%3DITM%26aid%3D1110006%26algo%3DHOMESPLICE.SIM%26ao%3D1%26asc%3D291639%26meid%3D742ab269bb5c4bcba07351de4de50cc3%26pid%3D101196%26rk%3D3%26rkt%3D12%26sd%3D236197281359%26itm%3D236167858459%26pmt%3D1%26noa%3D0%26pg%3D2332490%26algv%3DSimplAMLv5PairwiseWebWithBBEV2bAndUBSourceDemotionWithUltimatelyBoughtOfCoviewV1%26brand%3DApple&_trksid=p2332490.c101196.m2219&itmprp=cksum%3A236167858459742ab269bb5c4bcba07351de4de50cc3%7Cenc%3AAQAKAAABQKf%252BZDynwIBzPFOUXzsYfl6V00AKQ%252B%252B7P%252BQrUe%252FaNcA%252F6g5%252BKJDCW80yl3sDyiOtDc%252Bwp382udDvnYxF7ZDSjYqJm5GyOUkm75MegRvdMcZOp66%252FyDudCANRlWAoDDDX9eZsUCDB3VfI%252BQlOVIwVb2dEMuoLEeaMjVu1CXFvLZx%252F5j9zoajVkM%252BHmBos3hTZthWPPG%252F6rapw5L4SdJCASqrpWtDEAXCI40w0F%252BASXGtUutoKSNOLpl%252BWR1V6XmAc94D3AaW58K6ZSdYtS5DMH3AAfUed090EcbgsCYyrBAYwisHO4L0ZSzl5Mf%252Boy%252FhO2VnxZ7qqzJ3KHbcn%252Fa3sxbgHFwTh%252F3XnoHwjSzhZ49uaewz1Go6PIr9IvmRlS1yeNf9YmBUNotONNIWxgppuQohGlo0%252Fs2FfVwiKQtll%252F04R%7Campid%3APL_CLK%7Cclp%3A2332490&itmmeta=01K42WWHZRENMW7GCK70Q46VKD",
+      "title": "Apple iPhone 12 Pro-128 GB/256GB-Various Colors Unlocked IOS Cell Phones Face ID | eBay",
+      "price": 249.99,
+      "currency": "$",
+      "platform": "ebay",
+      "imageUrl": "https://i.ebayimg.com/images/g/92QAAOSwRoxoXQ1V/s-l1600.webp",
+      "userId": "1753818521609lw3h2",
+      "stockStatus": "unknown",
+      "totalMatches": 1,
+      "createdAt": "2025-09-01T15:44:57.606Z",
+      "updatedAt": "2025-09-01T15:44:57.606Z"
+    },
+    {
+      "id": "17567415890034i3hj",
+      "url": "https://www.ebay.com/itm/406134545828?_trkparms=amclksrc%3DITM%26aid%3D1110006%26algo%3DHOMESPLICE.SIM%26ao%3D1%26asc%3D291639%26meid%3D5d81b5e133094d708f03a1c839465a8a%26pid%3D101196%26rk%3D1%26rkt%3D12%26sd%3D236167858459%26itm%3D406134545828%26pmt%3D1%26noa%3D0%26pg%3D2332490%26algv%3DSimplAMLv5PairwiseWebWithBBEV2bAndUBSourceDemotionWithUltimatelyBoughtOfCoviewV1%26brand%3DApple&_trksid=p2332490.c101196.m2219&itmprp=cksum%3A4061345458285d81b5e133094d708f03a1c839465a8a%7Cenc%3AAQAKAAABQKf%252BZDynwIBzPFOUXzsYfl6V00AKQ%252B%252B7P%252BQrUe%252FaNcA%252F6g5%252BKJDCW80yl3sDyiOtDc%252Bwp382udDvnYxF7ZDSjYqJm5GyOUkm75MegRvdMcZOp66%252FyDudCANRlWAoDDDX9V5GrnfRooendQME1yzG2RvSEwz1qEGV3Wo0Y4H%252F1jDR8FRNjvBK9bLJgswpfWaYmxZSvdnHYP1LhAv%252BDxZ5Vqvlronm2Yes5JQPIhzCnF%252BEqrC21ifTsRi0jYIxbUaC0htushjlUfsEfbTL%252B6nig6i3RtnE4xH5Bv43%252FNSGpWodmOeB70OdUYyfR0R9Aw9mREys9C65oI%252Fc01iRAXBEWek%252BaSGmp4fL4m2%252FqQEyFxTDKUYaerERvSrpP4MklfgBG%252BHlhMZx9EhI6gInET%252BCSexTvfDmXmF4%252FSqlkaN8wOzI%7Campid%3APL_CLK%7Cclp%3A2332490&itmmeta=01K42X23CGWEY0XK597GF8ZGFS",
+      "title": "Apple iPhone 12 Pro 128GB/256GB Factory Unlocked Smartphone selectable Face ID | eBay",
+      "price": 225.8,
+      "currency": "$",
+      "platform": "ebay",
+      "imageUrl": "https://i.ebayimg.com/images/g/mU4AAeSwVGRonwjS/s-l1600.webp",
+      "userId": "1753818521609lw3h2",
+      "stockStatus": "unknown",
+      "totalMatches": 0,
+      "createdAt": "2025-09-01T15:46:29.003Z",
+      "updatedAt": "2025-09-01T15:46:29.003Z"
+    },
+    {
+      "id": "1756741602219ko7sq",
+      "url": "https://www.amazon.com/Apple-iPhone-13-128GB-Blue/dp/B09LNX6KQS/ref=pd_sbs_d_sccl_1_3/130-8846991-1590527?pd_rd_w=GisjN&content-id=amzn1.sym.2cd14f8d-eb5c-4042-b934-4a05eafd2874&pf_rd_p=2cd14f8d-eb5c-4042-b934-4a05eafd2874&pf_rd_r=QHRBM8FA822AM9X5BTZE&pd_rd_wg=F98TY&pd_rd_r=7a0543b5-119b-4af8-a326-a6fb7fa522bd&pd_rd_i=B09LNX6KQS&th=1",
+      "title": "Apple iPhone 13, 128GB, Blue - Unlocked (Renewed)",
+      "price": 319,
+      "currency": "$",
+      "platform": "amazon",
+      "imageUrl": "https://m.media-amazon.com/images/I/71MKNCEgE6L._AC_SX679_.jpg",
+      "userId": "1753818521609lw3h2",
+      "stockStatus": "in_stock",
+      "discountInfo": "-6%",
+      "totalMatches": 0,
+      "createdAt": "2025-09-01T15:46:42.219Z",
+      "updatedAt": "2025-09-01T15:46:42.219Z"
+    },
+    {
+      "id": "1756742292723nlck1",
+      "url": "https://www.aliexpress.com/item/1005009447035469.html?algo_pvid=09d51eb0-8725-45d8-87f5-4d537d25072a&algo_exp_id=09d51eb0-8725-45d8-87f5-4d537d25072a-0&pdp_ext_f=%7B%22order%22%3A%225%22%2C%22eval%22%3A%221%22%7D&pdp_npi=6%40dis%21USD%211516.82%21879.75%21%21%2110750.00%216235.00%21%40212e509017567422157802636ec367%2112000049127809837%21sea%21ET%210%21ABX%211%210%21n_tag%3A-29910%3Bd%3A607e5600%3Bm03_new_user%3A-29895&curPageLogUid=EfuryV0Sounx&utparam-url=scene%3Asearch%7Cquery_from%3A%7Cx_object_id%3A1005009447035469%7C_p_origin_prod%3A",
+      "title": "Apple iphone 15 Pro Max 5G Unlocked ROM 256GB/512GB/1T iOS 48MP Camera NFC 4422mAh Battery Original used phone",
+      "price": 879.75,
+      "currency": "$",
+      "platform": "aliexpress",
+      "imageUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S549505b7e1f14e3c9e09c8635dc4cd14V.jpg_220x220q75.jpg_.avif",
+      "userId": "1753818521609lw3h2",
+      "stockStatus": "in_stock",
+      "discountInfo": "US $879.75 42% offUS $1,516.82",
+      "totalMatches": 0,
+      "createdAt": "2025-09-01T15:58:12.723Z",
+      "updatedAt": "2025-09-01T15:58:12.723Z"
+    },
+    {
+      "id": "1756742397818lu4da",
+      "url": "https://www.amazon.com/Apple-iPhone-13-128GB-Blue/dp/B09LNX6KQS/?th=1",
+      "title": "Apple iPhone 13, 128GB, Blue - Unlocked (Renewed)",
+      "price": 319,
+      "currency": "$",
+      "platform": "amazon",
+      "imageUrl": "https://m.media-amazon.com/images/I/71MKNCEgE6L._AC_SX679_.jpg",
+      "userId": "1753818521609lw3h2",
+      "stockStatus": "in_stock",
+      "discountInfo": "-6%",
+      "totalMatches": 5,
+      "createdAt": "2025-09-01T15:59:57.818Z",
+      "updatedAt": "2025-09-01T15:59:57.818Z"
+    },
+    {
+      "id": "1756742993304i9sjr",
+      "url": "https://www.walmart.com/ip/Straight-Talk-Apple-iPhone-16-256GB-Blue-Prepaid-Smartphone-Locked-to-Straight-Talk/11611367074?classType=REGULAR&from=/search",
+      "title": "Straight Talk Apple iPhone 16, 256GB, Blue - Prepaid Smartphone [Locked to Straight Talk]",
+      "price": 929,
+      "currency": "$",
+      "platform": "walmart",
+      "imageUrl": "https://i5.walmartimages.com/dfw/63fd9f59-14e2/9d304ce6-96de-4331-b8ec-c5191226d378/v1/spark-icon.svg",
+      "userId": "1753818521609lw3h2",
+      "stockStatus": "in_stock",
+      "totalMatches": 0,
+      "createdAt": "2025-09-01T16:09:53.304Z",
+      "updatedAt": "2025-09-01T16:09:53.304Z",
+      "matchedProducts": []
+    },
+    {
+      "id": "1756743034723e8fzk",
+      "url": "https://www.ebay.com/itm/276217815521?_trkparms=amclksrc%3DITM%26aid%3D1110006%26algo%3DHOMESPLICE.SIM%26ao%3D1%26asc%3D291639%26meid%3Dba1fbd6c243c43e5bde06444150a39d0%26pid%3D101875%26rk%3D3%26rkt%3D4%26sd%3D236167858459%26itm%3D276217815521%26pmt%3D1%26noa%3D1%26pg%3D2332490%26algv%3DSimVIDwebV3WithCPCExpansionEmbeddingSearchQuerySemanticBroadMatchSingularityRecallReplaceKnnV4WithVectorDbNsOptHotPlRecallCIICentroidCoviewCPCAuto%26brand%3DApple&_trksid=p2332490.c101875.m1851&itmprp=cksum%3A276217815521ba1fbd6c243c43e5bde06444150a39d0%7Cenc%3AAQAKAAABYG96wQ16jds4VFcrhy1F3d4mbwZUJI9Fs%252BgdXYAHIzlX2e3YaNh7x%252BEnKA3G%252BCqSl1Xn4McfcWFK1GytmS2qxJ87mtE8Gm3iR1Ja4WBwh0hNHJrJx3Ki5mp04ow4CO7lP%252BooCybZDDU%252BbbSwmg7CbTin%252BBzBzbCYVnbjvyQAHu6--HI4MB7SvJl5IJqlyvomgoLMlgT6qAJzX0SANJhty2fhDYBsaOpU5trhnXCHHIfwc8Q28N1zG6xWBnAMvEjoqxxKpheEbY%252B4tF%252BSondpUhAdeTK9%252BMs3rcs4XiDYmyPO5uesNbm3ElZceJD2dGxq7F3%252BgdoSKDwbAOfxSAbxJmJ6BOUVLN5Gj%252FBGml%252FmK6Qi7f1dZYWMw9fNiI7MeA1Vhbb5EuLn6nbxPE%252F7BizMgGPJOKnuQYKyOu%252BwWBj49NmRRRGYhAPY4y768202YezivXtooHkox%252FbLYYumNmKpwGc%253D%7Campid%3APLP_CLK%7Cclp%3A2332490&itmmeta=01K42X23CFVFS1G28A609B8P57",
+      "title": "Apple iPhone 12 Pro 128GB Unlocked Very Good Condition - All Colors",
+      "price": 309.99,
+      "currency": "$",
+      "platform": "ebay",
+      "imageUrl": "https://i.ebayimg.com/images/g/epYAAOSw67xlczAr/s-l1600.webp",
+      "userId": "1753818521609lw3h2",
+      "stockStatus": "unknown",
+      "totalMatches": 1,
+      "createdAt": "2025-09-01T16:10:34.723Z",
+      "updatedAt": "2025-09-01T16:10:34.723Z"
+    },
+    {
+      "id": "17567430459380ztmj",
+      "url": "https://www.aliexpress.com/item/1005005775316697.html?spm=a2g0o.productlist.main.11.1b1125e0I09C0D&algo_pvid=ce2dfcfd-bfc0-4d53-a47f-0db62122fed5&algo_exp_id=ce2dfcfd-bfc0-4d53-a47f-0db62122fed5-10&pdp_ext_f=%7B%22order%22%3A%2257%22%2C%22eval%22%3A%221%22%7D&pdp_npi=6%40dis%21USD%21765.00%21612.00%21%21%21765.00%21612.00%21%402141131717567427646365684e7fe0%2112000034309969409%21sea%21ET%210%21ABX%211%210%21n_tag%3A-29910%3Bd%3A607e5600%3Bm03_new_user%3A-29895&curPageLogUid=vy6nS327HbeN&utparam-url=scene%3Asearch%7Cquery_from%3A%7Cx_object_id%3A1005005775316697%7C_p_origin_prod%3A",
+      "title": "Apple iPhone 14 Pro 128/256/512GB ROM 6GB RAM 1SIM+1eSIM Original 6.1\" OLED Face ID NFC A15 Unlocked 5G 98% New Smartphone",
+      "price": 612,
+      "currency": "$",
+      "platform": "aliexpress",
+      "imageUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S4eb7c256f6e8447baa41510056b3fe68p.jpg_220x220q75.jpg_.avif",
+      "userId": "1753818521609lw3h2",
+      "stockStatus": "in_stock",
+      "discountInfo": "US $612.00 20% offUS $765.00",
+      "totalMatches": 0,
+      "createdAt": "2025-09-01T16:10:45.938Z",
+      "updatedAt": "2025-09-01T16:10:45.938Z",
+      "matchedProducts": []
+    },
+    {
+      "id": "1756743080805k6q4g",
+      "url": "https://www.amazon.com/Apple-iPhone-12-64GB-Black/dp/B08PP5MSVB/ref=pd_sbs_d_sccl_2_5/130-8846991-1590527?pd_rd_w=aHjNZ&content-id=amzn1.sym.2cd14f8d-eb5c-4042-b934-4a05eafd2874&pf_rd_p=2cd14f8d-eb5c-4042-b934-4a05eafd2874&pf_rd_r=W9ZSZ3P4QCS8RQVBRQRD&pd_rd_wg=OpsfW&pd_rd_r=7aa289a3-4677-4f4f-ac20-88e1372995a3&pd_rd_i=B08PP5MSVB&th=1",
+      "title": "Apple iPhone 12, 64GB, Black - Fully Unlocked (Renewed)",
+      "price": 217.97,
+      "currency": "$",
+      "platform": "amazon",
+      "imageUrl": "https://m.media-amazon.com/images/I/51fYXSnSu9L._AC_SY879_.jpg",
+      "userId": "1753818521609lw3h2",
+      "stockStatus": "in_stock",
+      "discountInfo": "-12%",
+      "totalMatches": 1,
+      "createdAt": "2025-09-01T16:11:20.806Z",
+      "updatedAt": "2025-09-01T16:11:20.806Z"
+    },
+    {
+      "id": "1756922383842jp3p7",
+      "url": "https://www.walmart.com/ip/Asus-ROG-Strix-G16-Premium-Gaming-Laptop-16-FHD-165Hz-G-SYNC-100-sRGB-Intel-14-core-i7-13650HX-16GB-DDR5-1TB-SSD-GeForce-RTX-4060-USB-C-RGB-Backlit-T/15599202587?athcpid=15599202587&athpgid=AthenaItempage&athcgid=null&athznid=si&athieid=v0_eeMTguNjcsNDY4LjU5OTk5OTk5OTk5OTk3LDAuMDQzMzY1NzM2NTU4NTQ4NzcsMC41Xw_cuW3siYnIiOnsiYXRocnMiOjAuMCwiYXRocyI6MC4wfSwiZm4iOnsiYXRocyI6MC4wMDIwMDE2ODI2MDQxMzY5NDg3fSwgImJydiI6Imh2MSJ9XQ&athstid=CS055~CS004&athguid=xrWAnMtfadzKs11n5vyBVq5wWShIdGYo4BPx&athancid=13567365941&athposb=0&athena=true",
+      "title": "Asus ROG Strix G16 Premium Gaming Laptop 16\" FHD 165Hz (G-SYNC, 100% sRGB) Intel 14-core i7-13650HX 16GB DDR5 1TB SSD GeForce RTX 4060 USB-C RGB Backlit Thunderbolt Rapid Charging Win11",
+      "price": 1499,
+      "currency": "$",
+      "platform": "walmart",
+      "imageUrl": "https://i5.walmartimages.com/dfw/63fd9f59-14e2/9d304ce6-96de-4331-b8ec-c5191226d378/v1/spark-icon.svg",
+      "userId": "1756922347410kpwd0",
+      "stockStatus": "in_stock",
+      "totalMatches": 0,
+      "createdAt": "2025-09-03T17:59:43.842Z",
+      "updatedAt": "2025-09-03T17:59:43.842Z",
+      "matchedProducts": []
+    },
+    {
+      "id": "1756922392997btgx2",
+      "url": "https://us.shein.com/2025-New-Air7-7th-Gen-Wireless-Bluetooth-Headset-High-Fidelity-Sound-p-100788909.html?imgRatio=1-1",
+      "title": "2025 New Air7 7th Gen Wireless Bluetooth Headset - High - Fidelity Sound---",
+      "price": 13.2,
+      "currency": "$",
+      "platform": "shein",
+      "imageUrl": "https://img.ltwebstatic.com/v4/j/spmp/2025/06/16/62/1750062332cfce78871217b22704d76bc39dfb6eef_thumbnail_220x293.webp",
+      "userId": "1756922347410kpwd0",
+      "stockStatus": "out_of_stock",
+      "totalMatches": 0,
+      "createdAt": "2025-09-03T17:59:52.997Z",
+      "updatedAt": "2025-09-03T17:59:52.997Z",
+      "matchedProducts": []
+    },
+    {
+      "id": "1756922400191xgnk7",
+      "url": "https://www.aliexpress.com/item/1005006839287603.html?spm=a2g0o.detail.pcDetailTopMoreOtherSeller.1.4a196ZHK6ZHKaM&gps-id=pcDetailTopMoreOtherSeller&scm=1007.40050.354490.0&scm_id=1007.40050.354490.0&scm-url=1007.40050.354490.0&pvid=95d6dd8e-8fde-4c07-bd1c-379cd510a207&_t=gps-id:pcDetailTopMoreOtherSeller,scm-url:1007.40050.354490.0,pvid:95d6dd8e-8fde-4c07-bd1c-379cd510a207,tpp_buckets:668%232846%238109%231935&pdp_ext_f=%7B%22order%22%3A%2211362%22%2C%22eval%22%3A%221%22%2C%22sceneId%22%3A%2230050%22%7D&pdp_npi=6%40dis%21USD%213.78%211.74%21%21%2126.88%2112.36%21%40210385bb17569213501686554eef26%2112000038472644452%21rec%21ET%21%21ABX%211%210%21n_tag%3A-29910%3Bd%3A607e5600%3Bm03_new_user%3A-29895&utparam-url=scene%3ApcDetailTopMoreOtherSeller%7Cquery_from%3A%7Cx_object_id%3A1005006839287603%7C_p_origin_prod%3A",
+      "title": "Stainless Steel Braided Double Row Front and Rear Fish Scale Alloy Magnetic Buckle Bracelet with Keel Jewelry New Model",
+      "price": 1.74,
+      "currency": "$",
+      "platform": "aliexpress",
+      "imageUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S9911cb4e5f7640f2a4a0d5f11df5dcceo.jpg_220x220q75.jpg_.avif",
+      "userId": "1756922347410kpwd0",
+      "stockStatus": "unknown",
+      "discountInfo": "Ends : Sep 6, 09:59 (GMT+3)US $1.74 Save US $2.04 US $3.78",
+      "totalMatches": 0,
+      "createdAt": "2025-09-03T18:00:00.191Z",
+      "updatedAt": "2025-09-03T18:00:00.191Z",
+      "matchedProducts": []
+    },
+    {
+      "id": "1756922413914hiun4",
+      "url": "https://www.ebay.com/itm/236167858459?_trkparms=amclksrc%3DITM%26aid%3D1110006%26algo%3DHOMESPLICE.SIM%26ao%3D1%26asc%3D20201210111451%26meid%3D5cd6f8f926ee490286894556e206f08e%26pid%3D101196%26rk%3D2%26rkt%3D12%26sd%3D406134545828%26itm%3D236167858459%26pmt%3D1%26noa%3D0%26pg%3D2332490%26algv%3DSimplAMLv5PairwiseWebWithBBEV2bAndUBSourceDemotionWithUltimatelyBoughtOfCoviewV1%26brand%3DApple&_trksid=p2332490.c101196.m2219&itmprp=cksum%3A2361678584595cd6f8f926ee490286894556e206f08e%7Cenc%3AAQAKAAABQKf%252BZDynwIBzPFOUXzsYfl6V00AKQ%252B%252B7P%252BQrUe%252FaNcA%252F6g5%252BKJDCW80yl3sDyiOtDc%252Bwp382udDvnYxF7ZDSjYqJm5GyOUkm75MegRvdMcZOp66%252FyDudCANRlWAoDDDX9eZsUCDB3VfI%252BQlOVIwVb2dEMuoLEeaMjVu1CXFvLZx%252F5j9zoajVkM%252BHmBos3hTZthWPPG%252F6rapw5L4SdJCASqrpWtDEAXCI40w0F%252BASXGtUutoKSNOLpl%252BWR1V6XmAc98yhrLY%252BF5Ql%252FifJ69HU%252BrVc23NR%252B2ZI1CyPJG8tDLoWH0aYi1XJ0jVDTHnWahcopaNMh2FBlFkQ8vJaOUCTMq7ONy1vTQrrAFFK41MJXNhdEW1SJsoRYW7traWlVYJTgb1amYpaPL%252B1baxd2WzSy6OtOscQts9AwoG%252FLHi2IhBJ%7Campid%3APL_CLK%7Cclp%3A2332490&itmmeta=01K48AQBKD6V9NDNWFX9QK2N12",
+      "title": "Apple iPhone 12 Pro-128 GB/256GB-Various Colors Unlocked IOS Cell Phones Face ID",
+      "price": 249.99,
+      "currency": "$",
+      "platform": "ebay",
+      "imageUrl": "https://i.ebayimg.com/images/g/92QAAOSwRoxoXQ1V/s-l1600.webp",
+      "userId": "1756922347410kpwd0",
+      "stockStatus": "unknown",
+      "totalMatches": 3,
+      "createdAt": "2025-09-03T18:00:13.914Z",
+      "updatedAt": "2025-09-03T18:00:13.914Z"
+    },
+    {
+      "id": "1756922423460nxtfu",
+      "url": "https://www.aliexpress.com/item/1005005775316697.html?spm=a2g0o.productlist.main.11.1b1125e0I09C0D&algo_pvid=ce2dfcfd-bfc0-4d53-a47f-0db62122fed5&algo_exp_id=ce2dfcfd-bfc0-4d53-a47f-0db62122fed5-10&pdp_ext_f=%7B%22order%22%3A%2257%22%2C%22eval%22%3A%221%22%7D&pdp_npi=6%40dis%21USD%21765.00%21612.00%21%21%21765.00%21612.00%21%402141131717567427646365684e7fe0%2112000034309969409%21sea%21ET%210%21ABX%211%210%21n_tag%3A-29910%3Bd%3A607e5600%3Bm03_new_user%3A-29895&curPageLogUid=vy6nS327HbeN&utparam-url=scene%3Asearch%7Cquery_from%3A%7Cx_object_id%3A1005005775316697%7C_p_origin_prod%3A&aff_platform=link-c-tool&aff_short_key=pricetrack0f8-20",
+      "title": "Apple iPhone 14 Pro 128/256/512GB ROM 6GB RAM 1SIM+1eSIM Original 6.1\" OLED Face ID NFC A15 Unlocked 5G 98% New Smartphone",
+      "price": 612,
+      "currency": "$",
+      "platform": "aliexpress",
+      "imageUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S4eb7c256f6e8447baa41510056b3fe68p.jpg_220x220q75.jpg_.avif",
+      "userId": "1756922347410kpwd0",
+      "stockStatus": "in_stock",
+      "discountInfo": "US $612.00 20% offUS $765.00",
+      "totalMatches": 1,
+      "createdAt": "2025-09-03T18:00:23.460Z",
+      "updatedAt": "2025-09-03T18:00:23.460Z"
+    },
+    {
+      "id": "1756922430964krfk9",
+      "url": "https://www.amazon.com/dp/B0CRJ14D7L/ref=sspa_dk_detail_1?pd_rd_i=B0CRJ14D7L&pd_rd_w=DXDnh&content-id=amzn1.sym.8c2f9165-8e93-42a1-8313-73d3809141a2&pf_rd_p=8c2f9165-8e93-42a1-8313-73d3809141a2&pf_rd_r=CV8ZEZ42J3DAD1AYJ07R&pd_rd_wg=jUaDj&pd_rd_r=b153a9b1-c8e1-4dd5-a0b1-f56bb212495c&sp_csd=d2lkZ2V0TmFtZT1zcF9kZXRhaWw&th=1",
+      "title": "Apple iPhone 15, 512GB, Black - Unlocked (Renewed Premium)",
+      "price": 604,
+      "currency": "$",
+      "platform": "amazon",
+      "imageUrl": "https://m.media-amazon.com/images/I/51X7DW0bxDL._AC_SX679_.jpg",
+      "userId": "1756922347410kpwd0",
+      "stockStatus": "in_stock",
+      "discountInfo": "-7%",
+      "totalMatches": 4,
+      "createdAt": "2025-09-03T18:00:30.964Z",
+      "updatedAt": "2025-09-03T18:00:30.964Z"
     }
   ],
   "users": [
@@ -1964,7 +2587,7 @@
       "password": "$2a$10$r0/kwRs/wrflsG1Cf3D85OF2A46t1mJ9MKRbjKmz21yCnJKqGRKPG",
       "username": "michaelabrham8",
       "createdAt": "2025-07-29T19:48:41.609Z",
-      "lastLogin": "2025-08-16T16:56:38.742Z",
+      "lastLogin": "2025-09-03T17:45:35.330Z",
       "seenPriceDropIds": [
         "1753887931479igp4b",
         "17538878985128bk8l",
@@ -1981,7 +2604,7 @@
       "username": "admin",
       "role": "admin",
       "createdAt": "2025-08-07T20:50:59.048Z",
-      "lastLogin": "2025-08-18T15:30:57.725Z",
+      "lastLogin": "2025-09-03T19:50:21.049Z",
       "seenPriceDropIds": []
     },
     {
@@ -2002,15 +2625,6 @@
       "role": "user"
     },
     {
-      "id": "1754669342236sanvw",
-      "email": "michaelabrham9@gmail.com",
-      "password": "$2a$10$PEfMIIqTed0tFM15PbIzl.XnUq/XKXi63vu1qQaC4vhh6MrldzTSS",
-      "username": "michaelabrham9",
-      "createdAt": "2025-08-08T16:09:02.236Z",
-      "lastLogin": "2025-08-08T16:10:20.232Z",
-      "role": "user"
-    },
-    {
       "id": "1754676160132isg7n",
       "email": "blenabrham27@gmail.com",
       "password": "$2a$10$gk7fkxkq/IZK5f6k8ry9F.ifzq0S7IoT65kXI3fYKnSGg0.gZHJqC",
@@ -2018,6 +2632,22 @@
       "createdAt": "2025-08-08T18:02:40.132Z",
       "lastLogin": "2025-08-08T18:02:40.132Z",
       "role": "banned"
+    },
+    {
+      "id": "1755882533973s66jh",
+      "email": "michaelabrham9@gmail.com",
+      "password": "$2a$10$z9xlb2ks2mz4QsZFRTyYZOQTVHJiHfkhsxpS5k0cGmb/.8dkzaLaG",
+      "username": "michaelabrham9",
+      "createdAt": "2025-08-22T17:08:53.973Z",
+      "lastLogin": "2025-08-22T17:08:53.973Z"
+    },
+    {
+      "id": "1756922347410kpwd0",
+      "email": "nohamich94@gmail.com",
+      "password": "$2a$10$Be2L8sgyV0ssE037JJzuN.kQKKCB3xjPHDkXi5PPmCTEYAS7Ddu.m",
+      "username": "nohamich94",
+      "createdAt": "2025-09-03T17:59:07.410Z",
+      "lastLogin": "2025-09-03T17:59:07.410Z"
     }
   ],
   "alerts": [
@@ -2120,6 +2750,16 @@
       "email": "user@example.com",
       "isActive": true,
       "createdAt": "2025-08-09T20:30:19.558Z"
+    },
+    {
+      "id": "1756660009869ip2vd",
+      "productId": "17566599897724atyu",
+      "productTitle": "Apple AirPods 4 Generazione ANC Cancellazione Del Rumore USB-C | eBay",
+      "targetPrice": 60,
+      "currentPrice": 80,
+      "isActive": false,
+      "userId": "1753818521609lw3h2",
+      "createdAt": "2025-08-31T17:06:49.869Z"
     }
   ],
   "notifications": [
@@ -3130,6 +3770,272 @@
       "price": 1,
       "currency": "$",
       "timestamp": "2025-08-16T16:57:13.337Z"
+    },
+    {
+      "id": "1755964133318za2l1",
+      "productId": "1755964133274kyw2g",
+      "price": 0.99,
+      "currency": "$",
+      "timestamp": "2025-08-23T15:48:53.318Z"
+    },
+    {
+      "id": "1755965233457vt1k3",
+      "productId": "1755965233405rtn38",
+      "price": 5.99,
+      "currency": "$",
+      "timestamp": "2025-08-23T16:07:13.457Z"
+    },
+    {
+      "id": "1756216599916odqmm",
+      "productId": "17562165998447uyq4",
+      "price": 0.99,
+      "currency": "$",
+      "timestamp": "2025-08-26T13:56:39.916Z"
+    },
+    {
+      "id": "17562167468157uhlx",
+      "productId": "1756216746745ekwh2",
+      "price": 0.99,
+      "currency": "$",
+      "timestamp": "2025-08-26T13:59:06.815Z"
+    },
+    {
+      "id": "17562167592301l2j4",
+      "productId": "1756216759170nzhld",
+      "price": 0.58,
+      "currency": "$",
+      "timestamp": "2025-08-26T13:59:19.230Z"
+    },
+    {
+      "id": "1756216844605r8ene",
+      "productId": "1756216844538f23ok",
+      "price": 82,
+      "currency": "$",
+      "timestamp": "2025-08-26T14:00:44.605Z"
+    },
+    {
+      "id": "1756217273091vfy3j",
+      "productId": "1756217273018obcwx",
+      "price": 3,
+      "currency": "$",
+      "timestamp": "2025-08-26T14:07:53.091Z"
+    },
+    {
+      "id": "1756217318281zdmu0",
+      "productId": "1756217318217bpka1",
+      "price": 223.99,
+      "currency": "$",
+      "timestamp": "2025-08-26T14:08:38.281Z"
+    },
+    {
+      "id": "175621737097494ey0",
+      "productId": "1756217370910hr6s3",
+      "price": 1846.98,
+      "currency": "$",
+      "timestamp": "2025-08-26T14:09:30.974Z"
+    },
+    {
+      "id": "1756635221835tu4z6",
+      "productId": "1756635221752s9ukh",
+      "price": 199.99,
+      "currency": "$",
+      "timestamp": "2025-08-31T10:13:41.835Z"
+    },
+    {
+      "id": "1756635297262guwxj",
+      "productId": "1756635297188mp17t",
+      "price": 649,
+      "currency": "$",
+      "timestamp": "2025-08-31T10:14:57.262Z"
+    },
+    {
+      "id": "17566368036500h99e",
+      "productId": "1756636803565qo9vo",
+      "price": 649.95,
+      "currency": "$",
+      "timestamp": "2025-08-31T10:40:03.650Z"
+    },
+    {
+      "id": "1756659094093bigup",
+      "productId": "1756659094014fn5o9",
+      "price": 448,
+      "currency": "$",
+      "timestamp": "2025-08-31T16:51:34.093Z"
+    },
+    {
+      "id": "1756659381347oi5w3",
+      "productId": "1756659381291x1tec",
+      "price": 8.99,
+      "currency": "$",
+      "timestamp": "2025-08-31T16:56:21.347Z"
+    },
+    {
+      "id": "1756659522901lzil9",
+      "productId": "1756659522837ddjs4",
+      "price": 89.99,
+      "currency": "$",
+      "timestamp": "2025-08-31T16:58:42.901Z"
+    },
+    {
+      "id": "175665956609498p4s",
+      "productId": "1756659566041p2dix",
+      "price": 89.99,
+      "currency": "$",
+      "timestamp": "2025-08-31T16:59:26.094Z"
+    },
+    {
+      "id": "17566598113862qn25",
+      "productId": "1756659811327m2mum",
+      "price": 125.75,
+      "currency": "$",
+      "timestamp": "2025-08-31T17:03:31.386Z"
+    },
+    {
+      "id": "175665998982303flm",
+      "productId": "17566599897724atyu",
+      "price": 80,
+      "currency": "$",
+      "timestamp": "2025-08-31T17:06:29.823Z"
+    },
+    {
+      "id": "1756735832657wezg1",
+      "productId": "17567358325837dkwh",
+      "price": 11.98,
+      "currency": "$",
+      "timestamp": "2025-09-01T14:10:32.657Z"
+    },
+    {
+      "id": "175673593984601ntp",
+      "productId": "1756735939771p9kuu",
+      "price": 364.29,
+      "currency": "$",
+      "timestamp": "2025-09-01T14:12:19.846Z"
+    },
+    {
+      "id": "1756737510600mbxeo",
+      "productId": "1756737510520sccpv",
+      "price": 322.95,
+      "currency": "$",
+      "timestamp": "2025-09-01T14:38:30.600Z"
+    },
+    {
+      "id": "1756739045316fhgwg",
+      "productId": "175673904522276bmg",
+      "price": 258,
+      "currency": "$",
+      "timestamp": "2025-09-01T15:04:05.316Z"
+    },
+    {
+      "id": "1756739220879wvt5d",
+      "productId": "1756739220798e5jai",
+      "price": 310,
+      "currency": "$",
+      "timestamp": "2025-09-01T15:07:00.879Z"
+    },
+    {
+      "id": "1756741497680lyvpx",
+      "productId": "1756741497606q1zxj",
+      "price": 249.99,
+      "currency": "$",
+      "timestamp": "2025-09-01T15:44:57.680Z"
+    },
+    {
+      "id": "1756741589073szr66",
+      "productId": "17567415890034i3hj",
+      "price": 225.8,
+      "currency": "$",
+      "timestamp": "2025-09-01T15:46:29.073Z"
+    },
+    {
+      "id": "1756741602298l4k2o",
+      "productId": "1756741602219ko7sq",
+      "price": 319,
+      "currency": "$",
+      "timestamp": "2025-09-01T15:46:42.298Z"
+    },
+    {
+      "id": "1756742292798u8s0v",
+      "productId": "1756742292723nlck1",
+      "price": 879.75,
+      "currency": "$",
+      "timestamp": "2025-09-01T15:58:12.798Z"
+    },
+    {
+      "id": "17567423979264tn8i",
+      "productId": "1756742397818lu4da",
+      "price": 319,
+      "currency": "$",
+      "timestamp": "2025-09-01T15:59:57.926Z"
+    },
+    {
+      "id": "1756742993405hhols",
+      "productId": "1756742993304i9sjr",
+      "price": 929,
+      "currency": "$",
+      "timestamp": "2025-09-01T16:09:53.405Z"
+    },
+    {
+      "id": "1756743034794k09tc",
+      "productId": "1756743034723e8fzk",
+      "price": 309.99,
+      "currency": "$",
+      "timestamp": "2025-09-01T16:10:34.794Z"
+    },
+    {
+      "id": "1756743046013djebf",
+      "productId": "17567430459380ztmj",
+      "price": 612,
+      "currency": "$",
+      "timestamp": "2025-09-01T16:10:46.013Z"
+    },
+    {
+      "id": "1756743080885k7ra2",
+      "productId": "1756743080805k6q4g",
+      "price": 217.97,
+      "currency": "$",
+      "timestamp": "2025-09-01T16:11:20.885Z"
+    },
+    {
+      "id": "17569223839152nszg",
+      "productId": "1756922383842jp3p7",
+      "price": 1499,
+      "currency": "$",
+      "timestamp": "2025-09-03T17:59:43.915Z"
+    },
+    {
+      "id": "17569223930651rpuz",
+      "productId": "1756922392997btgx2",
+      "price": 13.2,
+      "currency": "$",
+      "timestamp": "2025-09-03T17:59:53.065Z"
+    },
+    {
+      "id": "1756922400269dt6fn",
+      "productId": "1756922400191xgnk7",
+      "price": 1.74,
+      "currency": "$",
+      "timestamp": "2025-09-03T18:00:00.269Z"
+    },
+    {
+      "id": "1756922413995nwxyt",
+      "productId": "1756922413914hiun4",
+      "price": 249.99,
+      "currency": "$",
+      "timestamp": "2025-09-03T18:00:13.995Z"
+    },
+    {
+      "id": "1756922423528mv6dl",
+      "productId": "1756922423460nxtfu",
+      "price": 612,
+      "currency": "$",
+      "timestamp": "2025-09-03T18:00:23.528Z"
+    },
+    {
+      "id": "17569224310354gni2",
+      "productId": "1756922430964krfk9",
+      "price": 604,
+      "currency": "$",
+      "timestamp": "2025-09-03T18:00:31.035Z"
     }
   ],
   "subscriptionPlans": [

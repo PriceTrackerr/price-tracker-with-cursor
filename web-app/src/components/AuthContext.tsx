@@ -84,6 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Save user data to localStorage for persistence
         localStorage.setItem('user', JSON.stringify(userData));
         setReconnecting(false); // Clear reconnecting state on success
+        setLoading(false); // Ensure loading is set to false
         return userData; // Return user data for persistence
       } else {
         // Only clear token if it's an authentication error (401), not server errors
@@ -94,6 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           localStorage.removeItem('token');
           sessionStorage.removeItem('token');
           setReconnecting(false);
+          setLoading(false); // Ensure loading is set to false
         } else {
           console.log('Server error, keeping token for retry');
           // Keep the user logged in even on server errors
@@ -103,6 +105,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setTimeout(() => fetchUser(t, retryCount + 1), delay);
           } else {
             setReconnecting(false); // Clear reconnecting state after max retries
+            setLoading(false); // Ensure loading is set to false after max retries
           }
         }
       }
@@ -115,10 +118,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setTimeout(() => fetchUser(t, retryCount + 1), delay);
       } else {
         setReconnecting(false); // Clear reconnecting state after max retries
+        setLoading(false); // Ensure loading is set to false after max retries
       }
       console.log('Network error, keeping token for retry');
     }
-    setLoading(false);
     return null; // Return null on failure
   }, [user]);
 
@@ -126,28 +129,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const t = localStorage.getItem('token');
     if (t) {
       setToken(t);
-      
+
       // Sync token to extension if available
       if (typeof chrome !== 'undefined' && chrome.storage) {
         chrome.storage.local.set({ authToken: t });
       }
-      
+
       // Only fetch user if we don't already have user data
       if (!user) {
         // Add a small delay before fetching user to allow server to start
         const timer = setTimeout(() => {
           fetchUser(t);
         }, 1000);
-        
-        return () => clearTimeout(timer);
+
+        // Add a timeout to prevent infinite loading (10 seconds)
+        const timeoutTimer = setTimeout(() => {
+          console.log('Auth timeout - setting loading to false');
+          setLoading(false);
+          setReconnecting(false);
+        }, 10000);
+
+        return () => {
+          clearTimeout(timer);
+          clearTimeout(timeoutTimer);
+        };
       } else {
         setLoading(false);
-        return () => {}; // Return empty cleanup function
       }
     } else {
       setLoading(false);
-      return () => {}; // Return empty cleanup function
     }
+
+    // Default return for when no cleanup is needed
+    return () => {};
   }, [fetchUser, user]);
 
   // Add a backup mechanism to restore token from sessionStorage if localStorage fails
@@ -177,9 +191,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const parsedUser = JSON.parse(savedUser);
         setUser(parsedUser);
+        setLoading(false); // Ensure loading is set to false when restoring from localStorage
         console.log('Restored user session from localStorage');
       } catch (error) {
         console.log('Failed to restore user session from localStorage');
+        setLoading(false); // Ensure loading is set to false even on error
       }
     }
   }, [user, token]);

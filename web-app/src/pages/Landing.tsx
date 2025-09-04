@@ -917,16 +917,16 @@ const Landing: React.FC = () => {
               Simple, Transparent Pricing
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Start free for 6 months, then choose the plan that works best for you
+              Start free for 7 days, then choose the plan that works best for you
             </p>
           </div>
 
           {/* Free Period Banner */}
           <div className="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-2xl p-8 mb-12 text-center">
             <div className="text-5xl mb-4">🎉</div>
-            <h3 className="text-3xl font-bold mb-4">First 6 Months FREE!</h3>
+            <h3 className="text-3xl font-bold mb-4">First 7 Days FREE!</h3>
             <p className="text-xl mb-6">
-              Enjoy all Premium features for 6 months - completely free!
+              Enjoy all Premium features for 7 days - completely free!
             </p>
             <div className="bg-white bg-opacity-20 rounded-lg p-4 inline-block">
               <p className="text-lg">
@@ -945,7 +945,7 @@ const Landing: React.FC = () => {
                   $0
                   <span className="text-lg text-gray-500">/month</span>
                 </div>
-                <p className="text-gray-600">After 6-month trial</p>
+                <p className="text-gray-600">After 7-day trial</p>
               </div>
               
               <ul className="space-y-4 mb-8">

@@ -5,9 +5,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const express_validator_1 = require("express-validator");
-const storage_1 = __importDefault(require("../config/storage"));
+const database_1 = require("../config/database");
+const db = (0, database_1.getDb)();
 const auth_1 = require("../middleware/auth");
-const string_similarity_1 = __importDefault(require("string-similarity"));
 const router = express_1.default.Router();
 const validateProduct = [
     (0, express_validator_1.body)('url').isURL().withMessage('Valid URL is required'),
@@ -51,7 +51,7 @@ router.get('/search', auth_1.authMiddleware, async (req, res) => {
                 error: 'Search query is required'
             });
         }
-        const allProducts = await storage_1.default.getProducts();
+        const allProducts = await db.getProducts();
         const userProducts = allProducts.filter((p) => p.userId === userId);
         const query = q.toLowerCase().trim();
         const startsWithMatches = userProducts.filter((product) => product.title.toLowerCase().startsWith(query) ||
@@ -79,462 +79,6 @@ router.get('/search', auth_1.authMiddleware, async (req, res) => {
         });
     }
 });
-function extractProductIdentifiers(title) {
-    const normalizedTitle = title.toLowerCase();
-    const identifiers = {
-        brand: '',
-        model: '',
-        color: '',
-        size: '',
-        keywords: [],
-        features: [],
-        sku: '',
-        condition: undefined,
-        isBundle: undefined,
-        accessories: []
-    };
-    const brands = [
-        'asus', 'dell', 'hp', 'acer', 'msi', 'razer', 'lenovo', 'alienware', 'origin', 'clevo',
-        'apple', 'samsung', 'xiaomi', 'huawei', 'sony', 'microsoft', 'google', 'surface',
-        'corsair', 'steelseries', 'logitech', 'hyperx', 'roccat', 'cooler master',
-        'bose', 'jbl', 'beats', 'sennheiser', 'audio-technica', 'sony', 'skullcandy',
-        'oneplus', 'oppo', 'vivo', 'realme', 'motorola', 'nokia', 'blackberry',
-        'lg', 'panasonic', 'philips', 'canon', 'nikon', 'gopro', 'dji', 'fitbit', 'garmin',
-        'nike', 'adidas', 'puma', 'under armour', 'new balance',
-        'toyota', 'honda', 'ford', 'bmw', 'mercedes', 'audi', 'volkswagen', 'nissan',
-        'chevrolet', 'hyundai', 'kia', 'mazda', 'subaru', 'lexus', 'infiniti',
-        'acura', 'buick', 'cadillac', 'chrysler', 'dodge', 'jeep', 'ram'
-    ];
-    if (normalizedTitle.includes('airpods') || normalizedTitle.includes('air pods')) {
-        identifiers.brand = 'apple';
-        identifiers.model = 'airpods';
-    }
-    for (const brand of brands) {
-        if (normalizedTitle.includes(brand)) {
-            identifiers.brand = brand;
-            break;
-        }
-    }
-    const modelPatterns = [
-        /iphone\s*(\d+)/i,
-        /ipad\s*(pro|air|mini)?\s*(\d+)?/i,
-        /macbook\s*(pro|air)?\s*(\d+)?/i,
-        /airpods\s*(pro|max|gen|generation)?/i,
-        /apple\s*watch\s*series\s*(\d+)/i,
-        /rog\s*(zephyrus|strix|flow|scar)\s*(g\d+|m\d+|x\d+)?/i,
-        /(predator|nitro|aspire)\s*(helios|triton|5|7)?\s*(\d+)?/i,
-        /(legion|ideapad)\s*(5|7|y\d+)?/i,
-        /(alienware|inspiron|xps|precision)\s*(m\d+|x\d+|\d+)?/i,
-        /(gaming|republic)\s*(laptop|notebook)/i,
-        /(hp|dell|lenovo|asus|acer|msi|razer|toshiba|samsung|lg)\s*(\d+\.?\d*)/i,
-        /(intel|amd)\s*(core|ryzen|athlon|pentium|celeron)\s*(i\d|r\d|a\d|p\d|c\d)/i,
-        /(\d+\.?\d*)\s*(inch|")\s*(laptop|notebook|computer)/i,
-        /(\d+)\s*(gb|tb)\s*(ram|memory|ssd|storage)/i,
-        /(rtx|gtx|radeon|rx)\s*(\d+)/i,
-        /galaxy\s*(s|note|a|m|tab)\s*(\d+)/i,
-        /galaxy\s*(s|note|a|m|tab)\s*(\d+)\s*(ultra|plus|fe|5g)/i,
-        /s(\d+)\s*(ultra|plus|fe|5g)/i,
-        /note\s*(\d+)/i,
-        /galaxy\s*buds\s*(\d+)?/i,
-        /galaxy\s*watch\s*(\d+)?/i,
-        /redmi\s*(note|airdots|buds)\s*(\d+)?/i,
-        /mi\s*(note|mix|max)\s*(\d+)?/i,
-        /xiaomi\s*(redmi|mi)\s*(\d+)?/i,
-        /oneplus\s*(\d+)/i,
-        /oneplus\s*(\d+)\s*(pro|t|r)/i,
-        /pixel\s*(\d+)/i,
-        /pixel\s*(\d+)\s*(pro|a)/i,
-        /logitech\s*(mx|g|k|m|h|z|b|c|s)\s*(\d+)?/i,
-        /(mx|g|k|m|h|z|b|c|s)\s*(\d+)\s*(master|pro|ultra|wireless|bluetooth)/i,
-        /(mx master|g pro|k\d+|m\d+|h\d+|z\d+|b\d+|c\d+|s\d+)/i,
-        /(\d+)\s*(gb|tb|mb)/i,
-        /(\d+)\s*inch/i,
-        /(\d+)\s*mm/i,
-        /(\d+)\s*w/i,
-        /(\d+)\s*mah/i,
-        /yaris\s*(\d{4})/i,
-        /prius\s*(\d{4})/i,
-        /civic\s*(\d{4})/i,
-        /accord\s*(\d{4})/i,
-        /camry\s*(\d{4})/i,
-        /corolla\s*(\d{4})/i,
-        /focus\s*(\d{4})/i,
-        /fiesta\s*(\d{4})/i,
-        /mustang\s*(\d{4})/i,
-        /escape\s*(\d{4})/i,
-        /explorer\s*(\d{4})/i,
-        /side\s*mirror/i,
-        /rear\s*mirror/i,
-        /side\s*view/i,
-        /wing\s*mirror/i
-    ];
-    for (const pattern of modelPatterns) {
-        const match = normalizedTitle.match(pattern);
-        if (match) {
-            identifiers.model = match[0];
-            break;
-        }
-    }
-    const colors = [
-        'black', 'white', 'blue', 'red', 'green', 'yellow', 'pink', 'purple', 'gold', 'silver',
-        'gray', 'grey', 'brown', 'orange', 'navy', 'maroon', 'teal', 'lime', 'cyan', 'magenta'
-    ];
-    for (const color of colors) {
-        if (normalizedTitle.includes(color)) {
-            identifiers.color = color;
-            break;
-        }
-    }
-    const sizePatterns = [
-        /128gb/i, /256gb/i, /512gb/i, /1tb/i, /2tb/i, /4tb/i,
-        /small/i, /medium/i, /large/i, /xl/i, /xxl/i,
-        /(\d+)\s*inch/i, /(\d+)\s*cm/i
-    ];
-    for (const pattern of sizePatterns) {
-        const match = normalizedTitle.match(pattern);
-        if (match) {
-            identifiers.size = match[0];
-            break;
-        }
-    }
-    const features = [
-        'gaming', 'rog', 'zephyrus', 'strix', 'rtx', 'gtx', 'nvidia', 'geforce', 'radeon',
-        'core i7', 'core i5', 'core i9', 'ryzen 5', 'ryzen 7', 'ryzen 9',
-        '165hz', '144hz', '120hz', '240hz', 'high refresh', 'gaming laptop',
-        '16gb ram', '32gb ram', '8gb ram', '512gb ssd', '1tb ssd', 'nvme',
-        'fhd', '4k', 'uhd', 'qhd', '1080p', '1440p', '2160p', 'ips', 'oled', 'amoled', 'lcd', 'retina',
-        'wireless', 'bluetooth', 'wifi', '4g', '5g', 'nfc', 'gps',
-        'hdmi', 'usb', 'type c', 'thunderbolt', 'ethernet', 'vga', 'displayport',
-        'waterproof', 'dustproof', 'shockproof', 'antishock',
-        'fast charging', 'wireless charging', 'quick charge',
-        'stereo', 'surround', 'noise cancelling', 'active noise cancellation',
-        'touch screen', 'touchscreen', 'backlit', 'backlit keyboard', 'fingerprint', 'webcam',
-        'ssd', 'hdd', 'hybrid', 'dual core', 'quad core', 'octa core', 'hexa core',
-        'intel', 'amd', 'core i3', 'core i5', 'core i7', 'core i9', 'ryzen', 'athlon'
-    ];
-    for (const feature of features) {
-        if (normalizedTitle.includes(feature)) {
-            identifiers.features.push(feature);
-        }
-    }
-    if (/(renewed|refurb|refurbished|re\-certified|recertified)/i.test(normalizedTitle)) {
-        identifiers.condition = 'refurbished';
-    }
-    else if (/(used|pre\-owned|preowned|open box|open\-box)/i.test(normalizedTitle)) {
-        identifiers.condition = /open box|open\-box/i.test(normalizedTitle) ? 'open_box' : 'used';
-    }
-    else if (/(brand new|sealed|new)/i.test(normalizedTitle)) {
-        identifiers.condition = 'new';
-    }
-    const accessoryKeywords = [
-        'case', 'charger', 'cable', 'earbuds', 'headphones', 'screen protector', 'protector', 'bundle', 'kit', 'mouse', 'keyboard', 'controller', 'dock', 'cover', 'strap', 'adapter', 'power bank', 'sd card', 'memory card', 'stand', 'tripod'
-    ];
-    for (const word of accessoryKeywords) {
-        if (normalizedTitle.includes(word)) {
-            identifiers.accessories.push(word);
-        }
-    }
-    identifiers.isBundle = normalizedTitle.includes('bundle') || normalizedTitle.includes('with ') || identifiers.accessories.length >= 2;
-    const stopWords = [
-        'the', 'and', 'for', 'with', 'new', 'original', 'genuine', 'official',
-        'brand', 'product', 'item', 'best', 'top', 'quality', 'premium'
-    ];
-    identifiers.keywords = normalizedTitle
-        .split(/\s+/)
-        .filter(word => word.length > 2 &&
-        !stopWords.includes(word) &&
-        !identifiers.brand.includes(word) &&
-        !identifiers.model.includes(word) &&
-        !identifiers.color.includes(word) &&
-        !identifiers.size.includes(word));
-    const skuPattern = /[A-Z]{2,}\d{3,}/i;
-    const skuMatch = normalizedTitle.match(skuPattern);
-    if (skuMatch) {
-        identifiers.sku = skuMatch[0];
-    }
-    return identifiers;
-}
-function calculateTitleSimilarity(title1, title2) {
-    const basicSimilarity = string_similarity_1.default.compareTwoStrings(title1.toLowerCase(), title2.toLowerCase());
-    const words1 = title1.toLowerCase().split(/\s+/).filter(word => word.length > 2);
-    const words2 = title2.toLowerCase().split(/\s+/).filter(word => word.length > 2);
-    const commonWords = words1.filter(word => words2.includes(word));
-    const wordSimilarity = commonWords.length / Math.max(words1.length, words2.length);
-    const charSimilarity = string_similarity_1.default.compareTwoStrings(title1.toLowerCase().replace(/\s+/g, ''), title2.toLowerCase().replace(/\s+/g, ''));
-    const samsungPattern1 = /(galaxy\s*s\d+|s\d+)/i;
-    const samsungPattern2 = /(galaxy\s*s\d+|s\d+)/i;
-    const isSamsung1 = samsungPattern1.test(title1);
-    const isSamsung2 = samsungPattern2.test(title2);
-    let samsungBonus = 0;
-    if (isSamsung1 && isSamsung2) {
-        const model1 = title1.match(/(s\d+)/i)?.[1] || '';
-        const model2 = title2.match(/(s\d+)/i)?.[1] || '';
-        if (model1 && model2 && model1.toLowerCase() === model2.toLowerCase()) {
-            samsungBonus = 0.3;
-        }
-    }
-    return Math.min(1, (basicSimilarity * 0.3 + wordSimilarity * 0.4 + charSimilarity * 0.2 + samsungBonus));
-}
-function calculateIdentifierSimilarity(identifiers1, identifiers2) {
-    let score = 0;
-    let totalChecks = 0;
-    if (identifiers1.brand && identifiers2.brand) {
-        totalChecks++;
-        if (identifiers1.brand === identifiers2.brand) {
-            score += 1;
-        }
-    }
-    if (identifiers1.model && identifiers2.model) {
-        totalChecks++;
-        if (identifiers1.model === identifiers2.model) {
-            score += 1;
-        }
-    }
-    if (identifiers1.color && identifiers2.color) {
-        totalChecks++;
-        if (identifiers1.color === identifiers2.color) {
-            score += 1;
-        }
-    }
-    if (identifiers1.size && identifiers2.size) {
-        totalChecks++;
-        if (identifiers1.size === identifiers2.size) {
-            score += 1;
-        }
-    }
-    if (identifiers1.condition && identifiers2.condition) {
-        totalChecks++;
-        if (identifiers1.condition === identifiers2.condition) {
-            score += 1;
-        }
-    }
-    if (identifiers1.sku && identifiers2.sku) {
-        totalChecks++;
-        if (identifiers1.sku === identifiers2.sku) {
-            score += 1;
-        }
-    }
-    if (identifiers1.features.length > 0 && identifiers2.features.length > 0) {
-        const commonFeatures = identifiers1.features.filter(f => identifiers2.features.includes(f));
-        const featureSimilarity = commonFeatures.length / Math.max(identifiers1.features.length, identifiers2.features.length);
-        score += featureSimilarity;
-        totalChecks++;
-    }
-    if (identifiers1.keywords.length > 0 && identifiers2.keywords.length > 0) {
-        const commonKeywords = identifiers1.keywords.filter(k => identifiers2.keywords.includes(k));
-        const keywordSimilarity = commonKeywords.length / Math.max(identifiers1.keywords.length, identifiers2.keywords.length);
-        score += keywordSimilarity;
-        totalChecks++;
-    }
-    if (typeof identifiers1.isBundle === 'boolean' && typeof identifiers2.isBundle === 'boolean') {
-        totalChecks++;
-        if (identifiers1.isBundle === identifiers2.isBundle) {
-            score += 1;
-        }
-    }
-    const isLaptop1 = identifiers1.keywords.some(k => k.toLowerCase().includes('laptop') || k.toLowerCase().includes('notebook') || k.toLowerCase().includes('computer'));
-    const isLaptop2 = identifiers2.keywords.some(k => k.toLowerCase().includes('laptop') || k.toLowerCase().includes('notebook') || k.toLowerCase().includes('computer'));
-    if (isLaptop1 && isLaptop2) {
-        totalChecks++;
-        score += 0.5;
-        if (identifiers1.brand && identifiers2.brand && identifiers1.brand === identifiers2.brand) {
-            score += 0.3;
-        }
-        if (identifiers1.size && identifiers2.size) {
-            const size1 = identifiers1.size.match(/(\d+\.?\d*)/)?.[1];
-            const size2 = identifiers2.size.match(/(\d+\.?\d*)/)?.[1];
-            if (size1 && size2) {
-                const diff = Math.abs(parseFloat(size1) - parseFloat(size2));
-                if (diff <= 1)
-                    score += 0.2;
-                else if (diff <= 2)
-                    score += 0.1;
-            }
-        }
-    }
-    return totalChecks > 0 ? score / totalChecks : 0;
-}
-function calculatePriceSimilarity(price1, price2) {
-    const priceDiff = Math.abs(price1 - price2);
-    const avgPrice = (price1 + price2) / 2;
-    const priceRatio = priceDiff / avgPrice;
-    return Math.max(0, 1 - (priceRatio * 2));
-}
-function findProductMatches(targetProduct, allProducts) {
-    console.log(`🔍 [Product Matching] Finding matches for: ${targetProduct.title} (${targetProduct.platform})`);
-    console.log(`🔍 [Product Matching] Total products to check: ${allProducts.length}`);
-    const isLaptop = targetProduct.title.toLowerCase().includes('laptop') ||
-        targetProduct.title.toLowerCase().includes('notebook') ||
-        targetProduct.title.toLowerCase().includes('computer');
-    console.log(`🔍 [Product Matching] Is laptop: ${isLaptop}`);
-    const matches = [];
-    const targetIdentifiers = extractProductIdentifiers(targetProduct.title);
-    console.log(`🔍 [Product Matching] Target identifiers:`, targetIdentifiers);
-    if (isLaptop) {
-        console.log(`🔍 [Product Matching] Laptop keywords:`, targetIdentifiers.keywords);
-        console.log(`🔍 [Product Matching] Laptop features:`, targetIdentifiers.features);
-    }
-    for (const product of allProducts) {
-        if (product.id === targetProduct.id) {
-            continue;
-        }
-        let platformPenalty = 0;
-        if (product.platform === targetProduct.platform) {
-            platformPenalty = 0.15;
-        }
-        const productIdentifiers = extractProductIdentifiers(product.title);
-        const titleSimilarity = calculateTitleSimilarity(targetProduct.title, product.title);
-        const identifierSimilarity = calculateIdentifierSimilarity(targetIdentifiers, productIdentifiers);
-        const priceSimilarity = calculatePriceSimilarity(targetProduct.price, product.price);
-        const targetCategory = getProductCategory(targetProduct.title);
-        const productCategory = getProductCategory(product.title);
-        console.log(`🔍 [Product Matching] Category check: ${targetCategory} vs ${productCategory}`);
-        if (targetCategory !== productCategory) {
-            console.log(`🚫 [Product Matching] Category mismatch: ${targetCategory} vs ${productCategory} - Skipping`);
-            continue;
-        }
-        console.log(`✅ [Product Matching] Category match: ${targetCategory}`);
-        if (isLaptop && titleSimilarity > 0.2) {
-            console.log(`🔍 [Product Matching] Laptop candidate: ${product.title}`);
-            console.log(`🔍 [Product Matching] Scores - Title: ${titleSimilarity.toFixed(3)}, Identifiers: ${identifierSimilarity.toFixed(3)}, Price: ${priceSimilarity.toFixed(3)}`);
-        }
-        let overallSimilarity;
-        if (isLaptop) {
-            overallSimilarity = (titleSimilarity * 0.30 +
-                identifierSimilarity * 0.50 +
-                priceSimilarity * 0.20);
-        }
-        else {
-            overallSimilarity = (titleSimilarity * 0.35 +
-                identifierSimilarity * 0.45 +
-                priceSimilarity * 0.20);
-        }
-        overallSimilarity -= platformPenalty;
-        if (targetIdentifiers.size && productIdentifiers.size && targetIdentifiers.size !== productIdentifiers.size) {
-            overallSimilarity -= 0.10;
-        }
-        if (targetIdentifiers.condition && productIdentifiers.condition && targetIdentifiers.condition !== productIdentifiers.condition) {
-            overallSimilarity -= 0.15;
-        }
-        if (typeof targetIdentifiers.isBundle === 'boolean' && typeof productIdentifiers.isBundle === 'boolean') {
-            if (targetIdentifiers.isBundle !== productIdentifiers.isBundle) {
-                overallSimilarity -= 0.05;
-            }
-            else if (targetIdentifiers.isBundle && productIdentifiers.isBundle) {
-                overallSimilarity += 0.05;
-            }
-        }
-        overallSimilarity = Math.max(0, Math.min(1, overallSimilarity));
-        const threshold = isLaptop ? 0.25 : 0.35;
-        if (isLaptop && overallSimilarity > 0.2) {
-            console.log(`🔍 [Product Matching] Final similarity: ${overallSimilarity.toFixed(3)} (threshold: ${threshold})`);
-        }
-        if (overallSimilarity > threshold) {
-            const priceDifference = Math.abs(targetProduct.price - product.price);
-            const priceDifferencePercent = (priceDifference / targetProduct.price) * 100;
-            const confidence = overallSimilarity > 0.65 ? 'high' : overallSimilarity > 0.5 ? 'medium' : 'low';
-            const matchReason = generateMatchReason(targetIdentifiers, productIdentifiers, overallSimilarity);
-            matches.push({
-                product,
-                similarity: overallSimilarity,
-                confidence,
-                matchReason,
-                priceDifference,
-                priceDifferencePercent
-            });
-        }
-    }
-    console.log(`🔍 [Product Matching] Found ${matches.length} matches`);
-    if (matches.length > 0) {
-        console.log(`🔍 [Product Matching] Top match: ${matches[0].product.title} (${matches[0].similarity.toFixed(2)})`);
-    }
-    return matches.sort((a, b) => b.similarity - a.similarity);
-}
-function getProductCategory(title) {
-    const normalizedTitle = title.toLowerCase();
-    if ((normalizedTitle.includes('laptop') || normalizedTitle.includes('notebook')) &&
-        (normalizedTitle.includes('gaming') || normalizedTitle.includes('rog') ||
-            normalizedTitle.includes('zephyrus') || normalizedTitle.includes('nitro') ||
-            normalizedTitle.includes('alienware') || normalizedTitle.includes('legion') ||
-            normalizedTitle.includes('rtx') || normalizedTitle.includes('gtx'))) {
-        return 'gaming_laptop';
-    }
-    if (normalizedTitle.includes('laptop') || normalizedTitle.includes('notebook') ||
-        normalizedTitle.includes('computer') || normalizedTitle.includes('pc') ||
-        normalizedTitle.includes('macbook') || normalizedTitle.includes('chromebook')) {
-        return 'laptop';
-    }
-    if (normalizedTitle.includes('phone') || normalizedTitle.includes('smartphone') ||
-        normalizedTitle.includes('iphone') || normalizedTitle.includes('galaxy') ||
-        normalizedTitle.includes('android') || normalizedTitle.includes('mobile')) {
-        return 'phone';
-    }
-    if (normalizedTitle.includes('xbox') || normalizedTitle.includes('playstation') ||
-        normalizedTitle.includes('nintendo') || normalizedTitle.includes('ps5') ||
-        normalizedTitle.includes('ps4') || normalizedTitle.includes('switch')) {
-        return 'gaming_console';
-    }
-    if (normalizedTitle.includes('tv') || normalizedTitle.includes('television') ||
-        normalizedTitle.includes('monitor') || normalizedTitle.includes('display') ||
-        normalizedTitle.includes('screen')) {
-        return 'display';
-    }
-    if (normalizedTitle.includes('ice maker') || normalizedTitle.includes('refrigerator') ||
-        normalizedTitle.includes('microwave') || normalizedTitle.includes('dishwasher') ||
-        normalizedTitle.includes('washer') || normalizedTitle.includes('dryer') ||
-        normalizedTitle.includes('appliance')) {
-        return 'appliance';
-    }
-    if (normalizedTitle.includes('headphone') || normalizedTitle.includes('earbud') ||
-        normalizedTitle.includes('airpod') || normalizedTitle.includes('speaker') ||
-        normalizedTitle.includes('audio') || normalizedTitle.includes('sound')) {
-        return 'audio';
-    }
-    if (normalizedTitle.includes('necklace') || normalizedTitle.includes('bracelet') ||
-        normalizedTitle.includes('ring') || normalizedTitle.includes('earring') ||
-        normalizedTitle.includes('jewelry') || normalizedTitle.includes('accessory')) {
-        return 'jewelry';
-    }
-    if (normalizedTitle.includes('shirt') || normalizedTitle.includes('dress') ||
-        normalizedTitle.includes('pants') || normalizedTitle.includes('jacket') ||
-        normalizedTitle.includes('shoes') || normalizedTitle.includes('boots')) {
-        return 'clothing';
-    }
-    return 'other';
-}
-function generateMatchReason(targetIdentifiers, productIdentifiers, similarity) {
-    if (targetIdentifiers.brand && productIdentifiers.brand && targetIdentifiers.brand === productIdentifiers.brand) {
-        return `Same brand (${targetIdentifiers.brand})`;
-    }
-    if (targetIdentifiers.model && productIdentifiers.model && targetIdentifiers.model === productIdentifiers.model) {
-        return `Same model (${targetIdentifiers.model})`;
-    }
-    if (targetIdentifiers.size && productIdentifiers.size && targetIdentifiers.size === productIdentifiers.size) {
-        return `Same storage/size (${targetIdentifiers.size})`;
-    }
-    if (targetIdentifiers.color && productIdentifiers.color && targetIdentifiers.color === productIdentifiers.color) {
-        return `Same color (${targetIdentifiers.color})`;
-    }
-    if (targetIdentifiers.condition && productIdentifiers.condition && targetIdentifiers.condition === productIdentifiers.condition) {
-        return `Same condition (${targetIdentifiers.condition})`;
-    }
-    if (typeof targetIdentifiers.isBundle === 'boolean' && typeof productIdentifiers.isBundle === 'boolean') {
-        if (targetIdentifiers.isBundle && productIdentifiers.isBundle)
-            return 'Both are bundles';
-        if (targetIdentifiers.isBundle !== productIdentifiers.isBundle)
-            return 'Bundle vs standalone';
-    }
-    if (targetIdentifiers.sku && productIdentifiers.sku && targetIdentifiers.sku === productIdentifiers.sku) {
-        return `Same SKU (${targetIdentifiers.sku})`;
-    }
-    if (similarity > 0.8) {
-        return 'Very similar product names';
-    }
-    if (similarity > 0.7) {
-        return 'Similar product characteristics';
-    }
-    return 'Partial match based on keywords';
-}
 router.post('/track', auth_1.authMiddleware, validateProduct, async (req, res) => {
     try {
         const errors = (0, express_validator_1.validationResult)(req);
@@ -546,7 +90,7 @@ router.post('/track', auth_1.authMiddleware, validateProduct, async (req, res) =
         }
         const { url, title, price, currency, platform, imageUrl, stockStatus, discountInfo } = req.body;
         const userId = req.user.uid;
-        const products = await storage_1.default.getProducts(userId);
+        const products = await db.getProducts(userId);
         console.log(`[DEBUG] Checking for duplicates - User: ${userId}, URL: ${url}`);
         console.log(`[DEBUG] User has ${products.length} products`);
         const existing = products.find((p) => p.url === url);
@@ -558,7 +102,7 @@ router.post('/track', auth_1.authMiddleware, validateProduct, async (req, res) =
             });
         }
         console.log(`[DEBUG] No existing product found, proceeding to add new product`);
-        const id = await storage_1.default.addProduct({
+        const id = await db.addProduct({
             url,
             title,
             price: typeof price === 'string' ? parseFloat(price) : price,
@@ -567,31 +111,40 @@ router.post('/track', auth_1.authMiddleware, validateProduct, async (req, res) =
             imageUrl: imageUrl || '',
             userId,
             stockStatus: stockStatus || 'unknown',
-            discountInfo
+            discountInfo,
+            totalMatches: 0
         });
-        await storage_1.default.addPriceHistory({
+        await db.addPriceHistory({
             productId: id,
             price: typeof price === 'string' ? parseFloat(price) : price,
             currency: currency || '$'
         });
-        const allProducts = await storage_1.default.getProducts();
+        const allProducts = await db.getProducts();
         const newProduct = allProducts.find((p) => p.id === id);
         if (newProduct) {
             console.log(`[PRODUCT MATCHING] Looking for matches for: ${newProduct.title}`);
-            const matches = findProductMatches(newProduct, allProducts);
-            const matchedProductIds = matches.map(match => match.product.id);
+            const { matchProducts } = require('../services/productMatchingService');
+            const candidateProducts = allProducts.filter((p) => p.id !== id);
+            const matches = matchProducts(newProduct, candidateProducts);
+            const matchedProductIds = matches.map((match) => match.id);
             console.log(`[PRODUCT MATCHING] Found ${matches.length} matches:`);
-            matches.forEach(match => {
-                console.log(`  - ${match.product.title} (${match.product.platform}) - Similarity: ${match.similarity.toFixed(2)} - Reason: ${match.matchReason}`);
+            matches.forEach((match) => {
+                console.log(`  - ${match.title} (${match.platform}) - Confidence: ${match.confidence.toFixed(2)}`);
             });
-            await storage_1.default.updateProduct(id, { matchedProducts: matchedProductIds });
+            await db.updateProduct(id, {
+                matchedProducts: matchedProductIds,
+                totalMatches: matches.length
+            });
             for (const match of matches) {
                 const existingProduct = allProducts.find((p) => p.id === match.product.id);
                 if (existingProduct) {
                     const currentMatches = existingProduct.matchedProducts || [];
                     if (!currentMatches.includes(id)) {
                         currentMatches.push(id);
-                        await storage_1.default.updateProduct(match.product.id, { matchedProducts: currentMatches });
+                        await db.updateProduct(match.product.id, {
+                            matchedProducts: currentMatches,
+                            totalMatches: currentMatches.length
+                        });
                     }
                 }
             }
@@ -624,12 +177,12 @@ router.post('/track', auth_1.authMiddleware, validateProduct, async (req, res) =
 router.get('/', auth_1.authMiddleware, async (req, res) => {
     try {
         const userId = req.user.uid;
-        let products = await storage_1.default.getProducts(userId);
-        const user = await storage_1.default.getUserById(userId);
+        let products = await db.getProducts(userId);
+        const user = await db.getUserById(userId);
         const seenPriceDropIds = user?.seenPriceDropIds || [];
         const { search, platform, minPrice, maxPrice, stockStatus, hasPriceDrop, sortBy = 'createdAt', sortOrder = 'desc', limit, offset = 0 } = req.query;
         let productsWithHistory = await Promise.all(products.map(async (product) => {
-            const history = await storage_1.default.getPriceHistory(product.id);
+            const history = await db.getPriceHistory(product.id);
             const priceHistory = history || [];
             let priceDrop = 0;
             let priceDropPercent = 0;
@@ -761,15 +314,15 @@ router.delete('/:productId', auth_1.authMiddleware, async (req, res) => {
                 error: 'Product ID is required'
             });
         }
-        const product = await storage_1.default.getProductById(productId);
-        const user = await storage_1.default.getUserById(userId);
+        const product = await db.getProductById(productId);
+        const user = await db.getUserById(userId);
         if (!product) {
             return res.status(404).json({ success: false, error: 'Product not found' });
         }
         if (!user || (user.role !== 'admin' && product.userId !== userId)) {
             return res.status(403).json({ success: false, error: 'Not authorized' });
         }
-        await storage_1.default.deleteProduct(productId);
+        await db.deleteProduct(productId);
         return res.json({ success: true, message: 'Product removed from tracking' });
     }
     catch (error) {
@@ -790,14 +343,14 @@ router.get('/:productId/history', auth_1.authMiddleware, async (req, res) => {
                 error: 'Product ID is required'
             });
         }
-        const product = await storage_1.default.getProductById(productId);
+        const product = await db.getProductById(productId);
         if (!product) {
             return res.status(404).json({ success: false, error: 'Product not found' });
         }
         if (product.userId !== userId) {
             return res.status(403).json({ success: false, error: 'Not authorized' });
         }
-        const history = await storage_1.default.getPriceHistory(productId);
+        const history = await db.getPriceHistory(productId);
         return res.json({ success: true, data: history });
     }
     catch (error) {
@@ -811,20 +364,20 @@ router.get('/:productId/history', auth_1.authMiddleware, async (req, res) => {
 router.get('/filters', auth_1.authMiddleware, async (req, res) => {
     try {
         const userId = req.user.uid;
-        const products = await storage_1.default.getProducts(userId);
-        const user = await storage_1.default.getUserById(userId);
+        const products = await db.getProducts(userId);
+        const user = await db.getUserById(userId);
         const seenPriceDropIds = user?.seenPriceDropIds || [];
-        const prices = products.map(p => p.price).filter(p => p > 0);
+        const prices = products.map((p) => p.price).filter((p) => p > 0);
         const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
         const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
-        const platforms = [...new Set(products.map(p => p.platform))];
+        const platforms = [...new Set(products.map((p) => p.platform))];
         const stockStatuses = products.reduce((acc, product) => {
             const status = product.stockStatus || 'unknown';
             acc[status] = (acc[status] || 0) + 1;
             return acc;
         }, {});
         const productsWithHistory = await Promise.all(products.map(async (product) => {
-            const history = await storage_1.default.getPriceHistory(product.id);
+            const history = await db.getPriceHistory(product.id);
             if (history.length > 1) {
                 const previousEntry = history[history.length - 2];
                 if (previousEntry && previousEntry.price) {
@@ -869,11 +422,11 @@ router.get('/filters', auth_1.authMiddleware, async (req, res) => {
 });
 router.get('/all', auth_1.authMiddleware, async (req, res) => {
     try {
-        const user = await storage_1.default.getUserById(req.user.uid);
+        const user = await db.getUserById(req.user.uid);
         if (!user || user.role !== 'admin') {
             return res.status(403).json({ success: false, message: 'Forbidden: Admins only' });
         }
-        const data = storage_1.default.readData();
+        const data = db.readData();
         const products = data.products || [];
         const users = data.users || [];
         const productsWithIds = products.map((p, i) => {
@@ -899,10 +452,10 @@ router.get('/price-drops', auth_1.authMiddleware, async (req, res) => {
         if (!userId) {
             return res.status(401).json({ success: false, message: 'User not authenticated' });
         }
-        const products = await storage_1.default.getProducts(userId);
+        const products = await db.getProducts(userId);
         const priceDropIds = [];
         for (const product of products) {
-            const history = await storage_1.default.getPriceHistory(product.id);
+            const history = await db.getPriceHistory(product.id);
             if (history.length > 1) {
                 const sortedHistory = history.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
                 const last = sortedHistory[sortedHistory.length - 1];
@@ -919,99 +472,6 @@ router.get('/price-drops', auth_1.authMiddleware, async (req, res) => {
         return res.status(500).json({ success: false, message: 'Failed to fetch price drops' });
     }
 });
-router.get('/:productId/matches', auth_1.authMiddleware, async (req, res) => {
-    try {
-        const { productId } = req.params;
-        if (!productId) {
-            return res.status(400).json({
-                success: false,
-                error: 'Product ID is required'
-            });
-        }
-        const userId = req.user.uid;
-        const allProducts = await storage_1.default.getProducts();
-        const targetProduct = allProducts.find((p) => p.id === productId);
-        if (!targetProduct) {
-            return res.status(404).json({
-                success: false,
-                error: 'Product not found'
-            });
-        }
-        console.log(`[MATCHING] Looking for matches for: "${targetProduct.title}"`);
-        console.log(`[MATCHING] Total products in database: ${allProducts.length}`);
-        const allMatches = findProductMatches(targetProduct, allProducts);
-        console.log(`[MATCHING] Found ${allMatches.length} total matches`);
-        const platformGroups = new Map();
-        const supportedPlatforms = ['amazon', 'ebay', 'walmart', 'target', 'aliexpress', 'shein', 'bestbuy'];
-        allMatches.forEach(match => {
-            const platform = match.product.platform.toLowerCase();
-            if (supportedPlatforms.includes(platform) && platform !== targetProduct.platform.toLowerCase()) {
-                if (!platformGroups.has(platform)) {
-                    platformGroups.set(platform, []);
-                }
-                platformGroups.get(platform).push(match);
-            }
-        });
-        const matches = [];
-        console.log(`[MATCHING] Processing ${platformGroups.size} platforms (excluding ${targetProduct.platform})`);
-        supportedPlatforms.forEach(platform => {
-            if (platform === targetProduct.platform.toLowerCase())
-                return;
-            const platformMatches = platformGroups.get(platform) || [];
-            if (platformMatches.length > 0) {
-                const sortedByPrice = platformMatches.sort((a, b) => a.product.price - b.product.price);
-                const cheapestFromPlatform = sortedByPrice.slice(0, 2);
-                matches.push(...cheapestFromPlatform);
-                console.log(`[MATCHING] ${platform}: Added ${cheapestFromPlatform.length} products (${cheapestFromPlatform.map(m => `$${m.product.price}`).join(', ')})`);
-            }
-            else {
-                console.log(`[MATCHING] ${platform}: No matches found`);
-            }
-        });
-        console.log(`[MATCHING] Final ${matches.length} cheapest matches across platforms:`);
-        matches.forEach((match, index) => {
-            console.log(`[MATCHING] ${index + 1}. "${match.product.title}" (${match.product.platform}) - $${match.product.price} - Similarity: ${match.similarity.toFixed(3)}`);
-        });
-        const matchedProductIds = matches.map(match => match.product.id);
-        await storage_1.default.updateProduct(productId, { matchedProducts: matchedProductIds });
-        const formattedMatches = matches.map(match => ({
-            product: {
-                id: match.product.id,
-                title: match.product.title,
-                price: match.product.price,
-                platform: match.product.platform,
-                url: match.product.url,
-                imageUrl: match.product.imageUrl,
-                stockStatus: match.product.stockStatus,
-                discountInfo: match.product.discountInfo
-            },
-            similarity: match.similarity,
-            confidence: match.confidence,
-            matchReason: match.matchReason,
-            priceDifference: match.priceDifference,
-            priceDifferencePercent: match.priceDifferencePercent
-        }));
-        return res.json({
-            success: true,
-            data: {
-                targetProduct: {
-                    id: targetProduct.id,
-                    title: targetProduct.title,
-                    price: targetProduct.price,
-                    platform: targetProduct.platform
-                },
-                matches: formattedMatches
-            }
-        });
-    }
-    catch (error) {
-        console.error('Error finding product matches:', error);
-        return res.status(500).json({
-            success: false,
-            error: 'Internal server error'
-        });
-    }
-});
 router.post('/:productId/link/:targetProductId', auth_1.authMiddleware, async (req, res) => {
     try {
         const { productId, targetProductId } = req.params;
@@ -1022,7 +482,7 @@ router.post('/:productId/link/:targetProductId', auth_1.authMiddleware, async (r
                 error: 'Both product IDs are required'
             });
         }
-        const allProducts = await storage_1.default.getProducts();
+        const allProducts = await db.getProducts();
         const product = allProducts.find((p) => p.id === productId);
         const targetProduct = allProducts.find((p) => p.id === targetProductId);
         if (!product || !targetProduct) {
@@ -1041,11 +501,11 @@ router.post('/:productId/link/:targetProductId', auth_1.authMiddleware, async (r
         const targetMatchedProducts = targetProduct.matchedProducts || [];
         if (!productMatchedProducts.includes(targetProductId)) {
             productMatchedProducts.push(targetProductId);
-            await storage_1.default.updateProduct(productId, { matchedProducts: productMatchedProducts });
+            await db.updateProduct(productId, { matchedProducts: productMatchedProducts });
         }
         if (!targetMatchedProducts.includes(productId)) {
             targetMatchedProducts.push(productId);
-            await storage_1.default.updateProduct(targetProductId, { matchedProducts: targetMatchedProducts });
+            await db.updateProduct(targetProductId, { matchedProducts: targetMatchedProducts });
         }
         return res.json({
             success: true,
@@ -1070,7 +530,7 @@ router.delete('/:productId/unlink/:targetProductId', auth_1.authMiddleware, asyn
                 error: 'Both product IDs are required'
             });
         }
-        const allProducts = await storage_1.default.getProducts();
+        const allProducts = await db.getProducts();
         const product = allProducts.find((p) => p.id === productId);
         const targetProduct = allProducts.find((p) => p.id === targetProductId);
         if (!product || !targetProduct) {
@@ -1089,8 +549,8 @@ router.delete('/:productId/unlink/:targetProductId', auth_1.authMiddleware, asyn
         const targetMatchedProducts = targetProduct.matchedProducts || [];
         const updatedProductMatches = productMatchedProducts.filter((id) => id !== targetProductId);
         const updatedTargetMatches = targetMatchedProducts.filter((id) => id !== productId);
-        await storage_1.default.updateProduct(productId, { matchedProducts: updatedProductMatches });
-        await storage_1.default.updateProduct(targetProductId, { matchedProducts: updatedTargetMatches });
+        await db.updateProduct(productId, { matchedProducts: updatedProductMatches });
+        await db.updateProduct(targetProductId, { matchedProducts: updatedTargetMatches });
         return res.json({
             success: true,
             message: 'Products unlinked successfully'
@@ -1107,7 +567,7 @@ router.delete('/:productId/unlink/:targetProductId', auth_1.authMiddleware, asyn
 router.get('/export/csv', auth_1.authMiddleware, async (req, res) => {
     try {
         const userId = req.user.uid;
-        const allProducts = await storage_1.default.getProducts();
+        const allProducts = await db.getProducts();
         const userProducts = allProducts.filter((p) => p.userId === userId);
         const csvHeader = 'ID,Title,Price,Currency,Platform,URL,Stock Status,Discount Info,Created At,Updated At\n';
         const csvRows = userProducts.map((product) => {
@@ -1126,7 +586,7 @@ router.get('/export/csv', auth_1.authMiddleware, async (req, res) => {
 router.get('/export/json', auth_1.authMiddleware, async (req, res) => {
     try {
         const userId = req.user.uid;
-        const allProducts = await storage_1.default.getProducts();
+        const allProducts = await db.getProducts();
         const userProducts = allProducts.filter((p) => p.userId === userId);
         res.setHeader('Content-Type', 'application/json');
         res.setHeader('Content-Disposition', 'attachment; filename="products.json"');
@@ -1172,7 +632,7 @@ router.get('/external/products', async (req, res) => {
         if (!userId) {
             return res.status(401).json({ success: false, message: 'Invalid API key' });
         }
-        const allProducts = await storage_1.default.getProducts();
+        const allProducts = await db.getProducts();
         const userProducts = allProducts.filter((p) => p.userId === userId);
         return res.json({
             success: true,
@@ -1197,18 +657,15 @@ router.post('/debug/match', auth_1.authMiddleware, async (req, res) => {
                 error: 'Both title1 and title2 are required'
             });
         }
-        const identifiers1 = extractProductIdentifiers(title1);
-        const identifiers2 = extractProductIdentifiers(title2);
-        const titleSimilarity = calculateTitleSimilarity(title1, title2);
-        const identifierSimilarity = calculateIdentifierSimilarity(identifiers1, identifiers2);
+        const stringSimilarity = require('string-similarity');
+        const titleSimilarity = stringSimilarity.compareTwoStrings(title1.toLowerCase(), title2.toLowerCase());
+        const identifierSimilarity = titleSimilarity;
         const overallSimilarity = (titleSimilarity * 0.4 + identifierSimilarity * 0.4 + 0.2);
         return res.json({
             success: true,
             data: {
                 title1,
                 title2,
-                identifiers1,
-                identifiers2,
                 titleSimilarity,
                 identifierSimilarity,
                 overallSimilarity,
@@ -1227,19 +684,21 @@ router.post('/debug/match', auth_1.authMiddleware, async (req, res) => {
 router.get('/:productId/predict', auth_1.authMiddleware, async (req, res) => {
     try {
         const { productId } = req.params;
-        const history = await storage_1.default.getPriceHistory(String(productId));
-        const allProducts = await storage_1.default.getProducts();
+        const history = await db.getPriceHistory(String(productId));
+        const allProducts = await db.getProducts();
         const targetProduct = allProducts.find((p) => p.id === productId);
         if (!targetProduct) {
             return res.status(404).json({ success: false, message: 'Product not found' });
         }
-        const alternatives = findProductMatches(targetProduct, allProducts)
-            .filter(m => m.similarity > 0.5 && m.product.id !== productId)
+        const { matchProducts } = require('../services/productMatchingService');
+        const candidateProducts = allProducts.filter((p) => p.id !== productId);
+        const alternatives = matchProducts(targetProduct, candidateProducts)
+            .filter((m) => m.confidence > 0.5)
             .slice(0, 10);
         const targetPrice = targetProduct.price;
-        const cheaperAlternatives = alternatives.filter(a => a.product.price < targetPrice);
+        const cheaperAlternatives = alternatives.filter((a) => a.price < targetPrice);
         const avgAlternativePrice = alternatives.length > 0
-            ? alternatives.reduce((sum, a) => sum + a.product.price, 0) / alternatives.length
+            ? alternatives.reduce((sum, a) => sum + a.price, 0) / alternatives.length
             : targetPrice;
         const pricePositioning = alternatives.length > 0
             ? Math.max(0, Math.min(1, (avgAlternativePrice - targetPrice) / Math.max(1, avgAlternativePrice)))
@@ -1343,36 +802,31 @@ router.get('/:productId/predict', auth_1.authMiddleware, async (req, res) => {
 router.get('/:productId/alternatives', auth_1.authMiddleware, async (req, res) => {
     try {
         const { productId } = req.params;
-        const allProducts = await storage_1.default.getProducts();
+        const allProducts = await db.getProducts();
         const target = allProducts.find((p) => p.id === productId);
         if (!target)
             return res.status(404).json({ success: false, message: 'Product not found' });
-        const targetIds = extractProductIdentifiers(target.title);
-        const matches = findProductMatches(target, allProducts);
+        const { matchProducts } = require('../services/productMatchingService');
+        const candidateProducts = allProducts.filter((p) => p.id !== productId);
+        const matches = matchProducts(target, candidateProducts);
         const alts = matches
-            .filter(m => m.product.price <= target.price || m.similarity > 0.6)
-            .map(m => {
-            const altIds = extractProductIdentifiers(m.product.title);
-            const modelNum = (targetIds.model.match(/\d+/)?.[0]) || '';
-            const altModelNum = (altIds.model.match(/\d+/)?.[0]) || '';
-            let reason = m.matchReason;
-            if (modelNum && altModelNum && parseInt(altModelNum) === parseInt(modelNum) - 1) {
-                reason = `Previous generation alternative (${altIds.model})`;
-            }
-            else if (m.product.price < target.price) {
-                reason = `Cheaper by $${(target.price - m.product.price).toFixed(2)}`;
+            .filter((m) => m.price <= target.price || m.confidence > 0.6)
+            .map((m) => {
+            let reason = 'Similar product found';
+            if (m.price < target.price) {
+                reason = `Cheaper by $${(target.price - m.price).toFixed(2)}`;
             }
             return {
                 product: {
-                    id: m.product.id,
-                    title: m.product.title,
-                    price: m.product.price,
-                    platform: m.product.platform,
-                    url: m.product.url,
-                    imageUrl: m.product.imageUrl
+                    id: m.id,
+                    title: m.title,
+                    price: m.price,
+                    platform: m.platform,
+                    url: m.url,
+                    imageUrl: m.imageUrl
                 },
                 reason,
-                similarity: m.similarity
+                similarity: m.confidence
             };
         })
             .slice(0, 10);
@@ -1385,43 +839,226 @@ router.get('/:productId/alternatives', auth_1.authMiddleware, async (req, res) =
 router.get('/:productId/bundle', auth_1.authMiddleware, async (req, res) => {
     try {
         const { productId } = req.params;
-        const allProducts = await storage_1.default.getProducts();
+        const allProducts = await db.getProducts();
         const target = allProducts.find((p) => p.id === productId);
         if (!target)
             return res.status(404).json({ success: false, message: 'Product not found' });
-        const ids = extractProductIdentifiers(target.title);
         const estAccessoryValue = {
             'case': 10, 'charger': 20, 'cable': 7, 'earbuds': 20, 'headphones': 25, 'screen protector': 8,
             'protector': 8, 'mouse': 15, 'keyboard': 25, 'controller': 35, 'dock': 20, 'cover': 10, 'strap': 12,
             'adapter': 12, 'power bank': 25, 'sd card': 15, 'memory card': 15, 'stand': 12, 'tripod': 18
         };
-        const targetBundleValue = (ids.accessories || []).reduce((sum, a) => sum + (estAccessoryValue[a] || 0), 0);
-        const matches = findProductMatches(target, allProducts).slice(0, 20);
-        const bundleComparisons = matches.map(m => {
-            const mid = extractProductIdentifiers(m.product.title);
-            const val = (mid.accessories || []).reduce((sum, a) => sum + (estAccessoryValue[a] || 0), 0);
-            const netValue = val - (m.product.price - target.price);
+        const targetBundleValue = 0;
+        const { matchProducts } = require('../services/productMatchingService');
+        const candidateProducts = allProducts.filter((p) => p.id !== productId);
+        const matches = matchProducts(target, candidateProducts).slice(0, 20);
+        const bundleComparisons = matches.map((m) => {
+            const val = 0;
+            const netValue = val - (m.price - target.price);
             return {
                 product: {
-                    id: m.product.id,
-                    title: m.product.title,
-                    price: m.product.price,
-                    platform: m.product.platform,
-                    url: m.product.url,
-                    imageUrl: m.product.imageUrl
+                    id: m.id,
+                    title: m.title,
+                    price: m.price,
+                    platform: m.platform,
+                    url: m.url,
+                    imageUrl: m.imageUrl
                 },
-                accessories: mid.accessories,
+                accessories: [],
                 estimatedAccessoryValue: val,
-                priceDifference: m.product.price - target.price,
+                priceDifference: m.price - target.price,
                 netValue
             };
         }).sort((a, b) => (b.netValue - a.netValue));
-        return res.json({ success: true, data: { target: { id: target.id, accessories: ids.accessories, estimatedAccessoryValue: targetBundleValue }, bundles: bundleComparisons } });
+        return res.json({ success: true, data: { target: { id: target.id, accessories: [], estimatedAccessoryValue: targetBundleValue }, bundles: bundleComparisons } });
     }
     catch (e) {
         return res.status(500).json({ success: false, message: 'Failed to compute bundle value' });
     }
 });
+router.get('/:productId/matches', auth_1.authMiddleware, async (req, res) => {
+    try {
+        const { productId } = req.params;
+        const widen = String(req.query?.widen || '').toLowerCase() === '1' || String(req.query?.widen || '').toLowerCase() === 'true';
+        const userId = req.user.uid;
+        if (!productId) {
+            return res.status(400).json({
+                success: false,
+                error: 'Product ID is required'
+            });
+        }
+        const sourceProduct = await db.getProductById(productId);
+        if (!sourceProduct) {
+            return res.status(404).json({
+                success: false,
+                error: 'Product not found'
+            });
+        }
+        const user = await db.getUserById(userId);
+        const isAdmin = user?.role === 'admin';
+        if (sourceProduct.userId !== userId && !isAdmin) {
+            return res.status(403).json({
+                success: false,
+                error: 'Not authorized'
+            });
+        }
+        console.log(`🎯 Finding enhanced matches for: ${sourceProduct.title}`);
+        const allProducts = await db.getProducts();
+        const candidateProducts = allProducts.filter((p) => p.id !== productId);
+        console.log(`📊 Database stats: ${allProducts.length} total products, ${candidateProducts.length} candidates`);
+        const { matchProducts } = require('../services/productMatchingService');
+        let matches = matchProducts(sourceProduct, candidateProducts);
+        console.log(`🎯 Found ${matches.length} initial matches`);
+        if ((widen || matches.length < 3)) {
+            try {
+                const externalCandidates = await widenSearchAcrossPlatforms(sourceProduct);
+                if (externalCandidates.length > 0) {
+                    const externalMatches = matchProducts(sourceProduct, externalCandidates);
+                    const byUrl = {};
+                    for (const m of [...matches, ...externalMatches]) {
+                        const urlKey = (m.url || m.product?.url || '').split('#')[0];
+                        if (!urlKey)
+                            continue;
+                        const confidence = (m.confidence ?? m.similarity ?? 0);
+                        if (!byUrl[urlKey] || confidence > (byUrl[urlKey].confidence ?? byUrl[urlKey].similarity ?? 0)) {
+                            byUrl[urlKey] = m;
+                        }
+                    }
+                    matches = Object.values(byUrl);
+                    console.log(`🌐 Widen search added ${Math.max(0, matches.length - candidateProducts.length)} web candidates`);
+                }
+                else {
+                    console.log('🌐 Widen search returned no external candidates');
+                }
+            }
+            catch (extErr) {
+                console.warn('🌐 Widen search failed:', extErr instanceof Error ? extErr.message : extErr);
+            }
+        }
+        if (matches.length === 0) {
+            console.warn(`⚠️ No matches found for "${sourceProduct.title}". This could indicate:`);
+            console.warn(`   - High accuracy threshold (75%+) - only very similar products match`);
+            console.warn(`   - No similar products in database`);
+            console.warn(`   - Brand/model extraction differences`);
+            console.warn(`   - Category mismatch or price range issues`);
+        }
+        await db.updateProduct(productId, {
+            totalMatches: matches.length
+        });
+        return res.json({
+            success: true,
+            data: {
+                algorithm: 'buyhatke-enhanced',
+                targetProduct: {
+                    id: sourceProduct.id,
+                    title: sourceProduct.title,
+                    price: sourceProduct.price,
+                    currency: sourceProduct.currency || 'USD',
+                    platform: sourceProduct.platform,
+                    imageUrl: sourceProduct.imageUrl || '',
+                    url: sourceProduct.url
+                },
+                matches: matches.map((match) => ({
+                    product: {
+                        id: (match.product?.id ?? match.id),
+                        title: (match.product?.title ?? match.title),
+                        price: Number(match.product?.price ?? match.price ?? 0),
+                        currency: (match.product?.currency ?? match.currency ?? 'USD'),
+                        platform: (match.product?.platform ?? match.platform ?? 'unknown'),
+                        imageUrl: (match.product?.imageUrl ?? match.imageUrl ?? ''),
+                        url: (match.product?.url ?? match.url),
+                        stockStatus: (match.product?.stockStatus ?? match.stockStatus ?? 'unknown')
+                    },
+                    confidence: Number(match.confidence ?? match.similarity ?? 0),
+                    similarity: Number(match.similarity ?? match.confidence ?? 0),
+                    matchReason: (match.matchReason ?? 'Similarity-based match'),
+                    priceDifference: Number(match.priceDifference ?? Math.abs(Number(sourceProduct.price) - Number(match.product?.price ?? match.price ?? 0))),
+                    priceDifferencePercent: Number(match.priceDifferencePercent ?? (Math.abs(Number(sourceProduct.price) - Number(match.product?.price ?? match.price ?? 0)) / Math.max(1, Number(sourceProduct.price)) * 100)),
+                    savings: match.savings
+                })),
+                totalMatches: matches.length,
+                bestMatch: matches.length > 0 ? {
+                    product: {
+                        id: (matches[0].product?.id ?? matches[0].id),
+                        title: (matches[0].product?.title ?? matches[0].title),
+                        price: Number(matches[0].product?.price ?? matches[0].price ?? 0),
+                        currency: (matches[0].product?.currency ?? matches[0].currency ?? 'USD'),
+                        platform: (matches[0].product?.platform ?? matches[0].platform ?? 'unknown'),
+                        imageUrl: (matches[0].product?.imageUrl ?? matches[0].imageUrl ?? ''),
+                        url: (matches[0].product?.url ?? matches[0].url)
+                    },
+                    confidence: Number(matches[0].similarity ?? matches[0].confidence ?? 0),
+                    priceDifference: Number(matches[0].priceDifference ?? Math.abs(Number(sourceProduct.price) - Number(matches[0].product?.price ?? matches[0].price ?? 0)))
+                } : null
+            }
+        });
+    }
+    catch (error) {
+        console.error('🚨 Product matching error:', error);
+        return res.status(500).json({
+            success: false,
+            error: 'Failed to find product matches'
+        });
+    }
+});
+function urlToPlatform(url) {
+    try {
+        const u = new URL(url);
+        const h = u.hostname.toLowerCase();
+        if (h.includes('amazon'))
+            return 'amazon';
+        if (h.includes('aliexpress'))
+            return 'aliexpress';
+        if (h.includes('ebay'))
+            return 'ebay';
+        if (h.includes('walmart'))
+            return 'walmart';
+        if (h.includes('shein'))
+            return 'shein';
+        if (h.includes('bestbuy'))
+            return 'bestbuy';
+        if (h.includes('target'))
+            return 'target';
+        return 'unknown';
+    }
+    catch {
+        return 'unknown';
+    }
+}
+async function widenSearchAcrossPlatforms(sourceProduct) {
+    const serpKey = process.env.SERPAPI_KEY || process.env.SERP_API_KEY;
+    if (!serpKey || typeof fetch !== 'function') {
+        return [];
+    }
+    const q = encodeURIComponent(sourceProduct.title);
+    const url = `https://serpapi.com/search.json?engine=google_shopping&q=${q}&hl=en&gl=us&api_key=${serpKey}`;
+    const resp = await fetch(url);
+    if (!resp.ok)
+        return [];
+    const data = await resp.json();
+    const items = data?.shopping_results || [];
+    const supported = new Set(['amazon', 'aliexpress', 'ebay', 'walmart', 'shein', 'bestbuy', 'target']);
+    const candidates = [];
+    for (const it of items) {
+        const link = it?.link || '';
+        const title = it?.title || '';
+        const priceStr = (it?.price || '').replace(/[^0-9.]/g, '');
+        const price = Number(priceStr || 0);
+        const platform = urlToPlatform(link);
+        if (!link || !title || !price || platform === 'unknown' || !supported.has(platform))
+            continue;
+        candidates.push({
+            id: link,
+            title,
+            price,
+            currency: 'USD',
+            platform,
+            url: link,
+            imageUrl: it?.thumbnail || it?.product_link || ''
+        });
+    }
+    return candidates;
+}
 router.get('/:productId', auth_1.authMiddleware, async (req, res) => {
     try {
         const { productId } = req.params;
@@ -1429,11 +1066,11 @@ router.get('/:productId', auth_1.authMiddleware, async (req, res) => {
         if (!productId) {
             return res.status(400).json({ success: false, error: 'Product ID is required' });
         }
-        const product = await storage_1.default.getProductById(productId);
+        const product = await db.getProductById(productId);
         if (!product) {
             return res.status(404).json({ success: false, error: 'Product not found' });
         }
-        const user = await storage_1.default.getUserById(userId);
+        const user = await db.getUserById(userId);
         const isAdmin = user?.role === 'admin';
         if (product.userId !== userId && !isAdmin) {
             return res.status(403).json({ success: false, error: 'Not authorized' });
@@ -1442,6 +1079,93 @@ router.get('/:productId', auth_1.authMiddleware, async (req, res) => {
     }
     catch (e) {
         return res.status(500).json({ success: false, error: 'Internal server error' });
+    }
+});
+router.get('/debug/test-matching', async (req, res) => {
+    try {
+        const { matchProducts } = require('../services/productMatchingService');
+        const testSource = {
+            id: 'test1',
+            title: 'Apple AirPods Pro 2nd Generation',
+            price: 249.99,
+            platform: 'amazon',
+            url: 'test-url',
+            imageUrl: '',
+            currency: 'USD'
+        };
+        const testCandidates = [
+            {
+                id: 'test2',
+                title: 'AirPods Pro (2nd generation) with MagSafe Charging',
+                price: 239.99,
+                platform: 'bestbuy',
+                url: 'test-url-2',
+                imageUrl: '',
+                currency: 'USD'
+            },
+            {
+                id: 'test3',
+                title: 'Apple AirPods Pro Second Gen Active Noise Cancellation',
+                price: 229.99,
+                platform: 'walmart',
+                url: 'test-url-3',
+                imageUrl: '',
+                currency: 'USD'
+            }
+        ];
+        const matches = matchProducts(testSource, testCandidates);
+        return res.json({
+            success: true,
+            data: {
+                source: testSource,
+                candidates: testCandidates,
+                matches,
+                matchCount: matches.length,
+                algorithm: 'enhanced-buyhatke'
+            }
+        });
+    }
+    catch (error) {
+        console.error('Test matching error:', error);
+        return res.status(500).json({ success: false, error: error.message });
+    }
+});
+router.get('/debug/all', async (req, res) => {
+    try {
+        const data = db.readData();
+        const products = data.products || [];
+        const users = data.users || [];
+        console.log(`[DEBUG] Total products in database: ${products.length}`);
+        console.log(`[DEBUG] Total users in database: ${users.length}`);
+        const productsByUser = products.reduce((acc, product) => {
+            const userId = product.userId;
+            if (!acc[userId])
+                acc[userId] = [];
+            acc[userId].push(product);
+            return acc;
+        }, {});
+        console.log('[DEBUG] Products by user:', Object.keys(productsByUser).map(userId => ({
+            userId,
+            count: productsByUser[userId].length,
+            userEmail: users.find((u) => u.id === userId)?.email || 'Unknown'
+        })));
+        return res.json({
+            success: true,
+            data: {
+                totalProducts: products.length,
+                totalUsers: users.length,
+                productsByUser: Object.keys(productsByUser).map(userId => ({
+                    userId,
+                    count: productsByUser[userId].length,
+                    userEmail: users.find((u) => u.id === userId)?.email || 'Unknown',
+                    products: productsByUser[userId].slice(0, 3)
+                }))
+            }
+        });
+    }
+    catch (error) {
+        console.error('[DEBUG] Error:', error);
+        return res.status(500).json({ success: false, message: 'Debug endpoint error' });
     }
 });
 exports.default = router;

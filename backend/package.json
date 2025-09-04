@@ -15,6 +15,7 @@
     "test:ebay-service": "ts-node -e \"import('./src/services/ebayService').then(m => new m.default().searchProducts('iPhone 14 Pro'))\""
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.56.0",
     "@types/socket.io": "^3.0.1",
     "axios": "^1.11.0",
     "bcryptjs": "^2.4.3",

@@ -10,7 +10,7 @@ import rateLimit from 'express-rate-limit';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { initializeCronJobs } from './services/cronJobs';
-import { getDb } from './config/firebase';
+import { getDb } from './config/database';
 
 // Import routes
 import productRoutes from './routes/products';
@@ -21,6 +21,7 @@ import notificationRoutes from './routes/notifications';
 import paymentRoutes from './routes/payments';
 import advancedFeaturesRoutes from './routes/advancedFeatures';
 import featuresRoutes from './routes/features';
+import productMatchingRoutes from './routes/productMatching';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler';
@@ -150,6 +151,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/advanced', advancedFeaturesRoutes);
 app.use('/api/features', featuresRoutes);
+app.use('/api/product-matching', productMatchingRoutes);
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {

@@ -1,182 +1,237 @@
-console.log('✅ Price Tracker content script loaded on', window.location.href);
-console.log('✅ Content script matches pattern:', window.location.hostname);
-console.log('✅ Content script ready to receive messages');
+// Content script for Buyhatke-style product comparison
+console.log('🔍 Price Tracker Content Script Loaded');
 
-// Inject injected.js into the page
-const script = document.createElement('script');
-script.src = chrome.runtime.getURL('injected.js');
-script.onload = function () {
-  (this as HTMLScriptElement).remove();
-};
-(document.head || document.documentElement).appendChild(script);
+// Inject the injected script into the page
+function injectScript() {
+  console.log('🔍 Injecting script into page...');
+  const script = document.createElement('script');
+  script.src = chrome.runtime.getURL('injected.js');
+  script.onload = () => {
+    console.log('🔍 Injected script loaded successfully');
+  };
+  script.onerror = (error) => {
+    console.error('🔍 Failed to load injected script:', error);
+  };
+  (document.head || document.documentElement).appendChild(script);
+}
 
+// Inject script when DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', injectScript);
+} else {
+  injectScript();
+}
 
+// Core types - matching injected.ts interface
+interface ProductInfo {
+  id: string;
+  url: string;
+  title: string;
+  price: number | null;
+  currency: string;
+  platform: 'amazon' | 'aliexpress' | 'ebay' | 'walmart' | 'shein' | 'bestbuy' | 'target';
+  imageUrl?: string;
+  stockStatus: 'in_stock' | 'out_of_stock' | 'unknown';
+  discountInfo?: string;
+}
 
-// Listen for messages from the popup
+// Extension only tracks products - no comparison overlay
+
+// Listen for messages from popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log('🔍 Content script received message:', message);
   
-  // Test message handler
+  // Handle test connection
   if (message.type === 'TEST_CONNECTION') {
-    console.log('✅ Test connection successful');
-    sendResponse({ success: true, message: 'Content script is working!' });
+    console.log('🔍 Content script responding to test connection');
+    sendResponse({ success: true, message: 'Content script is ready' });
     return true;
   }
   
-  if (message.type === 'GET_PRODUCT_INFO') {
-    // Relay the message to the injected script
+  if (message.action === 'getProductInfo') {
     window.postMessage({ type: 'GET_PRODUCT_INFO' }, '*');
-
-    // Listen for the response from the injected script
+    
     function handleResponse(event: MessageEvent) {
-      if (
-        event.source === window &&
-        event.data &&
-        event.data.type === 'PRODUCT_INFO_RESPONSE'
-      ) {
+      if (event.source === window && event.data?.type === 'PRODUCT_INFO_RESPONSE') {
         window.removeEventListener('message', handleResponse);
-        sendResponse({
-          success: event.data.success,
-          data: event.data.data,
-        });
+        sendResponse({ success: event.data.success, data: event.data.data });
       }
     }
+    
     window.addEventListener('message', handleResponse);
-
-    // Indicate async response
+    setTimeout(() => sendResponse({ success: false, error: 'Timeout' }), 5000);
     return true;
   }
   
   if (message.action === 'trackProduct') {
-    console.log('Content script: Handling trackProduct action');
+    console.log('🔍 Content script handling trackProduct request');
     
-    // Get product info from the injected script
-    console.log('Content script: Sending trackProduct action to injected script');
-    window.postMessage({ action: 'trackProduct' }, '*');
-
-    // Listen for the response from the injected script
-    function handleProductResponse(event: MessageEvent) {
-      console.log('Content script: Received message from injected script:', event.data);
-      if (
-        event.source === window &&
-        event.data &&
-        event.data.type === 'TRACK_PRODUCT_RESPONSE'
-      ) {
-        console.log('Content script: Processing TRACK_PRODUCT_RESPONSE');
-        window.removeEventListener('message', handleProductResponse);
+    // Wait a bit for injected script to be ready
+    setTimeout(() => {
+      console.log('🔍 Content script sending trackProduct message to injected script');
+      window.postMessage({ action: 'trackProduct' }, '*');
+    }, 100);
+    
+    function handleTrackResponse(event: MessageEvent) {
+      console.log('🔍 Content script received message:', event.data);
+      if (event.source === window && event.data?.type === 'TRACK_PRODUCT_RESPONSE') {
+        window.removeEventListener('message', handleTrackResponse);
+        console.log('🔍 Content script processing TRACK_PRODUCT_RESPONSE');
         
         if (event.data.success && event.data.data) {
-          console.log('Content script: Product info extracted successfully:', event.data.data);
-          
-          // Send the product data to the backend
+          console.log('🔍 Content script calling trackProductToBackend');
           trackProductToBackend(event.data.data).then(result => {
-            sendResponse(result);
+            console.log('🔍 Content script backend result:', result);
+            // Ensure consistent response structure
+            const response = {
+              success: result.success,
+              data: result.data,
+              message: result.success ? 'Product tracked successfully!' : result.error,
+              error: result.error
+            };
+            console.log('🔍 Content script sending response:', response);
+            sendResponse(response);
           }).catch(error => {
-            console.error('Content script: Error tracking product:', error);
-            sendResponse({ success: false, error: error.message || 'Unknown error' });
+            console.log('🔍 Content script backend error:', error);
+            // Don't show notification here - let popup handle it
+            sendResponse({ 
+              success: false, 
+              error: error.message,
+              message: 'Failed to track product'
+            });
           });
         } else {
-          console.error('Content script: Failed to extract product info');
-          sendResponse({ success: false, error: 'Failed to extract product info' });
+          console.log('🔍 Content script extraction failed');
+          // Don't show notification here - let popup handle it
+          sendResponse({ 
+            success: false, 
+            error: 'Failed to extract product info',
+            message: 'Failed to extract product info'
+          });
         }
       }
     }
-    window.addEventListener('message', handleProductResponse);
-
-    // Set a timeout to ensure we respond even if something goes wrong
+    
+    window.addEventListener('message', handleTrackResponse);
     setTimeout(() => {
-      if (sendResponse) {
-        sendResponse({ success: false, error: 'Timeout waiting for product info' });
-      }
-    }, 10000); // Increased timeout for cross-platform search
-
-    // Indicate async response
+      console.log('🔍 Content script trackProduct timeout');
+      // Don't show notification here - let popup handle it
+      sendResponse({ 
+        success: false, 
+        error: 'Timeout',
+        message: 'Request timed out'
+      });
+    }, 10000);
     return true;
   }
+  
+  // Default response for unknown messages
+  sendResponse({ 
+    success: false, 
+    error: 'Unknown message type',
+    message: 'Unknown message type'
+  });
+  return true;
 });
 
-// Function to send product data to backend
-async function trackProductToBackend(productInfo: any): Promise<any> {
+// Track product to backend - ONLY track, no popup
+async function trackProductToBackend(productInfo: ProductInfo): Promise<any> {
   try {
-    // Get auth token from storage
+    console.log('🔍 [Content Script] Starting trackProductToBackend');
+    console.log('🔍 [Content Script] Product info:', productInfo);
+    
     const result = await chrome.storage.local.get(['authToken']);
     const token = result.authToken;
     
+    console.log('🔍 [Content Script] Token found:', !!token);
+    
     if (!token) {
-      console.error('No auth token found');
-      return { success: false, error: 'No authentication token found. Please log in first.' };
+      console.log('🔍 [Content Script] No authentication token found');
+      return { success: false, error: 'No authentication token found. Please log in to the web app first.' };
     }
 
-    // Send to backend (let backend handle cross-platform matching)
+    console.log('🔍 [Content Script] Making request to backend...');
     const response = await fetch('http://localhost:3001/api/products/track', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({
-        url: productInfo.url,
-        title: productInfo.title,
-        price: productInfo.price,
-        currency: productInfo.currency,
-        platform: productInfo.platform,
-        imageUrl: productInfo.imageUrl,
-        stockStatus: productInfo.stockStatus,
-        discountInfo: productInfo.discountInfo
-      })
+      body: JSON.stringify(productInfo)
     });
 
+    console.log('🔍 [Content Script] Backend response status:', response.status);
+    console.log('🔍 [Content Script] Backend response ok:', response.ok);
+
     if (response.ok) {
-      console.log('Product tracked successfully');
-      return { 
-        success: true,
-        message: 'Product tracked successfully!'
-      };
-    } else if (response.status === 409) {
-      // 409 means product already exists for this user
-      console.log('Product already tracked for this user');
-      return { 
-        success: true,
-        message: 'Product already tracked!'
-      };
-    } else if (response.status === 403) {
-      // 403 means user is banned
-      console.log('User is banned');
-      let errorMessage = 'Account has been suspended';
-      try {
-        const errorData = await response.json();
-        if (errorData.message) {
-          errorMessage = errorData.message;
-        }
-      } catch (e) {
-        // Ignore JSON parse errors
-      }
-      return { 
-        success: false,
-        error: errorMessage
-      };
+      const responseData = await response.json();
+      console.log('🔍 [Content Script] Backend response data:', responseData);
+      
+      // Don't show notification here - let popup handle it
+      return { success: true, data: responseData };
     } else {
-      console.error('Failed to track product:', response.status, response.statusText);
-      // Try to get error message from response
-      let errorMessage = response.statusText;
-      try {
-        const errorData = await response.json();
-        if (errorData.error) {
-          errorMessage = errorData.error;
-        }
-      } catch (e) {
-        // Ignore JSON parse errors
-      }
-      return { 
-        success: false,
-        error: errorMessage
-      };
+      const errorData = await response.json().catch(() => ({}));
+      console.log('🔍 [Content Script] Backend error data:', errorData);
+      return { success: false, error: errorData.message || 'Failed to track product' };
     }
-  } catch (error) {
-    console.error('Error tracking product:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error'
-    };
+  } catch (error: any) {
+    console.log('🔍 [Content Script] Network error:', error);
+    return { success: false, error: 'Network error. Please check your connection and try again.' };
   }
 }
+
+// Simple notification for successful tracking
+function showTrackingNotification(message: string, isSuccess: boolean = true) {
+  // Remove existing notification
+  const existing = document.querySelector('#price-tracker-notification');
+  if (existing) {
+    existing.remove();
+  }
+
+  // Create notification
+  const notification = document.createElement('div');
+  notification.id = 'price-tracker-notification';
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 2147483647;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: ${isSuccess ? '#10b981' : '#ef4444'};
+    color: white;
+    padding: 12px 16px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    font-size: 14px;
+    font-weight: 500;
+    max-width: 300px;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+  `;
+
+  notification.innerHTML = `
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <span style="font-size: 16px;">${isSuccess ? '✅' : '❌'}</span>
+      <span>${message}</span>
+    </div>
+  `;
+
+  document.body.appendChild(notification);
+
+  // Slide in
+  setTimeout(() => {
+    notification.style.transform = 'translateX(0)';
+  }, 100);
+
+  // Auto-hide after 4 seconds
+  setTimeout(() => {
+    notification.style.transform = 'translateX(100%)';
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.remove();
+      }
+    }, 300);
+  }, 4000);
+}
+
+console.log('🎯 Price Tracker Extension Ready - Manual tracking only!');

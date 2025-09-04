@@ -13,7 +13,7 @@ const compression_1 = __importDefault(require("compression"));
 const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const http_1 = require("http");
 const socket_io_1 = require("socket.io");
-const firebase_1 = require("./config/firebase");
+const database_1 = require("./config/database");
 const products_1 = __importDefault(require("./routes/products"));
 const users_1 = __importDefault(require("./routes/users"));
 const alerts_1 = __importDefault(require("./routes/alerts"));
@@ -22,6 +22,7 @@ const notifications_1 = __importDefault(require("./routes/notifications"));
 const payments_1 = __importDefault(require("./routes/payments"));
 const advancedFeatures_1 = __importDefault(require("./routes/advancedFeatures"));
 const features_1 = __importDefault(require("./routes/features"));
+const productMatching_1 = __importDefault(require("./routes/productMatching"));
 const errorHandler_1 = require("./middleware/errorHandler");
 const notFound_1 = require("./middleware/notFound");
 const app = (0, express_1.default)();
@@ -98,7 +99,7 @@ app.get('/health', (req, res) => {
 });
 app.get('/test-storage', async (req, res) => {
     try {
-        const db = (0, firebase_1.getDb)();
+        const db = (0, database_1.getDb)();
         const products = await db.getProducts();
         res.json({ success: true, productCount: products.length });
     }
@@ -118,6 +119,7 @@ app.use('/api/notifications', notifications_1.default);
 app.use('/api/payments', payments_1.default);
 app.use('/api/advanced', advancedFeatures_1.default);
 app.use('/api/features', features_1.default);
+app.use('/api/product-matching', productMatching_1.default);
 io.on('connection', (socket) => {
     console.log('Client connected:', socket.id);
     socket.on('join-room', (roomId) => {

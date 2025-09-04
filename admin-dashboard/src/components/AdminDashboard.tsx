@@ -52,7 +52,7 @@ export function AdminDashboard() {
       case 'users':
         return <UsersPage />;
       case 'products':
-        return <ProductsPage />;
+        return <ProductsPage onNavigateToPage={(page: AdminPage) => setCurrentPage(page)} />;
       case 'subscription':
         return <SubscriptionPage />;
       case 'settings':

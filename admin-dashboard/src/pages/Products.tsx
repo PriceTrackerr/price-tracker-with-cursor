@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Package, Search, Filter, MoreHorizontal, ExternalLink, TrendingUp, TrendingDown } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../components/AuthContext';
 
 interface Product {
@@ -22,6 +23,7 @@ interface Product {
 
 export default function Products() {
   const { token } = useAuth();
+  const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -141,6 +143,10 @@ export default function Products() {
     }
   };
 
+  const handleProductClick = (productId: string) => {
+    navigate(`/products/${productId}`);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -200,7 +206,11 @@ export default function Products() {
       {/* Products Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredProducts.map((product) => (
-          <div key={product.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
+          <div 
+            key={product.id} 
+            className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200 cursor-pointer"
+            onClick={() => handleProductClick(product.id)}
+          >
             <div className="p-6">
               {/* Product Image and Title */}
               <div className="flex items-start gap-4 mb-4">
@@ -213,7 +223,13 @@ export default function Products() {
                   <h3 className="text-sm font-medium text-gray-900 truncate">{product.title}</h3>
                   <p className="text-sm text-gray-500">{product.platform}</p>
                 </div>
-                <button className="text-gray-400 hover:text-gray-600">
+                <button 
+                  className="text-gray-400 hover:text-gray-600"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // Handle menu click
+                  }}
+                >
                   <MoreHorizontal className="w-4 h-4" />
                 </button>
               </div>
@@ -244,6 +260,7 @@ export default function Products() {
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm font-medium"
+                  onClick={(e) => e.stopPropagation()}
                 >
                   <ExternalLink className="w-4 h-4" />
                   View

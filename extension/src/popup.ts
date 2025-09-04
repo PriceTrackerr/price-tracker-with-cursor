@@ -601,22 +601,37 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Send message to content script to track product with timeout
                 console.log('Sending trackProduct message...');
                 
-                // Send the track product message and wait for response
-                const response = await chrome.tabs.sendMessage(tab.id!, {
-                    action: 'trackProduct',
-                    url: tab.url
-                });
+                // Send the track product message and wait for response with longer timeout
+                const response = await Promise.race([
+                    chrome.tabs.sendMessage(tab.id!, {
+                        action: 'trackProduct',
+                        url: tab.url
+                    }),
+                    new Promise((_, reject) => 
+                        setTimeout(() => reject(new Error('Timeout')), 15000)
+                    )
+                ]);
 
                 console.log('Track product response:', response);
 
-                if (response && (response as any).success) {
+                console.log('Track product response:', response);
+                
+                // Check if the response indicates success
+                if (response && (
+                    (response as any).success === true || 
+                    (response as any).data || 
+                    (response as any).message?.includes('successfully')
+                )) {
                     const message = (response as any).message || 'Product tracked successfully!';
                     showSuccessMessage(message);
                     
                     // Refresh data after tracking
                     await refreshExtensionData();
                 } else {
-                    showErrorMessage((response as any)?.error || 'Failed to track product');
+                    // Check if there's an error message
+                    const errorMsg = (response as any)?.error || 'Failed to track product';
+                    console.log('Showing error message:', errorMsg);
+                    showErrorMessage(errorMsg);
                 }
             } else {
                 showErrorMessage('Could not access current page');

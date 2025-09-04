@@ -51,6 +51,7 @@ interface Product {
     timestamp: string;
   }>;
   matchedProducts?: string[]; // Array of product IDs that match this product
+  totalMatches?: number; // Total number of matches found
   priceDrop?: number;
   priceDropPercent?: number;
   previousPrice?: number;
@@ -471,12 +472,12 @@ const ProductCard: React.FC<{
         </div>
 
         {/* Matches Badge */}
-        {product.matchedProducts && product.matchedProducts.length > 0 && (
+        {product.totalMatches && product.totalMatches > 0 && (
           <div className="absolute bottom-3 left-3">
             <div className="flex items-center gap-1 px-2 py-1 bg-blue-500/90 backdrop-blur-sm rounded-full shadow-sm">
               <Users className="w-3 h-3 text-white" />
-              <span className="text-xs font-medium text-white">
-                {product.matchedProducts.length} match{product.matchedProducts.length !== 1 ? 'es' : ''}
+              <span className="text-xs font-medium text-white flex items-center gap-1">
+                {`${product.totalMatches} match${product.totalMatches !== 1 ? 'es' : ''}`}
               </span>
             </div>
           </div>
@@ -641,13 +642,84 @@ const ProductCard: React.FC<{
 
 export default function Products() {
   const { user, token } = useAuth();
+
+  // Show loading state while auth is initializing
+  if (token === undefined) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading your products...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login prompt if not authenticated
+  if (!token) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <div className="text-center py-12">
+            <Package className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-2 text-sm font-medium text-gray-900">Please log in to view your products</h3>
+            <p className="mt-1 text-sm text-gray-500">
+              You need to be authenticated to access your tracked products.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
   const location = useLocation();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedProductForHistory, setSelectedProductForHistory] = useState<Product | null>(null);
   const [selectedProductForMatches, setSelectedProductForMatches] = useState<Product | null>(null);
+  const [matchLoading, setMatchLoading] = useState(false);
   const [highlightedProductId, setHighlightedProductId] = useState<string | null>(null);
+
+  const handleViewMatches = async (product: Product) => {
+    setMatchLoading(true);
+    try {
+      const response = await fetch(`/api/products/${product.id}/matches`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          // Update product's match count and set it for viewing
+          const updatedProduct = {
+            ...product,
+            totalMatches: data.data.matches.length
+          };
+          setSelectedProductForMatches(updatedProduct);
+          
+          // Update the product in the products list
+          setProducts(prevProducts => 
+            prevProducts.map(p => 
+              p.id === product.id ? updatedProduct : p
+            )
+          );
+        } else {
+          console.error('Failed to fetch matches:', data.error);
+          setSelectedProductForMatches(product);
+        }
+      } else {
+        console.error('Failed to fetch matches:', response.statusText);
+        setSelectedProductForMatches(product);
+      }
+    } catch (error) {
+      console.error('Error fetching matches:', error);
+      setSelectedProductForMatches(product);
+    } finally {
+      setMatchLoading(false);
+    }
+  };
   
   // Advanced filtering state
   const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(null);
@@ -786,21 +858,22 @@ export default function Products() {
     }
   }, [location]);
 
-  const fetchProducts = useCallback(async () => {
+  const fetchProducts = useCallback(async (currentFilters?: FilterState) => {
     if (!token) return;
-    
+
     try {
+      const filterToUse = currentFilters || filters;
       // Build query parameters from filters
       const params = new URLSearchParams();
-      if (filters.search) params.append('search', filters.search);
-      if (filters.platform) params.append('platform', filters.platform);
-      if (filters.minPrice) params.append('minPrice', filters.minPrice);
-      if (filters.maxPrice) params.append('maxPrice', filters.maxPrice);
-      if (filters.stockStatus) params.append('stockStatus', filters.stockStatus);
-      if (filters.hasPriceDrop) params.append('hasPriceDrop', 'true');
-      if (filters.sortBy) params.append('sortBy', filters.sortBy);
-      if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
-      
+      if (filterToUse.search) params.append('search', filterToUse.search);
+      if (filterToUse.platform) params.append('platform', filterToUse.platform);
+      if (filterToUse.minPrice) params.append('minPrice', filterToUse.minPrice);
+      if (filterToUse.maxPrice) params.append('maxPrice', filterToUse.maxPrice);
+      if (filterToUse.stockStatus) params.append('stockStatus', filterToUse.stockStatus);
+      if (filterToUse.hasPriceDrop) params.append('hasPriceDrop', 'true');
+      if (filterToUse.sortBy) params.append('sortBy', filterToUse.sortBy);
+      if (filterToUse.sortOrder) params.append('sortOrder', filterToUse.sortOrder);
+
       const response = await fetch(`/api/products?${params.toString()}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -813,7 +886,7 @@ export default function Products() {
     } finally {
       setLoading(false);
     }
-  }, [token, filters]);
+  }, [token]);
 
   // Fetch filter options
   const fetchFilterOptions = useCallback(async () => {
@@ -834,10 +907,57 @@ export default function Products() {
 
   useEffect(() => {
     if (token) {
-      fetchProducts();
+      const fetchAllProducts = async () => {
+        try {
+          const response = await fetch('/api/products', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const data = await response.json();
+          if (data.success) {
+            setProducts(data.data);
+          }
+        } catch (error) {
+          console.error('Error fetching products:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchAllProducts();
       fetchFilterOptions();
     }
-  }, [token, fetchProducts, fetchFilterOptions]);
+  }, [token]);
+
+  // Fetch products when filters change (but not on initial load)
+  useEffect(() => {
+    if (token && !loading) {
+      const filterToUse = filters;
+      // Build query parameters from filters
+      const params = new URLSearchParams();
+      if (filterToUse.search) params.append('search', filterToUse.search);
+      if (filterToUse.platform) params.append('platform', filterToUse.platform);
+      if (filterToUse.minPrice) params.append('minPrice', filterToUse.minPrice);
+      if (filterToUse.maxPrice) params.append('maxPrice', filterToUse.maxPrice);
+      if (filterToUse.stockStatus) params.append('stockStatus', filterToUse.stockStatus);
+      if (filterToUse.hasPriceDrop) params.append('hasPriceDrop', 'true');
+      if (filterToUse.sortBy) params.append('sortBy', filterToUse.sortBy);
+      if (filterToUse.sortOrder) params.append('sortOrder', filterToUse.sortOrder);
+
+      const fetchFilteredProducts = async () => {
+        try {
+          const response = await fetch(`/api/products?${params.toString()}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const data = await response.json();
+          if (data.success) {
+            setProducts(data.data);
+          }
+        } catch (error) {
+          console.error('Error fetching products:', error);
+        }
+      };
+      fetchFilteredProducts();
+    }
+  }, [filters, token, loading]);
 
   // Filter handlers
   const handleFilterChange = (key: keyof FilterState, value: any) => {
@@ -1126,7 +1246,7 @@ export default function Products() {
               product={product}
               onDelete={deleteProduct}
               onViewHistory={setSelectedProductForHistory}
-              onViewMatches={setSelectedProductForMatches}
+              onViewMatches={handleViewMatches}
               highlighted={product.id === highlightedProductId}
 
             />

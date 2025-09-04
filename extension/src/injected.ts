@@ -77,94 +77,173 @@ class ProductExtractor {
 
   public async extractAmazonProductInfo(): Promise<ProductInfo | null> {
     try {
+      console.log('🔍 [Amazon] Starting product extraction...');
+      console.log('🔍 [Amazon] Current URL:', window.location.href);
+      console.log('🔍 [Amazon] Current pathname:', window.location.pathname);
+      
       // Support multiple URL formats for ASIN
       let productId = null;
       const urlPatterns = [
         /\/dp\/([A-Z0-9]{10})/i,
         /\/gp\/product\/([A-Z0-9]{10})/i,
-        /\/product\/([A-Z0-9]{10})/i
+        /\/product\/([A-Z0-9]{10})/i,
+        /\/([A-Z0-9]{10})(?:[/?]|$)/i
       ];
+      
       for (const pattern of urlPatterns) {
         const match = window.location.pathname.match(pattern);
         if (match) {
           productId = match[1];
+          console.log('🔍 [Amazon] Found product ID with pattern:', pattern, 'ID:', productId);
           break;
         }
       }
+      
       // Fallback: try meta og:url
       if (!productId) {
         const ogUrl = document.querySelector('meta[property="og:url"]') as HTMLMetaElement;
         if (ogUrl && ogUrl.content) {
+          console.log('🔍 [Amazon] Trying og:url:', ogUrl.content);
           const ogMatch = ogUrl.content.match(/\/([A-Z0-9]{10})(?:[/?]|$)/i);
-          if (ogMatch) productId = ogMatch[1];
+          if (ogMatch) {
+            productId = ogMatch[1];
+            console.log('🔍 [Amazon] Found product ID from og:url:', productId);
+          }
         }
       }
-      if (!productId) return null;
+      
+      if (!productId) {
+        console.error('🔍 [Amazon] No product ID found');
+        return null;
+      }
 
       // Robust title extraction
       let title = '';
       const titleSelectors = [
         '#productTitle',
-        'span#title',
+        'span#productTitle',
+        'h1[data-testid="product-title"]',
         'h1.a-size-large.a-spacing-none',
+        'h1.a-size-large',
         'h1',
+        '[data-feature-name="title"] h1',
+        '.product-title',
         'meta[name="title"]',
         'meta[property="og:title"]'
       ];
+      
       for (const sel of titleSelectors) {
         const el = document.querySelector(sel) as HTMLElement | HTMLMetaElement;
         if (el) {
           if (el.tagName === 'META') {
             title = (el as HTMLMetaElement).content?.trim() || '';
           } else {
-            title = el.innerText?.trim() || '';
-      }
-          if (title) break;
-        }
-      }
-
-      // Robust price extraction
-        let priceString = '';
-      const priceSelectors = [
-        '.a-price .a-offscreen',
-        '.a-price .a-offscreen:not([data-a-strike])',
-        '.a-price-whole',
-        '.a-price-fraction',
-        '#priceblock_ourprice',
-        '#priceblock_dealprice',
-        '#priceblock_saleprice',
-        '.a-color-price',
-        '.a-size-medium.a-color-price',
-        '.a-offscreen'
-      ];
-      for (const sel of priceSelectors) {
-        const el = document.querySelector(sel) as HTMLElement;
-        if (el && el.textContent && el.offsetParent !== null) {
-          priceString = el.textContent.trim();
-          if (priceString.match(/[$€£¥₹]/)) break;
-        }
-      }
-      // Fallback: scan all .a-offscreen
-      if (!priceString) {
-        const candidates = Array.from(document.querySelectorAll('.a-offscreen')) as HTMLElement[];
-        for (const el of candidates) {
-          if (el.textContent && el.offsetParent !== null && el.textContent.match(/[$€£¥₹]/)) {
-            priceString = el.textContent.trim();
+            title = el.innerText?.trim() || el.textContent?.trim() || '';
+          }
+          if (title) {
+            console.log('🔍 [Amazon] Found title with selector:', sel, 'Title:', title);
             break;
           }
         }
       }
-      const price = priceString ? parseFloat(priceString.replace(/[^0-9.]/g, '')) : null;
-      if (price === null || isNaN(price)) {
-        console.warn('[Injected] Could not extract a valid price from string:', priceString);
+      
+      if (!title) {
+        // Fallback to page title
+        title = document.title.replace(/ - Amazon.*$/, '').replace(/Amazon\.com : /, '').trim();
+        console.log('🔍 [Amazon] Using page title as fallback:', title);
       }
 
-      const imageUrl =
-        (document.getElementById('landingImage') as HTMLImageElement)?.src ||
-        (document.querySelector('#imgTagWrapperId img') as HTMLImageElement)?.src ||
-        (document.querySelector('img[data-old-hires]') as HTMLImageElement)?.src ||
-        (document.querySelector('img[src*="images/I/"]') as HTMLImageElement)?.src ||
-        '';
+      // Enhanced price extraction
+      let priceString = '';
+      const priceSelectors = [
+        '.a-price.a-text-price.a-size-medium.apexPriceToPay .a-offscreen',
+        '.a-price .a-offscreen:first-child',
+        '.a-price .a-offscreen:not([data-a-strike])',
+        '.a-price.a-text-price .a-offscreen',
+        '.a-price-whole',
+        '.a-price-fraction', 
+        '#apex_desktop .a-price .a-offscreen',
+        '#priceblock_ourprice',
+        '#priceblock_dealprice', 
+        '#priceblock_saleprice',
+        '.a-color-price:not(.a-text-strike)',
+        '.a-size-medium.a-color-price',
+        '.a-offscreen'
+      ];
+      
+      for (const sel of priceSelectors) {
+        const el = document.querySelector(sel) as HTMLElement;
+        if (el && el.textContent && el.offsetParent !== null) {
+          const text = el.textContent.trim();
+          if (text.match(/[$€£¥₹]/)) {
+            priceString = text;
+            console.log('🔍 [Amazon] Found price with selector:', sel, 'Price:', priceString);
+            break;
+          }
+        }
+      }
+      
+      // Enhanced fallback: scan all .a-offscreen for price patterns
+      if (!priceString) {
+        console.log('🔍 [Amazon] No price found with selectors, trying fallback...');
+        const candidates = Array.from(document.querySelectorAll('.a-offscreen')) as HTMLElement[];
+        for (const el of candidates) {
+          if (el.textContent && el.offsetParent !== null) {
+            const text = el.textContent.trim();
+            if (text.match(/[$€£¥₹]/) && !text.toLowerCase().includes('was') && !text.toLowerCase().includes('list')) {
+              priceString = text;
+              console.log('🔍 [Amazon] Found price in fallback scan:', priceString);
+              break;
+            }
+          }
+        }
+      }
+      
+      // Try to build price from separate whole and fraction parts
+      if (!priceString) {
+        const priceWhole = document.querySelector('.a-price-whole')?.textContent?.replace(/[^0-9]/g, '');
+        const priceFraction = document.querySelector('.a-price-fraction')?.textContent?.replace(/[^0-9]/g, '');
+        if (priceWhole) {
+          priceString = priceFraction ? `$${priceWhole}.${priceFraction}` : `$${priceWhole}`;
+          console.log('🔍 [Amazon] Built price from parts:', priceString);
+        }
+      }
+      
+      const price = priceString ? parseFloat(priceString.replace(/[^0-9.]/g, '')) : null;
+      console.log('🔍 [Amazon] Final price:', price, 'from string:', priceString);
+      
+      if (price === null || isNaN(price) || price <= 0) {
+        console.warn('🔍 [Amazon] Could not extract a valid price from string:', priceString);
+        return null;
+      }
+
+      // Enhanced image extraction
+      let imageUrl = '';
+      const imageSelectors = [
+        '#landingImage',
+        '#imgTagWrapperId img',
+        'img[data-old-hires]',
+        'img[data-a-dynamic-image]',
+        '.a-dynamic-image',
+        '#imgBlkFront',
+        'img[src*="images/I/"]',
+        'meta[property="og:image"]'
+      ];
+      
+      for (const sel of imageSelectors) {
+        const el = document.querySelector(sel) as HTMLImageElement | HTMLMetaElement;
+        if (el) {
+          if (el.tagName === 'META') {
+            imageUrl = (el as HTMLMetaElement).content || '';
+          } else {
+            imageUrl = (el as HTMLImageElement).src || '';
+          }
+          if (imageUrl && !imageUrl.includes('transparent-pixel')) {
+            console.log('🔍 [Amazon] Found image with selector:', sel, 'URL:', imageUrl);
+            break;
+          }
+        }
+      }
 
       const currencyMatch = priceString.match(/[$€£¥₹]/);
       const currency = currencyMatch ? currencyMatch[0] : '$';
@@ -264,19 +343,33 @@ class ProductExtractor {
         }
       }
 
-      return {
+      const result = {
         id: productId,
         url: window.location.href,
         title,
         price: price && !isNaN(price) ? price : null,
         currency,
-        platform: 'amazon',
-        imageUrl,
+        platform: 'amazon' as const,
+        imageUrl: imageUrl || undefined,
         stockStatus,
         discountInfo: discountInfo || undefined,
       };
+      
+      console.log('🔍 [Amazon] Final extraction result:', result);
+      
+      // Validate required fields
+      if (!result.id || !result.title || !result.price) {
+        console.error('🔍 [Amazon] Missing required fields:', {
+          id: !!result.id,
+          title: !!result.title,
+          price: !!result.price
+        });
+        return null;
+      }
+      
+      return result;
     } catch (error) {
-      console.error('Error extracting Amazon product info:', error);
+      console.error('🔍 [Amazon] Error extracting product info:', error);
       return null;
     }
   }
@@ -284,11 +377,19 @@ class ProductExtractor {
   // AliExpress extraction is now async and uses waitForElement
   public async extractAliExpressProductInfo(): Promise<ProductInfo | null> {
     try {
+      console.log('[Injected] Starting AliExpress extraction...');
+      console.log('[Injected] Current URL:', window.location.href);
+      
       const urlMatch = window.location.pathname.match(/\/item\/(\d+)\.html/);
-      if (!urlMatch) return null;
+      if (!urlMatch) {
+        console.log('[Injected] No product ID found in URL');
+        return null;
+      }
       const productId = urlMatch[1];
+      console.log('[Injected] Extracted product ID:', productId);
 
       // Wait for the title element
+      console.log('[Injected] Looking for title element...');
       const titleEl =
         (await waitForElement('h1[data-pl="product-title"]')) ||
         (await waitForElement('.product-title-text')) ||
@@ -296,38 +397,51 @@ class ProductExtractor {
         (await waitForElement('div.product-title')) ||
         (await waitForElement('h1'));
 
+      console.log('[Injected] Title element found:', !!titleEl);
       const title = titleEl?.innerText?.trim() || '';
-
-      // Log the extracted title for debugging
       console.log('[Injected] Extracted AliExpress product title:', title);
+      
+      if (!title) {
+        console.log('[Injected] No title found, trying fallback...');
+        // Fallback: try to get title from page title
+        const pageTitle = document.title.replace(/ - AliExpress$/, '').trim();
+        console.log('[Injected] Fallback title from page title:', pageTitle);
+      }
 
       // Enhanced price extraction for AliExpress
       let priceString = '';
       
-      // Try multiple selectors for price
+      // Wait for price elements to load
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Try multiple selectors for price - updated for current AliExpress structure
       const priceSelectors = [
+        '[data-pl="product-price"] .product-price-value',
         '.product-price-value',
-        '.product-price-current',
-        '.product-price',
+        '.product-price-current', 
         '.price-current',
         '.price-value',
         '[data-pl="product-price"]',
+        '.snow-price',
+        '.snow-price .notranslate',
+        '.product-price .notranslate',
+        '.product-price-current .notranslate',
+        '.uniform-banner-box-price .notranslate',
         '.product-info-price .price',
         '.product-price-info .price',
         '.price-box .price',
-        '.product-price-box .price',
-        '.product-price-current .price',
-        '.product-price-value .price',
-        '.price-current .price',
-        '.price-value .price'
+        '.product-price-box .price'
       ];
       
       for (const selector of priceSelectors) {
         const element = document.querySelector(selector) as HTMLElement;
         if (element?.textContent) {
-          priceString = element.textContent.trim();
-          console.log(`[Injected] Found price with selector ${selector}:`, priceString);
-          break;
+          const text = element.textContent.trim();
+          if (text.match(/[\d\.,]+/) && text.length < 50) {
+            priceString = text;
+            console.log(`🔍 [AliExpress] Found price with selector ${selector}:`, priceString);
+            break;
+          }
         }
       }
       
@@ -349,6 +463,19 @@ class ProductExtractor {
       console.log('[Injected] Final AliExpress price string:', priceString);
 
       const price = priceString ? parseFloat(priceString.replace(/[^0-9.]/g, '')) : null;
+      console.log('[Injected] Parsed price number:', price);
+      
+      if (!price || isNaN(price)) {
+        console.log('[Injected] No valid price found, trying fallback...');
+        // Fallback: look for any number that looks like a price
+        const allText = document.body.textContent || '';
+        const priceMatches = allText.match(/(?:US\s*\$|[\$€£¥₹])\s*([\d,]+\.?\d*)/g);
+        console.log('[Injected] All price matches found:', priceMatches);
+        if (priceMatches && priceMatches.length > 0) {
+          const fallbackPrice = parseFloat(priceMatches[0].replace(/[^0-9.]/g, ''));
+          console.log('[Injected] Using fallback price:', fallbackPrice);
+        }
+      }
 
       // Improved image extraction: get the currently visible main product image
       function getVisibleImage(selector: string): string | undefined {
@@ -379,78 +506,50 @@ class ProductExtractor {
 
       // Stock/availability extraction for AliExpress
       let stockStatus: 'in_stock' | 'out_of_stock' | 'unknown' = 'unknown';
-      // Scan all spans for 'only X left'
+      // Check stock status - simplified logging
       const allSpans = Array.from(document.querySelectorAll('span')) as HTMLElement[];
-      console.log('[AliExpress Stock Debug] All span texts:', allSpans.map(s => s.textContent));
       let foundStock = false;
       for (const span of allSpans) {
         const text = span.textContent?.trim().toLowerCase() || '';
-        console.log('[AliExpress Stock Debug] Checking span text:', text);
         const match = text.match(/only\s*(\d+)\s*left/);
         if (match) {
           const qty = parseInt(match[1], 10);
-          console.log('[AliExpress Stock Debug] Found "only X left":', qty, 'in text:', text);
-          if (qty > 0) {
-            stockStatus = 'in_stock';
-            console.log('[AliExpress Stock Debug] Set stockStatus to in_stock');
-            foundStock = true;
-            break;
-          } else {
-            stockStatus = 'out_of_stock';
-            console.log('[AliExpress Stock Debug] Set stockStatus to out_of_stock');
-            foundStock = true;
-            break;
-          }
+          stockStatus = qty > 0 ? 'in_stock' : 'out_of_stock';
+          foundStock = true;
+          break;
         }
-        // NEW: Match 'X available'
         const availableMatch = text.match(/(\d+)\s*available/);
         if (availableMatch) {
           const qty = parseInt(availableMatch[1], 10);
-          console.log('[AliExpress Stock Debug] Found "X available":', qty, 'in text:', text);
-          if (qty > 0) {
-            stockStatus = 'in_stock';
-            console.log('[AliExpress Stock Debug] Set stockStatus to in_stock (available)');
-            foundStock = true;
-            break;
-          } else {
-            stockStatus = 'out_of_stock';
-            console.log('[AliExpress Stock Debug] Set stockStatus to out_of_stock (available)');
-            foundStock = true;
-            break;
-          }
+          stockStatus = qty > 0 ? 'in_stock' : 'out_of_stock';
+          foundStock = true;
+          break;
         }
         if (text.includes('sold out')) {
           stockStatus = 'out_of_stock';
-          console.log('[AliExpress Stock Debug] Found "sold out" in text:', text);
           foundStock = true;
           break;
         }
       }
+      
       if (!foundStock) {
-        console.log('[AliExpress Stock Debug] No stock info found in spans, falling back to previous selectors');
-        // fallback to previous selectors
+        // Fallback stock check
         const stockSelectors = [
           '.product-quantity-tip',
-          '.product-quantity-info',
+          '.product-quantity-info', 
           '.product-quantity',
-          '.quantity-tip',
-          '.quantity-info',
-          '.quantity',
           '.product-status',
-          '.product-availability',
+          '.product-availability'
         ];
         for (const sel of stockSelectors) {
           const el = document.querySelector(sel) as HTMLElement;
           if (el && el.textContent) {
             const text = el.textContent.trim().toLowerCase();
-            console.log('[AliExpress Stock Debug] Fallback selector', sel, 'text:', text);
             if (text.includes('in stock') || text.includes('available')) {
               stockStatus = 'in_stock';
-              console.log('[AliExpress Stock Debug] Set stockStatus to in_stock (fallback)');
               break;
             } else if (text.includes('out of stock') || text.includes('unavailable') || text.includes('sold out')) {
               stockStatus = 'out_of_stock';
-              console.log('[AliExpress Stock Debug] Set stockStatus to out_of_stock (fallback)');
               break;
             }
           }
@@ -509,17 +608,31 @@ class ProductExtractor {
         }
       }
 
-      return {
+      const result: ProductInfo = {
         id: productId,
         url: window.location.href,
-        title,
+        title: title || document.title.replace(/ - AliExpress$/, '').trim(),
         price: price && !isNaN(price) ? price : null,
         currency,
-        platform: 'aliexpress',
-        imageUrl,
+        platform: 'aliexpress' as const,
+        imageUrl: imageUrl || undefined,
         stockStatus,
         discountInfo: discountInfo || undefined,
       };
+      
+      console.log('🔍 [AliExpress] Final extraction result:', result);
+      
+      // Validate required fields
+      if (!result.id || !result.title || !result.price) {
+        console.error('🔍 [AliExpress] Missing required fields:', {
+          id: !!result.id,
+          title: !!result.title,
+          price: !!result.price
+        });
+        return null;
+      }
+      
+      return result;
     } catch (error) {
       console.error('Error extracting AliExpress product info:', error);
       return null;
@@ -528,9 +641,44 @@ class ProductExtractor {
 
   public async extractEbayProductInfo(): Promise<ProductInfo | null> {
     try {
+      console.log('🔍 [eBay] Starting product extraction...');
+      console.log('🔍 [eBay] Current URL:', window.location.href);
+      
       const match = window.location.pathname.match(/\/itm\/(\d+)/);
       const productId = match ? match[1] : window.location.pathname;
-      const title = (document.querySelector('#itemTitle') as HTMLElement)?.innerText?.replace('Details about\xa0', '').trim() || document.title;
+      console.log('🔍 [eBay] Product ID:', productId);
+      
+      // Enhanced title extraction
+      let title = '';
+      const titleSelectors = [
+        '#x-title-label-lbl',
+        '#itemTitle',
+        'h1[id="x-title-label-lbl"]',
+        'h1.notranslate',
+        'h1',
+        'meta[property="og:title"]'
+      ];
+      
+      for (const sel of titleSelectors) {
+        const el = document.querySelector(sel) as HTMLElement | HTMLMetaElement;
+        if (el) {
+          if (el.tagName === 'META') {
+            title = (el as HTMLMetaElement).content?.trim() || '';
+          } else {
+            title = el.innerText?.trim() || el.textContent?.trim() || '';
+          }
+          if (title) {
+            title = title.replace('Details about\xa0', '').trim();
+            console.log('🔍 [eBay] Found title with selector:', sel, 'Title:', title);
+            break;
+          }
+        }
+      }
+      
+      if (!title) {
+        title = document.title.replace(/ \| eBay$/, '').trim();
+        console.log('🔍 [eBay] Using page title as fallback:', title);
+      }
       // Price extraction
       let priceString =
         (document.querySelector('.x-price-primary .ux-textspans') as HTMLElement)?.innerText ||
@@ -656,27 +804,73 @@ class ProductExtractor {
           }
         }
       }
-      return {
+      const result = {
         id: productId,
         url: window.location.href,
         title,
         price: price && !isNaN(price) ? price : null,
         currency,
-        platform: 'ebay',
-        imageUrl,
+        platform: 'ebay' as const,
+        imageUrl: imageUrl || undefined,
         stockStatus,
       };
+      
+      console.log('🔍 [eBay] Final extraction result:', result);
+      
+      // Validate required fields
+      if (!result.id || !result.title || !result.price) {
+        console.error('🔍 [eBay] Missing required fields:', {
+          id: !!result.id,
+          title: !!result.title,
+          price: !!result.price
+        });
+        return null;
+      }
+      
+      return result;
     } catch (error) {
-      console.error('Error extracting eBay product info:', error);
+      console.error('🔍 [eBay] Error extracting product info:', error);
       return null;
     }
   }
 
   public async extractWalmartProductInfo(): Promise<ProductInfo | null> {
     try {
+      console.log('🔍 [Walmart] Starting product extraction...');
+      console.log('🔍 [Walmart] Current URL:', window.location.href);
+      
       const match = window.location.pathname.match(/\/ip\/(\d+)/);
       const productId = match ? match[1] : window.location.pathname;
-      const title = (document.querySelector('h1.prod-ProductTitle') as HTMLElement)?.innerText?.trim() || document.title;
+      console.log('🔍 [Walmart] Product ID:', productId);
+      
+      // Enhanced title extraction
+      let title = '';
+      const titleSelectors = [
+        'h1[data-testid="product-title"]',
+        'h1.prod-ProductTitle',
+        'h1',
+        'meta[property="og:title"]'
+      ];
+      
+      for (const sel of titleSelectors) {
+        const el = document.querySelector(sel) as HTMLElement | HTMLMetaElement;
+        if (el) {
+          if (el.tagName === 'META') {
+            title = (el as HTMLMetaElement).content?.trim() || '';
+          } else {
+            title = el.innerText?.trim() || el.textContent?.trim() || '';
+          }
+          if (title) {
+            console.log('🔍 [Walmart] Found title with selector:', sel, 'Title:', title);
+            break;
+          }
+        }
+      }
+      
+      if (!title) {
+        title = document.title.replace(/ - Walmart.*$/, '').trim();
+        console.log('🔍 [Walmart] Using page title as fallback:', title);
+      }
       // Try multiple selectors for price
       let priceString =
         (document.querySelector('span[itemprop="price"]') as HTMLElement)?.innerText ||
@@ -834,27 +1028,73 @@ class ProductExtractor {
           stockStatus = 'out_of_stock';
         }
       }
-      return {
+      const result = {
         id: productId,
         url: window.location.href,
         title,
         price: price && !isNaN(price) ? price : null,
         currency,
-        platform: 'walmart',
-        imageUrl,
+        platform: 'walmart' as const,
+        imageUrl: imageUrl || undefined,
         stockStatus,
       };
+      
+      console.log('🔍 [Walmart] Final extraction result:', result);
+      
+      // Validate required fields
+      if (!result.id || !result.title || !result.price) {
+        console.error('🔍 [Walmart] Missing required fields:', {
+          id: !!result.id,
+          title: !!result.title,
+          price: !!result.price
+        });
+        return null;
+      }
+      
+      return result;
     } catch (error) {
-      console.error('Error extracting Walmart product info:', error);
+      console.error('🔍 [Walmart] Error extracting product info:', error);
       return null;
     }
   }
 
   public async extractSheinProductInfo(): Promise<ProductInfo | null> {
     try {
+      console.log('🔍 [Shein] Starting product extraction...');
+      console.log('🔍 [Shein] Current URL:', window.location.href);
+      
       const match = window.location.pathname.match(/\/item\/(\d+)\.html/);
       const productId = match ? match[1] : window.location.pathname;
-      const title = (document.querySelector('.product-intro__head-name') as HTMLElement)?.innerText?.trim() || document.title;
+      console.log('🔍 [Shein] Product ID:', productId);
+      
+      // Enhanced title extraction
+      let title = '';
+      const titleSelectors = [
+        '.product-intro__head-name',
+        'h1.product-intro__head-name',
+        'h1',
+        'meta[property="og:title"]'
+      ];
+      
+      for (const sel of titleSelectors) {
+        const el = document.querySelector(sel) as HTMLElement | HTMLMetaElement;
+        if (el) {
+          if (el.tagName === 'META') {
+            title = (el as HTMLMetaElement).content?.trim() || '';
+          } else {
+            title = el.innerText?.trim() || el.textContent?.trim() || '';
+          }
+          if (title) {
+            console.log('🔍 [Shein] Found title with selector:', sel, 'Title:', title);
+            break;
+          }
+        }
+      }
+      
+      if (!title) {
+        title = document.title.replace(/ - SHEIN.*$/, '').trim();
+        console.log('🔍 [Shein] Using page title as fallback:', title);
+      }
       // Try multiple selectors for price
       let priceString =
         (document.querySelector('.product-intro__head-price .original') as HTMLElement)?.innerText ||
@@ -939,18 +1179,32 @@ class ProductExtractor {
           }
         }
       }
-      return {
+      const result = {
         id: productId,
         url: window.location.href,
         title,
         price: price && !isNaN(price) ? price : null,
         currency,
-        platform: 'shein',
-        imageUrl,
+        platform: 'shein' as const,
+        imageUrl: imageUrl || undefined,
         stockStatus,
       };
+      
+      console.log('🔍 [Shein] Final extraction result:', result);
+      
+      // Validate required fields
+      if (!result.id || !result.title || !result.price) {
+        console.error('🔍 [Shein] Missing required fields:', {
+          id: !!result.id,
+          title: !!result.title,
+          price: !!result.price
+        });
+        return null;
+      }
+      
+      return result;
     } catch (error) {
-      console.error('Error extracting Shein product info:', error);
+      console.error('🔍 [Shein] Error extracting product info:', error);
       return null;
     }
   }
@@ -1047,6 +1301,9 @@ class ProductExtractor {
   public async extractBestBuyProductInfo(): Promise<ProductInfo | null> {
     try {
       console.log('🔍 [Best Buy] Starting product extraction...');
+      
+      // Wait for page to load completely
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
       // Extract product ID from URL
       const productId = this.extractBestBuyProductId();
@@ -1174,6 +1431,8 @@ class ProductExtractor {
   }
 
   private extractBestBuyPrice(): number | null {
+    console.log('🔍 [Best Buy] Starting price extraction...');
+    
     const priceSelectors = [
       '[data-testid="customer-price"]',
       '.priceView-customer-price span',
@@ -1183,28 +1442,46 @@ class ProductExtractor {
       '.priceView-pricing-price',
       '.priceView-pricing-price span',
       '.priceView-pricing-price .priceView-customer-price',
-      '.priceView-pricing-price .priceView-customer-price span'
+      '.priceView-pricing-price .priceView-customer-price span',
+      // Additional Best Buy specific selectors
+      '.priceView-hero-price',
+      '.priceView-hero-price span',
+      '.priceView-pricing-price .priceView-hero-price',
+      '.priceView-pricing-price .priceView-hero-price span',
+      '[data-testid="pricing-price"]',
+      '[data-testid="pricing-price"] span',
+      '.priceView-pricing-price [data-testid="pricing-price"]',
+      '.priceView-pricing-price [data-testid="pricing-price"] span'
     ];
 
     for (const selector of priceSelectors) {
       const element = document.querySelector(selector) as HTMLElement;
       if (element?.textContent) {
         const priceText = element.textContent.trim();
+        console.log(`🔍 [Best Buy] Found price text with selector ${selector}:`, priceText);
         const price = extractPriceNumber(priceText);
-        if (price) return price;
+        if (price) {
+          console.log(`✅ [Best Buy] Successfully extracted price: $${price}`);
+          return price;
+        }
       }
     }
     
-    // Fallback: search for any price pattern in the page
+    // Enhanced fallback: search for any price pattern in the page
+    console.log('🔍 [Best Buy] Trying fallback price extraction...');
     const allElements = Array.from(document.querySelectorAll('*')) as HTMLElement[];
     for (const element of allElements) {
       const text = element.textContent?.trim() || '';
       if (text.includes('$') && text.length < 50) {
         const price = extractPriceNumber(text);
-        if (price && price > 0 && price < 10000) return price;
+        if (price && price > 0 && price < 10000) {
+          console.log(`✅ [Best Buy] Found price in fallback text: $${price} from "${text}"`);
+          return price;
+        }
       }
     }
     
+    console.log('❌ [Best Buy] No valid price found');
     return null;
   }
 
@@ -1569,13 +1846,19 @@ const productExtractor = new ProductExtractor();
 
 // Listen for messages from content script
 window.addEventListener('message', async (event) => {
-  console.log('🔍 [Message Listener] Received message:', event.data);
-  if (event.source !== window) return;
+  console.log('🔍 [Injected Script] Received message:', event.data);
+  console.log('🔍 [Injected Script] Event source:', event.source);
+  console.log('🔍 [Injected Script] Window source:', window);
+  
+  if (event.source !== window) {
+    console.log('🔍 [Injected Script] Ignoring message from different source');
+    return;
+  }
 
   // Handle trackProduct action from popup
   if (event.data.action === 'trackProduct') {
-    console.log('🔍 [Extension] Received trackProduct request');
-    console.log('🔍 [Extension] Request data:', event.data);
+    console.log('🔍 [Injected Script] Processing trackProduct request');
+    console.log('🔍 [Injected Script] Request data:', event.data);
     
     let productInfo: ProductInfo | null = null;
     const platform = (productExtractor as any)['platform'];
@@ -1658,6 +1941,10 @@ window.addEventListener('message', async (event) => {
 
 // Make extractor available globally for debugging
 (window as any).realPriceTrackerExtractor = productExtractor;
+
+// Signal that the injected script is ready
+console.log('🔍 [Injected Script] Price Tracker injected script is ready');
+window.postMessage({ type: 'INJECTED_SCRIPT_READY' }, '*');
 
 // Helper: Wait for an element to appear in the DOM
 function waitForElement(selector: string, timeout = 2000): Promise<HTMLElement | null> {

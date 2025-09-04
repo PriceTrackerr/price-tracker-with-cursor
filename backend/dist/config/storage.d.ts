@@ -12,6 +12,7 @@ export interface Product {
     stockStatus?: 'in_stock' | 'out_of_stock' | 'unknown';
     discountInfo?: string | undefined;
     matchedProducts?: string[];
+    totalMatches?: number;
     previousStockStatus?: 'in_stock' | 'out_of_stock' | 'unknown';
     condition?: 'new' | 'used' | 'refurbished' | 'open_box' | 'damaged';
     conditionScore?: number;

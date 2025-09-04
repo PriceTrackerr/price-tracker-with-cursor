@@ -202,14 +202,18 @@ function ProductTable({ searchTerm, navigate }: { searchTerm: string; navigate: 
   const { t } = useTranslation();
   const { loading: authLoading, token } = useAuth();
 
+  console.log('Dashboard ProductTable - Component rendered:', { authLoading, hasToken: !!token, productsCount: products.length });
+
   useEffect(() => {
     // Wait for auth to be ready before fetching data
-    if (!authLoading) {
+    if (!authLoading && token) {
       fetchProducts();
     }
-  }, [authLoading]);
+  }, [authLoading, token]);
 
   const fetchProducts = async () => {
+    if (!token) return;
+    
     try {
       const response = await fetch('/api/products', {
         headers: {
@@ -217,12 +221,16 @@ function ProductTable({ searchTerm, navigate }: { searchTerm: string; navigate: 
         }
       });
       const data = await response.json();
+      console.log('Dashboard ProductTable - API Response:', data);
       if (data.success) {
-        // Sort by date (newest first) and show up to 20 products
+        // Sort by date (newest first) and show ALL products
         const sortedProducts = data.data.sort((a: any, b: any) => 
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
-        setProducts(sortedProducts.slice(0, 20));
+        console.log('Dashboard ProductTable - Setting products:', sortedProducts.length);
+        setProducts(sortedProducts);
+      } else {
+        console.error('Failed to fetch products:', data.message);
       }
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -308,8 +316,8 @@ function ProductTable({ searchTerm, navigate }: { searchTerm: string; navigate: 
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">Recent Tracked Products</h2>
-              <p className="text-sm text-gray-600 mt-1">Monitor price changes across platforms</p>
+              <h2 className="text-xl font-semibold text-gray-900">All Tracked Products</h2>
+              <p className="text-sm text-gray-600 mt-1">Monitor price changes across platforms (sorted by date)</p>
             </div>
             <button 
               onClick={() => navigate('/products')}
@@ -460,12 +468,16 @@ export default function Dashboard() {
   });
   const [seenPriceDropIds, setSeenPriceDropIds] = useState<string[]>([]);
   const [isBanned, setIsBanned] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [showAlertModal, setShowAlertModal] = useState(false);
 
   const fetchDashboardData = async () => {
     if (!token) {
+      console.log('Dashboard - No token available');
       return;
     }
     
+    console.log('Dashboard - Fetching dashboard data...');
     try {
       const timestamp = Date.now();
       const randomParam = Math.random().toString(36).substring(7);
@@ -502,6 +514,7 @@ export default function Dashboard() {
 
       if (productsData.success) {
         const productsArray = productsData.data;
+        console.log('Dashboard - Products fetched:', productsArray.length);
         setProducts(productsArray);
         const totalValue = productsArray.reduce((sum: number, p: any) => sum + (p.price || 0), 0);
         
@@ -526,6 +539,7 @@ export default function Dashboard() {
         }).length;
 
         // Force immediate state update
+        console.log('Dashboard - Setting products in main component:', productsArray.length);
         setMetrics(prevMetrics => ({
           ...prevMetrics,
           totalProducts: productsArray.length,
@@ -748,7 +762,104 @@ export default function Dashboard() {
       </div>
 
       {/* Recent Products */}
-      <ProductTable searchTerm="" navigate={navigate} />
-    </div>
-  );
-} 
+      <div className="bg-white rounded-xl shadow-lg border-0 shadow-gray-200/50">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">Recent Tracked Products</h2>
+              <p className="text-sm text-gray-600 mt-1">Monitor price changes across platforms</p>
+            </div>
+            <button 
+              onClick={() => navigate('/products')}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              View All Products
+            </button>
+          </div>
+          <div className="divide-y divide-gray-200">
+            {products.length === 0 ? (
+              <div className="p-6 text-center text-gray-500">
+                <Package className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                <p>No products tracked yet</p>
+                <p className="text-sm">Start tracking products to see them here</p>
+              </div>
+                         ) : (
+               products.map((product) => (
+                 <div key={product.id} className="p-4 hover:bg-gray-50 transition-colors">
+                   <div className="flex items-center gap-4">
+                     {/* Product Image */}
+                     <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                       <img
+                         src={product.imageUrl || 'https://via.placeholder.com/64x64'}
+                         alt={product.title}
+                         className="w-full h-full object-cover"
+                         onError={(e) => {
+                           (e.target as HTMLImageElement).src = 'https://via.placeholder.com/64x64';
+                         }}
+                       />
+                     </div>
+                     
+                     {/* Product Info */}
+                     <div className="flex-1 min-w-0 space-y-2">
+                       <h3 className="font-medium text-gray-900 truncate">
+                         {product.title.length > 50 ? product.title.substring(0, 50) + '...' : product.title}
+                       </h3>
+                       <p className="text-sm text-gray-500 capitalize">{product.platform}</p>
+                     </div>
+                     
+                     {/* Price Info */}
+                     <div className="text-right space-y-1 flex-shrink-0">
+                       <div className="flex items-center gap-2">
+                         <span className="text-lg font-bold text-gray-900">
+                           ${product.price}
+                         </span>
+                         {product.originalPrice && product.originalPrice > product.price && (
+                           <span className="text-sm text-gray-500 line-through">
+                             ${product.originalPrice}
+                           </span>
+                         )}
+                       </div>
+                     </div>
+                     
+                     {/* Action Buttons */}
+                     <div className="flex items-center space-x-2 flex-shrink-0">
+                       <button
+                         onClick={() => {
+                           setSelectedProduct(product);
+                           setShowAlertModal(true);
+                         }}
+                         className="p-2 hover:bg-blue-50 rounded-lg transition-colors text-blue-600"
+                         title="Create Alert"
+                       >
+                         <Plus className="w-4 h-4" />
+                       </button>
+                       <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                         <Eye className="w-4 h-4 text-gray-600" />
+                       </button>
+                       <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                         <MoreVertical className="w-4 h-4 text-gray-600" />
+                       </button>
+                     </div>
+                   </div>
+                 </div>
+               ))
+             )}
+          </div>
+        </div>
+      </div>
+      
+             {/* Original ProductTable (commented out for debugging) */}
+       {/* <ProductTable searchTerm="" navigate={navigate} /> */}
+       
+       {/* Create Alert Modal */}
+       <CreateAlertModal 
+         product={selectedProduct}
+         isOpen={showAlertModal}
+         onClose={() => {
+           setShowAlertModal(false);
+           setSelectedProduct(null);
+         }}
+       />
+     </div>
+   );
+ } 

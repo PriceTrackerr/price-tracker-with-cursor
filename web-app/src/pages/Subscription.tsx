@@ -118,11 +118,11 @@ const Subscription: React.FC = () => {
             <div className="text-4xl mb-2">🎉</div>
             <h2 className="text-2xl font-bold mb-2">You're in the FREE Period!</h2>
             <p className="text-lg mb-4">
-              Enjoy all Premium features for the first 6 months - completely free!
+              Enjoy all Premium features for the first 7 days - completely free!
             </p>
             <div className="bg-white bg-opacity-20 rounded-lg p-4 inline-block">
               <p className="text-sm">
-                <strong>{formatDays(subscriptionStatus.daysRemaining)}</strong> remaining in your free period
+                <strong>7 days</strong> remaining in your free period
               </p>
             </div>
           </div>
@@ -293,7 +293,7 @@ const Subscription: React.FC = () => {
             </h3>
             <p className="text-blue-800 mb-4">
               We want you to experience the full value of our service before making any payment decisions. 
-              Use all Premium features for 6 months, then choose the plan that works best for you.
+              Use all Premium features for 7 days, then choose the plan that works best for you.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
               <div className="bg-white rounded p-3">
@@ -309,7 +309,7 @@ const Subscription: React.FC = () => {
               <div className="bg-white rounded p-3">
                 <div className="text-2xl mb-1">💰</div>
                 <p className="font-semibold">Save Money</p>
-                <p className="text-gray-600">6 months of free service</p>
+                <p className="text-gray-600">7 days of free service</p>
               </div>
             </div>
           </div>
