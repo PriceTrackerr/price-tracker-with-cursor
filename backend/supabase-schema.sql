@@ -362,9 +362,8 @@ CREATE POLICY "Deal comments are viewable by everyone" ON deal_comments FOR SELE
 CREATE POLICY "Global market data is viewable by everyone" ON global_market_data FOR SELECT USING (true);
 
 -- Insert some default subscription plans
-INSERT INTO subscription_plans (id, name, price, currency, interval, features) VALUES
+INSERT INTO subscription_plans (name, price, currency, interval, features) VALUES
 (
-    'free-plan',
     'Free',
     0.00,
     'USD',
@@ -372,7 +371,6 @@ INSERT INTO subscription_plans (id, name, price, currency, interval, features) V
     '{"maxTrackedProducts": 5, "alertFrequency": "daily", "priceHistoryDays": 30, "exportData": false, "prioritySupport": false}'
 ),
 (
-    'premium-plan',
     'Premium',
     9.99,
     'USD',
@@ -380,14 +378,12 @@ INSERT INTO subscription_plans (id, name, price, currency, interval, features) V
     '{"maxTrackedProducts": 50, "alertFrequency": "hourly", "priceHistoryDays": 90, "exportData": true, "prioritySupport": false}'
 ),
 (
-    'pro-plan',
     'Pro',
     19.99,
     'USD',
     'monthly',
     '{"maxTrackedProducts": 200, "alertFrequency": "instant", "priceHistoryDays": 365, "exportData": true, "prioritySupport": true}'
-)
-ON CONFLICT (id) DO NOTHING;
+);
 
 -- Create a function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
