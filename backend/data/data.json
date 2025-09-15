@@ -2587,7 +2587,7 @@
       "password": "$2a$10$r0/kwRs/wrflsG1Cf3D85OF2A46t1mJ9MKRbjKmz21yCnJKqGRKPG",
       "username": "michaelabrham8",
       "createdAt": "2025-07-29T19:48:41.609Z",
-      "lastLogin": "2025-09-13T15:24:40.776Z",
+      "lastLogin": "2025-09-15T17:09:26.146Z",
       "seenPriceDropIds": [
         "1753887931479igp4b",
         "17538878985128bk8l",
@@ -2648,6 +2648,14 @@
       "username": "nohamich94",
       "createdAt": "2025-09-03T17:59:07.410Z",
       "lastLogin": "2025-09-03T17:59:07.410Z"
+    },
+    {
+      "id": "17579562128635lr1o",
+      "email": "semirahaile8485@gmail.com",
+      "password": "$2a$10$E03nwZkXlpAdLLsEsgcn7.rWXChi24QqHPEpw6WJJ0ce96DnEkTbC",
+      "username": "semirahaile8485",
+      "createdAt": "2025-09-15T17:10:12.863Z",
+      "lastLogin": "2025-09-15T17:10:12.863Z"
     }
   ],
   "alerts": [

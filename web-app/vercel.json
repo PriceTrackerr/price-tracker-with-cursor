@@ -28,6 +28,6 @@
     }
   ],
   "env": {
-    "VITE_API_URL": "/api"
+    "VITE_API_URL": "https://price-tracker-with-cursor-backend.vercel.app/"
   }
 }
