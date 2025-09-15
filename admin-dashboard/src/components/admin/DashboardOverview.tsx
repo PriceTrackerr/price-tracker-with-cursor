@@ -126,7 +126,7 @@ export function DashboardOverview() {
         if (!productsData || productsData.length === 0) {
           return [{ name: 'No Products', value: 100, color: '#e5e7eb' }];
         }
-        
+
         const platformCounts: { [key: string]: number } = {};
         productsData.forEach((product: any) => {
           const platform = product.platform || 'Unknown';
@@ -166,11 +166,11 @@ export function DashboardOverview() {
       const productGrowth = totalProducts > 0 ? Math.round((totalProducts / 20) * 100) : 0;
       const revenueGrowth = 0; // No revenue yet
 
-      setDashboardData({
-        totalUsers,
-        totalProducts,
+        setDashboardData({
+          totalUsers,
+          totalProducts,
         monthlyRevenue: 0, // No revenue yet
-        totalAlerts,
+          totalAlerts,
         alertsTriggeredToday: Math.floor(Math.random() * 5), // Mock data
         userGrowth,
         productGrowth,
@@ -187,7 +187,7 @@ export function DashboardOverview() {
   };
 
   if (loading) {
-    return (
+  return (
       <div className="space-y-6">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
@@ -301,11 +301,11 @@ export function DashboardOverview() {
                     <p className="text-xs text-muted-foreground">
                       Target: ${alert.targetPrice} | Current: ${alert.currentPrice}
                     </p>
-                  </div>
-                  <Badge variant={alert.status === 'reached' ? 'default' : 'secondary'}>
-                    {alert.status === 'reached' ? 'Reached' : 'Pending'}
-                  </Badge>
-                </div>
+                    </div>
+                        <Badge variant={alert.status === 'reached' ? 'default' : 'secondary'}>
+                          {alert.status === 'reached' ? 'Reached' : 'Pending'}
+                        </Badge>
+                      </div>
               ))}
               {dashboardData.recentAlerts.length === 0 && (
                 <p className="text-sm text-muted-foreground text-center py-4">
@@ -318,10 +318,10 @@ export function DashboardOverview() {
       </div>
 
       {/* Quick Actions */}
-      <Card>
-        <CardHeader>
+        <Card>
+          <CardHeader>
           <CardTitle>Quick Actions</CardTitle>
-        </CardHeader>
+          </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm">
@@ -336,9 +336,9 @@ export function DashboardOverview() {
               <Calendar className="mr-2 h-4 w-4" />
               Schedule Report
             </Button>
-          </div>
-        </CardContent>
-      </Card>
+            </div>
+          </CardContent>
+        </Card>
     </div>
   );
 }

@@ -11,16 +11,20 @@ const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-if (!supabaseUrl || !supabaseServiceKey) {
-    throw new Error('Missing Supabase environment variables. Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY');
-}
-exports.supabase = (0, supabase_js_1.createClient)(supabaseUrl, supabaseServiceKey, {
-    auth: {
-        autoRefreshToken: false,
-        persistSession: false
-    }
-});
-exports.supabasePublic = (0, supabase_js_1.createClient)(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+const configuredService = !!(supabaseUrl && supabaseServiceKey);
+const configuredPublic = !!(supabaseUrl && supabaseAnonKey);
+exports.supabase = configuredService
+    ? (0, supabase_js_1.createClient)(supabaseUrl, supabaseServiceKey, {
+        auth: {
+            autoRefreshToken: false,
+            persistSession: false
+        }
+    })
+    : null;
+exports.supabasePublic = configuredPublic
+    ? (0, supabase_js_1.createClient)(supabaseUrl, supabaseAnonKey)
+    : null;
 exports.TABLES = {
     USERS: 'users',
     PRODUCTS: 'products',
@@ -46,7 +50,7 @@ function handleSupabaseError(error, operation) {
     throw new Error(`Database ${operation} failed: ${error.message}`);
 }
 function isSupabaseConfigured() {
-    return !!(supabaseUrl && supabaseServiceKey);
+    return configuredService;
 }
 exports.default = exports.supabase;
 //# sourceMappingURL=supabase.js.map

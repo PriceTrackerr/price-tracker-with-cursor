@@ -1,5 +1,5 @@
-export declare const supabase: import("@supabase/supabase-js").SupabaseClient<any, "public", "public", any, any>;
-export declare const supabasePublic: import("@supabase/supabase-js").SupabaseClient<any, "public", "public", any, any>;
+export declare const supabase: any;
+export declare const supabasePublic: any;
 export declare const TABLES: {
     readonly USERS: "users";
     readonly PRODUCTS: "products";

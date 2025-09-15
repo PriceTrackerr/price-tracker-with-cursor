@@ -260,7 +260,7 @@ export default function ProductMatching({ productId, onClose }: ProductMatchingP
             {algorithm === 'buyhatke-enhanced' && (
               <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full flex items-center gap-1">
                 <Zap className="w-3 h-3" />
-                Buyhatke-Enhanced
+                
               </span>
             )}
           </div>

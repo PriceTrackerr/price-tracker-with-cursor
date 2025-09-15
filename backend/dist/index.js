@@ -97,6 +97,34 @@ app.get('/health', (req, res) => {
         environment: process.env.NODE_ENV || 'development'
     });
 });
+app.get('/', (req, res) => {
+    res.status(200).json({
+        name: 'Price Tracker Backend',
+        status: 'OK',
+        message: 'API is running',
+        endpoints: {
+            health: '/health',
+            api: '/api'
+        },
+        version: '1.0.0'
+    });
+});
+app.get('/api', (req, res) => {
+    res.status(200).json({
+        message: 'Price Tracker API',
+        routes: [
+            '/api/products',
+            '/api/users',
+            '/api/alerts',
+            '/api/webhooks',
+            '/api/notifications',
+            '/api/payments',
+            '/api/advanced',
+            '/api/features',
+            '/api/product-matching'
+        ]
+    });
+});
 app.get('/test-storage', async (req, res) => {
     try {
         const db = (0, database_1.getDb)();

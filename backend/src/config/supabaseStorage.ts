@@ -31,7 +31,7 @@ class SupabaseStorage {
         .eq('deleted', true);
 
       if (error) throw error;
-      return data?.map(item => item.id) || [];
+      return (data as Array<{ id: string }> | null)?.map((item: { id: string }) => item.id) || [];
     } catch (error) {
       handleSupabaseError(error, 'getDeletedSubscriptionPlanIds');
     }
@@ -609,7 +609,7 @@ class SupabaseStorage {
 
       if (error) throw error;
 
-      const referredUserIds = data?.map(t => t.referredUserId) || [];
+      const referredUserIds = (data as Array<{ referredUserId: string }> | null)?.map((t: { referredUserId: string }) => t.referredUserId) || [];
       
       if (referredUserIds.length === 0) return [];
 

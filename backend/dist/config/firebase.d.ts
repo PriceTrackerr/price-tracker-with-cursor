@@ -1,4 +1,2 @@
-import fileStorage from './storage';
-export declare function getDb(): any;
-export { fileStorage };
+export { getDb, fileStorage } from './database';
 //# sourceMappingURL=firebase.d.ts.map

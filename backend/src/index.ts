@@ -127,6 +127,38 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Root endpoint for deployments (e.g., Vercel) to avoid 404 on "/"
+app.get('/', (req, res) => {
+  res.status(200).json({
+    name: 'Price Tracker Backend',
+    status: 'OK',
+    message: 'API is running',
+    endpoints: {
+      health: '/health',
+      api: '/api'
+    },
+    version: '1.0.0'
+  });
+});
+
+// API root info
+app.get('/api', (req, res) => {
+  res.status(200).json({
+    message: 'Price Tracker API',
+    routes: [
+      '/api/products',
+      '/api/users',
+      '/api/alerts',
+      '/api/webhooks',
+      '/api/notifications',
+      '/api/payments',
+      '/api/advanced',
+      '/api/features',
+      '/api/product-matching'
+    ]
+  });
+});
+
 // Test endpoint for local storage
 app.get('/test-storage', async (req, res) => {
   try {
@@ -223,5 +255,10 @@ process.on('unhandledRejection', (reason, promise) => {
   process.exit(1);
 });
 
-// Start the server
-startServer();
+// Export app for serverless (Vercel)
+export default app;
+
+// Start the server only when not running in Vercel serverless
+if (!process.env.VERCEL) {
+  startServer();
+}
