@@ -1,4 +1,3 @@
-// /api/index.js  (or .ts)
-import app from '../server'   // the file you showed above
+import app from './src/index'
 
 export default app;
