@@ -72,8 +72,8 @@ app.use(cors({
     
     // Allow specific domains for production
     const allowedOrigins = [
-      'https://yourdomain.com', // Replace with your actual domain
-      'https://www.yourdomain.com'
+      'https://price-tracker-with-cursor-web-app.vercel.app/', // Replace with your actual domain
+      'https://price-tracker-with-cur-git-f56ab8-michaelabrham9-1537s-projects.vercel.app/'
     ];
     
     if (allowedOrigins.includes(origin)) {
