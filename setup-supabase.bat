@@ -5,7 +5,7 @@ echo ========================================
 echo.
 
 echo Step 1: Installing Supabase dependencies...
-cd backend
+cd api
 npm install @supabase/supabase-js
 echo.
 
