@@ -33,7 +33,7 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: ["https://price-tracker-with-cursor-web-app.vercel.app"],
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
     methods: ["GET", "POST"]
   }
 });
@@ -72,9 +72,10 @@ app.use(cors({
     
     // Allow specific domains for production
     const allowedOrigins = [
-      'https://price-tracker-with-cursor-web-app.vercel.app/', // Replace with your actual domain
-      'https://price-tracker-with-cur-git-f56ab8-michaelabrham9-1537s-projects.vercel.app/'
+      'https://price-tracker-with-cursor-web-app.vercel.app',
+      'https://price-tracker-with-cur-git-f56ab8-michaelabrham9-1537s-projects.vercel.app'
     ];
+    
     
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
