@@ -5,6 +5,7 @@ import supabaseStorage from './supabaseStorage';
 
 const USE_SUPABASE = process.env.USE_SUPABASE === 'true';
 const USE_LOCAL_DB = process.env.USE_LOCAL_DB === 'true';
+console.log('USE_SUPABASE', USE_SUPABASE, 'USE_LOCAL_DB', USE_LOCAL_DB, 'SUPABASE_URL', !!process.env.SUPABASE_URL, 'SUPABASE_SERVICE_ROLE_KEY', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 // Choose storage based on configuration
 let db: any = null;

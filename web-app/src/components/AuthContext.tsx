@@ -237,7 +237,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signup = async (email: string, password: string) => {
     setLoading(true);
     try {
-      const res = await fetch('/api/users/signup', {
+      const res = await fetch('https://price-tracker-with-cursor-web-app-s.vercel.app/api/users/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
