@@ -28,8 +28,22 @@ import { errorHandler } from './middleware/errorHandler';
 import { notFound } from './middleware/notFound';
 
 
+const allowedOriginst = [
+  'https://price-tracker-with-cursor-web-app.vercel.app',
+  'http://localhost:3000'
+];
+
 
 const app = express();
+
+
+app.use(cors({
+  origin: allowedOriginst,
+  credentials: true,
+  methods: ['GET','POST','PUT','DELETE','OPTIONS'],
+  allowedHeaders: ['Content-Type','Authorization','X-Requested-With']
+}));
+
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
@@ -53,45 +67,45 @@ app.use(helmet({
 }));
 
 // CORS configuration
-app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
+// app.use(cors({
+//   origin: function (origin, callback) {
+//     // Allow requests with no origin (like mobile apps or curl requests)
+//     if (!origin) return callback(null, true);
     
-    // Allow localhost for development
-    if (origin === 'http://localhost:3000' || origin === 'http://localhost:3001') {
-      return callback(null, true);
-    }
+//     // Allow localhost for development
+//     if (origin === 'http://localhost:3000' || origin === 'http://localhost:3001') {
+//       return callback(null, true);
+//     }
     
-    // Allow browser extensions (they come from various origins)
-    if (origin.startsWith('chrome-extension://') || 
-        origin.startsWith('moz-extension://') ||
-        origin.startsWith('safari-extension://')) {
-      return callback(null, true);
-    }
+//     // Allow browser extensions (they come from various origins)
+//     if (origin.startsWith('chrome-extension://') || 
+//         origin.startsWith('moz-extension://') ||
+//         origin.startsWith('safari-extension://')) {
+//       return callback(null, true);
+//     }
     
-    // Allow specific domains for production
-    const allowedOrigins = [
-      'https://price-tracker-with-cursor-web-app.vercel.app',
-      'https://price-tracker-with-cur-git-f56ab8-michaelabrham9-1537s-projects.vercel.app'
-    ];
+//     // Allow specific domains for production
+//     const allowedOrigins = [
+//       'https://price-tracker-with-cursor-web-app.vercel.app',
+//       'https://price-tracker-with-cur-git-f56ab8-michaelabrham9-1537s-projects.vercel.app'
+//     ];
     
     
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
+//     if (allowedOrigins.includes(origin)) {
+//       return callback(null, true);
+//     }
     
-    // For development, allow all origins (remove this in production)
-    if (process.env.NODE_ENV === 'development') {
-      return callback(null, true);
-    }
+//     // For development, allow all origins (remove this in production)
+//     if (process.env.NODE_ENV === 'development') {
+//       return callback(null, true);
+//     }
     
-    callback(new Error('Not allowed by CORS'));
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-}));
+//     callback(new Error('Not allowed by CORS'));
+//   },
+//   credentials: true,
+//   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+//   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+// }));
 
 // Rate limiting
 const limiter = rateLimit({
