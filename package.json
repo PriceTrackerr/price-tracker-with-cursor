@@ -6,7 +6,7 @@
   "workspaces": [
     "extension",
     "web-app",
-    "backend"
+    "api"
   ],
   "scripts": {
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:web\"",
