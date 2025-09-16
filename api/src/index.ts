@@ -33,7 +33,7 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "https://price-tracker-with-cursor-web-app.vercel.app",
+    origin: ["https://price-tracker-with-cursor-web-app.vercel.app"],
     methods: ["GET", "POST"]
   }
 });
