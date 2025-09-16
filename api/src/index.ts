@@ -28,7 +28,7 @@ import { errorHandler } from './middleware/errorHandler';
 import { notFound } from './middleware/notFound';
 
 
-const allowedOriginst = [
+const allowedOrigins1 = [
   'https://price-tracker-with-cursor-web-app.vercel.app',
   'http://localhost:3000'
 ];
@@ -38,7 +38,7 @@ const app = express();
 
 
 app.use(cors({
-  origin: allowedOriginst,
+  origin: allowedOrigins1,
   credentials: true,
   methods: ['GET','POST','PUT','DELETE','OPTIONS'],
   allowedHeaders: ['Content-Type','Authorization','X-Requested-With']
