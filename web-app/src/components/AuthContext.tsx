@@ -203,7 +203,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
-      const res = await fetch('https://price-tracker-with-cursor-backend.vercel.app/api/users/login', {
+      const res = await fetch('https://price-tracker-with-cursor-web-app-s.vercel.app/api/users/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
