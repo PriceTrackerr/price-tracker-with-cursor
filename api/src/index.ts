@@ -33,25 +33,18 @@ import { notFound } from './middleware/notFound';
 const app = express();
 
 app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (origin) {
-    // Allow any origin dynamically
-    res.header('Access-Control-Allow-Origin', origin);
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
-    res.header(
-      'Access-Control-Allow-Headers',
-      'Origin, X-Requested-With, Content-Type, Accept, Authorization'
-    );
-  }
+  res.setHeader('Access-Control-Allow-Origin', '*'); // or specific origin
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
 
-  // Handle preflight requests
   if (req.method === 'OPTIONS') {
     return res.sendStatus(204);
   }
 
   next();
 });
+
 
 
 
