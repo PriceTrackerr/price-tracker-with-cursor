@@ -19,7 +19,7 @@ timeout /t 3 /nobreak > nul
 
 echo.
 echo All services are starting...
-echo Backend: http://localhost:3001
+echo api: http://localhost:3001
 echo Web App: http://localhost:3000
 echo Admin Dashboard: http://localhost:5173
 echo.
