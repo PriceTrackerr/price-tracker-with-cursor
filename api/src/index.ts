@@ -32,27 +32,27 @@ import { notFound } from './middleware/notFound';
 
 const app = express();
 
-const allowedOrigins = [
-  'https://price-tracker-with-cursor-web-app.vercel.app',
-  'http://localhost:3000'
-];
-
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin!)) {
+  if (origin) {
+    // Allow any origin dynamically
     res.header('Access-Control-Allow-Origin', origin);
     res.header('Access-Control-Allow-Credentials', 'true');
     res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With');
+    res.header(
+      'Access-Control-Allow-Headers',
+      'Origin, X-Requested-With, Content-Type, Accept, Authorization'
+    );
   }
 
-  // handle preflight
+  // Handle preflight requests
   if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
+    return res.sendStatus(204);
   }
 
   next();
 });
+
 
 
 const server = createServer(app);
