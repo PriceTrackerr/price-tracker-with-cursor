@@ -55,7 +55,11 @@ export function handleSupabaseError(error: any, operation: string): never {
 
 // Helper function to check if Supabase is properly configured
 export function isSupabaseConfigured(): boolean {
-	return configuredService;
-}
+	const ready = configuredService;
+	console.log('Supabase configured:', ready, 'SUPABASE_URL set:', !!process.env.SUPABASE_URL, 'SUPABASE_SERVICE_ROLE_KEY set:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
+	return ready;
+  }
+  
+
 
 export default supabase; 
