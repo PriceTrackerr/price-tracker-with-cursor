@@ -5,23 +5,24 @@ import supabaseStorage from './supabaseStorage';
 
 const USE_SUPABASE = process.env.USE_SUPABASE === 'true';
 const USE_LOCAL_DB = process.env.USE_LOCAL_DB === 'true';
+const IS_VERCEL = process.env.VERCEL === '1';
 
 // Choose storage based on configuration
 let db: any = null;
 
 try {
-	// If explicitly using local DB, honor that
-	if (USE_LOCAL_DB) {
+	// If explicitly using local DB, honor that (but not on Vercel)
+	if (USE_LOCAL_DB && !IS_VERCEL) {
 		console.log('✅ Using local file storage as database (forced by USE_LOCAL_DB=true)');
 		db = fileStorage;
 	} else {
 		const supabaseIsReady = isSupabaseConfigured();
-		if (USE_SUPABASE || supabaseIsReady) {
+		if (USE_SUPABASE || supabaseIsReady || IS_VERCEL) {
 			if (supabaseIsReady) {
 				console.log('✅ Using Supabase as database');
 				db = supabaseStorage;
 			} else {
-				console.log('⚠️  USE_SUPABASE=true but Supabase is not configured. Falling back to local file storage');
+				console.log('⚠️  Supabase not configured. On Vercel, this will cause errors. Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY');
 				db = fileStorage;
 			}
 		} else {
@@ -30,7 +31,11 @@ try {
 		}
 	}
 } catch (error) {
-	console.error('⚠️  Failed to initialize database selection logic. Falling back to local file storage. Error:', error);
+	console.error('⚠️  Failed to initialize database selection logic. Error:', error);
+	if (IS_VERCEL) {
+		console.error('❌ On Vercel, Supabase must be configured. Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables.');
+		throw error;
+	}
 	db = fileStorage;
 }
 
