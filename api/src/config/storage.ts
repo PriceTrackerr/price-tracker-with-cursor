@@ -1,17 +1,24 @@
 import fs from 'fs';
 import path from 'path';
 
-const DATA_FILE = path.join(__dirname, '../../data/data.json');
+// Use ephemeral writable storage on serverless (Vercel) to avoid EROFS errors.
+// Note: /tmp is not persisted between deployments or cold starts.
+const DATA_FILE = process.env.VERCEL ? '/tmp/data.json' : path.join(__dirname, '../../data/data.json');
 
-// Ensure data directory exists
+// Ensure data directory exists (skip when writing directly to /tmp)
 const dataDir = path.dirname(DATA_FILE);
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
+try {
+  if (dataDir && dataDir !== '/' && !fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+  }
+} catch (_) {
+  // Ignore directory creation errors in serverless environments
 }
 
 // Initialize empty data file if it doesn't exist
 if (!fs.existsSync(DATA_FILE)) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify({ 
+  try {
+    fs.writeFileSync(DATA_FILE, JSON.stringify({ 
     products: [], 
     users: [], 
     alerts: [], 
@@ -32,6 +39,9 @@ if (!fs.existsSync(DATA_FILE)) {
     globalMarketData: [],
     automationRules: []
   }));
+  } catch (error) {
+    // On Vercel cold start, /tmp should be writable; if not, reads will fallback to empty state
+  }
 }
 
 export interface Product {
