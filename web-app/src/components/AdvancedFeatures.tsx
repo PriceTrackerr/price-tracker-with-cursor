@@ -83,7 +83,7 @@ export default function AdvancedFeatures({ product }: AdvancedFeaturesProps) {
     setLoading(true);
     try {
       // Use real product-card analysis endpoint (rule-based, no AI)
-      const enhancedResponse = await fetch(` https://price-tracker-with-cursor-web-app-s.vercel.app/api/advanced/product-card-analysis/${product.id}`);
+      const enhancedResponse = await fetch(`/api/advanced/product-card-analysis/${product.id}`);
       if (enhancedResponse.ok) {
         const enhancedData = await enhancedResponse.json();
         const data = enhancedData.data || enhancedData; // Support direct or wrapped payloads
@@ -170,7 +170,7 @@ export default function AdvancedFeatures({ product }: AdvancedFeaturesProps) {
 
   const loadConditionAnalysis = async () => {
     try {
-      const response = await fetch(`https://price-tracker-with-cursor-web-app-s.vercel.app/api/advanced/condition-analysis/${product.id}`);
+      const response = await fetch(`http://localhost:3001/api/advanced/condition-analysis/${product.id}`);
       if (response.ok) {
         const data = await response.json();
         setConditionAnalysis({
@@ -206,7 +206,7 @@ export default function AdvancedFeatures({ product }: AdvancedFeaturesProps) {
 
   const loadCouponStack = async () => {
     try {
-      const response = await fetch(`https://price-tracker-with-cursor-web-app-s.vercel.app/api/advanced/coupons/${product.id}`);
+      const response = await fetch(`/api/advanced/coupons/${product.id}`);
       if (response.ok) {
         const data = await response.json();
         setCouponStack({
@@ -251,7 +251,7 @@ export default function AdvancedFeatures({ product }: AdvancedFeaturesProps) {
 
   const loadGlobalComparison = async () => {
     try {
-      const response = await fetch(`https://price-tracker-with-cursor-web-app-s.vercel.app/api/advanced/global-arbitrage/${product.id}`);
+      const response = await fetch(`/api/advanced/global-arbitrage/${product.id}`);
       if (response.ok) {
         const data = await response.json();
         setGlobalComparison({
@@ -294,7 +294,7 @@ export default function AdvancedFeatures({ product }: AdvancedFeaturesProps) {
 
   const loadCommunityAnalysis = async () => {
     try {
-      const response = await fetch(`https://price-tracker-with-cursor-web-app-s.vercel.app/api/advanced/community-analysis/${product.id}`);
+      const response = await fetch(`/api/advanced/community-analysis/${product.id}`);
       if (response.ok) {
         const data = await response.json();
         setCommunityAnalysis({
