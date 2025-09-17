@@ -82,7 +82,7 @@ export default function ProductMatching({ productId, onClose }: ProductMatchingP
     
     try {
       const widenParam = widen ? '?widen=1' : '';
-      const response = await fetch(`/api/products/${productId}/matches${widenParam}`, {
+      const response = await fetch(`https://price-tracker-with-cursor-web-app-s.vercel.app/api/products/${productId}/matches${widenParam}`, {
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
