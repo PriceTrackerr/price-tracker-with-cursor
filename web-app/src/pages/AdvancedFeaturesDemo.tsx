@@ -69,8 +69,8 @@ const AdvancedFeaturesDemo: React.FC = () => {
     const fetchFeatures = async () => {
       try {
         const [statusResponse, roadmapResponse] = await Promise.all([
-          fetch('http://localhost:3001/api/features/status'),
-          fetch('http://localhost:3001/api/features/roadmap')
+          fetch('/api/features/status'),
+          fetch('/api/features/roadmap')
         ]);
 
         if (statusResponse.ok && roadmapResponse.ok) {
