@@ -47,11 +47,7 @@ class SupabaseStorage {
       created_at: now,
       last_login: now,
       role: userData.role || 'user',
-      notification_settings: userData.notification_settings || {},
-      privacy_settings: userData.privacy_settings || {},
-      preferences: userData.preferences || {},
-      seen_price_drop_ids_subscription: userData.seen_price_drop_ids_subscription || [],
-      affiliate: userData.affiliate || {}
+      
     }]);
     if (error) throw error;
     return id;
