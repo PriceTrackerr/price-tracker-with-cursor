@@ -38,6 +38,7 @@ const navigation = [
 export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, logout, token } = useAuth();
 
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
@@ -335,8 +336,8 @@ export default function Layout({ children }: LayoutProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <aside className={`fixed left-0 top-0 h-full bg-white border-r border-gray-200 transition-all duration-300 z-50 ${
+      {/* Sidebar (Desktop) */}
+      <aside className={`fixed left-0 top-0 h-full bg-white border-r border-gray-200 transition-all duration-300 z-50 hidden md:block ${
         sidebarCollapsed ? "w-16" : "w-64"
       }`}>
         <div className="flex flex-col h-full">
@@ -419,15 +420,72 @@ export default function Layout({ children }: LayoutProps) {
         </div>
       </aside>
 
+      {/* Sidebar (Mobile Drawer) */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setMobileMenuOpen(false)} />
+          <aside className="relative h-full w-64 bg-white border-r border-gray-200 shadow-xl">
+            <div className="flex flex-col h-full">
+              <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-10 h-10 bg-[#2563EB] rounded-lg flex items-center justify-center shadow-sm">
+                    <svg width="24" height="24" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <rect x="0" y="0" width="100" height="100" rx="20" fill="#2563EB"/>
+                      <path d="M25 70 C35 50, 65 50, 75 30" stroke="white" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round"/>
+                      <circle cx="75" cy="30" r="6" fill="white"/>
+                    </svg>
+                  </div>
+                  <span className="font-bold text-lg text-gray-900">Price Tracker</span>
+                </div>
+                <button onClick={() => setMobileMenuOpen(false)} className="p-2 hover:bg-gray-100 rounded-lg" aria-label="Close menu">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <nav className="flex-1 p-4">
+                <div className="space-y-2">
+                  {navigation.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = location.pathname === item.href;
+                    return (
+                      <Link
+                        key={item.id}
+                        to={item.href}
+                        className={`w-full flex items-center gap-3 h-12 px-3 rounded-lg transition-all duration-200 ${
+                          isActive 
+                            ? "bg-blue-600 text-white shadow-lg shadow-blue-600/25" 
+                            : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                        }`}
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <Icon className="w-5 h-5" />
+                        <span>{item.label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </nav>
+            </div>
+          </aside>
+        </div>
+      )}
+
       {/* Main Content Area */}
       <div className={`transition-all duration-300 min-h-screen ${
-        sidebarCollapsed ? "ml-16" : "ml-64"
-      }`}>
+        sidebarCollapsed ? "md:ml-16" : "md:ml-64"
+      } ml-0`}>
         {/* Top Header */}
         <header className="sticky top-0 z-40 w-full border-b border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
-          <div className="flex h-16 items-center justify-between px-6">
+          <div className="flex h-16 items-center justify-between px-4 sm:px-6">
             {/* Left side - Page title and breadcrumb */}
             <div className="flex items-center space-x-4">
+              {/* Mobile menu button */}
+              <button
+                className="md:hidden p-2 -ml-2 mr-2 rounded-lg hover:bg-gray-100"
+                onClick={() => setMobileMenuOpen(true)}
+                aria-label="Open menu"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
               <div>
                 <h1 className="text-xl font-semibold text-gray-900">{getPageTitle(location.pathname)}</h1>
                 <p className="text-sm text-gray-500">{getPageDescription(location.pathname)}</p>
