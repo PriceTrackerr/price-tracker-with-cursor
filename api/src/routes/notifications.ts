@@ -1,8 +1,9 @@
 import express, { Request, Response } from 'express';
-import db from '../config/storage';
+import { getDb } from '../config/database';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 
 const router = express.Router();
+const db = getDb();
 
 // Get all notifications
 router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {

@@ -9,9 +9,10 @@ import { AutomationEngine } from '../services/automationEngine';
 import { EbayService } from '../services/ebayService';
 import { FreeCouponService } from '../services/freeCouponService';
 import { CurrencyService } from '../services/currencyService';
-import db from '../config/storage';
+import { getDb } from '../config/database';
 
 const router = express.Router();
+const db = getDb();
 
 // Initialize services
 const conditionService = new ConditionScoringService();

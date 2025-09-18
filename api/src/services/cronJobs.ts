@@ -1,8 +1,9 @@
 import cron from 'node-cron';
-import db from '../config/storage';
+import { getDb } from '../config/database';
 import EmailService from './emailService';
 
 const emailService = new EmailService();
+const db = getDb();
 
 async function storeDashboardNotification(product: any, alert: any) {
   await db.addNotification({

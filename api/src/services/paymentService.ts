@@ -1,5 +1,8 @@
 import axios from 'axios';
 import { Payment, User, PayoutRequest } from '../config/storage';
+import { getDb } from '../config/database';
+
+const db = getDb();
 
 export interface PaymentConfig {
   paypal: {

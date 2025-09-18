@@ -1,10 +1,11 @@
 import express, { Request, Response } from 'express';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
-import db from '../config/storage';
+import { getDb } from '../config/database';
 import paymentService, { SUBSCRIPTION_PLANS } from '../services/paymentService';
 import { v4 as uuidv4 } from 'uuid';
 
 const router = express.Router();
+const db = getDb();
 
 // Helper to get persisted plans or fallback
 async function getEffectivePlans() {
@@ -128,8 +129,8 @@ router.get('/subscription', authMiddleware, async (req: AuthRequest, res: Respon
 
     // Fetch real user data
     const userProducts = await db.getProducts(user.id);
-    const userAlerts = await db.getAllAlerts().then(alerts => 
-      alerts.filter(alert => alert.userId === user.id)
+    const userAlerts = await db.getAllAlerts().then((alerts: any[]) => 
+      alerts.filter((alert: any) => alert.userId === user.id)
     );
     
     // Count alerts this month

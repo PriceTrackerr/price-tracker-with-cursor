@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import db from '../config/storage';
+import { getDb } from '../config/database';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import EmailService from '../services/emailService';
@@ -9,6 +9,7 @@ const emailService = new EmailService();
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'changeme';
+const db = getDb();
 
 // Signup
 router.post('/signup', async (req: Request, res: Response) => {

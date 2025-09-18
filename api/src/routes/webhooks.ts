@@ -1,9 +1,10 @@
 import express, { Request, Response } from 'express';
-import db from '../config/storage';
+import { getDb } from '../config/database';
 import paymentService from '../services/paymentService';
 import { v4 as uuidv4 } from 'uuid';
 
 const router = express.Router();
+const db = getDb();
 
 // Helper function to process affiliate commissions
 async function processAffiliateCommission(

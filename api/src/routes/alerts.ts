@@ -1,11 +1,12 @@
 import express, { Request, Response } from 'express';
-import db from '../config/storage';
+import { getDb } from '../config/database';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import EmailService from '../services/emailService';
 
 const emailService = new EmailService();
 
 const router = express.Router();
+const db = getDb();
 
 interface Alert {
   productId: string;

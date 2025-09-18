@@ -106,6 +106,51 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Database health check endpoint
+app.get('/health/database', async (req, res) => {
+  try {
+    const db = getDb();
+    const dbType = db.constructor.name;
+    
+    // Test database connection
+    let connectionTest = 'unknown';
+    try {
+      if (typeof db.getProducts === 'function') {
+        await db.getProducts();
+        connectionTest = 'success';
+      } else {
+        connectionTest = 'no_methods';
+      }
+    } catch (error) {
+      connectionTest = 'failed';
+    }
+    
+    res.json({
+      status: 'ok',
+      database: {
+        type: dbType,
+        connection: connectionTest,
+        isSupabase: dbType === 'SupabaseStorage',
+        isFileStorage: dbType === 'FileStorage'
+      },
+      environment: {
+        USE_SUPABASE: process.env.USE_SUPABASE,
+        USE_LOCAL_DB: process.env.USE_LOCAL_DB,
+        VERCEL: process.env.VERCEL,
+        SUPABASE_URL: process.env.SUPABASE_URL ? 'set' : 'not_set',
+        SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY ? 'set' : 'not_set'
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // Root endpoint for deployments (e.g., Vercel) to avoid 404 on "/"
 app.get('/', (req, res) => {
   res.status(200).json({

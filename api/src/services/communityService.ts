@@ -1,6 +1,8 @@
 import { Product, ExpertCurator, WatchlistShared, CommunityVote, DealComment } from '../config/storage';
 import axios from 'axios';
-import db from '../config/storage';
+import { getDb } from '../config/database';
+
+const db = getDb();
 
 export interface CredibilityAnalysis {
   score: number; // 0-100
