@@ -13,6 +13,9 @@ const db = getDb();
 
 // Signup
 router.post('/signup', async (req: Request, res: Response) => {
+// The next two lines are added by copilot for debugging
+  console.log('Signup endpoint hit');
+  console.log('Request body:', req.body);
   try {
     const { email, password } = req.body;
     console.log('Signup attempt for email:', email);
@@ -494,4 +497,4 @@ router.post('/:userId/delete', async (req: Request, res: Response) => {
   }
 });
 
-export default router; 
+export default router;
