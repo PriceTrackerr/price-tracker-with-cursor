@@ -11,60 +11,61 @@ const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'changeme';
 const db = getDb();
 
-// Signup
-router.post('/signup', async (req: Request, res: Response) => {
-// The next two lines are added by copilot for debugging
-  console.log('Signup endpoint hit');
-  console.log('Request body:', req.body);
-  try {
-    const { email, password } = req.body;
-    console.log('Signup attempt for email:', email);
-    
-    if (!email || !password) {
-      return res.status(400).json({ success: false, message: 'Email and password required' });
-    }
-    
-    // Check if user already exists
-    const userExists = await db.getUserByEmail(email);
-    if (userExists) {
-      console.log('Email already exists:', email);
-      return res.status(400).json({ success: false, message: 'Email already in use' });
-    }
-    
-    // Hash password
-    const hash = await bcrypt.hash(password, 10);
-    
-    // Create user data
-    const userData = {
-      email,
-      password: hash,
-      username: email.split('@')[0], // Simple username from email
-    };
-    
-    const userId = await db.addUser(userData);
-    const token = jwt.sign({ uid: userId, email }, JWT_SECRET, { expiresIn: '7d' });
+// // Signup
+// router.post('/signup', async (req: Request, res: Response) => {
 
-    // Send welcome email (don't block on email failure)
-    try {
-      await emailService.sendWelcomeEmail(email, userData.username);
-    } catch (emailError) {
-      console.error('Failed to send welcome email:', emailError);
-      // Don't fail the registration if email fails
-    }
+//   try {
+//     const { email, password } = req.body;
+//     console.log('Signup attempt for email:', email);
+    
+//     if (!email || !password) {
+//       return res.status(400).json({ success: false, message: 'Email and password required' });
+//     }
+    
+//     // Check if user already exists
+//     const userExists = await db.getUserByEmail(email);
+//     if (userExists) {
+//       console.log('Email already exists:', email);
+//       return res.status(400).json({ success: false, message: 'Email already in use' });
+//     }
+    
+//     // Hash password
+//     const hash = await bcrypt.hash(password, 10);
+    
+//     // Create user data
+//     const userData = {
+//       email,
+//       password: hash,
+//       username: email.split('@')[0], // Simple username from email
+//     };
+    
+//     const userId = await db.addUser(userData);
+//     const token = jwt.sign({ uid: userId, email }, JWT_SECRET, { expiresIn: '7d' });
 
-    console.log('User created successfully:', userId);
-    return res.json({
-      success: true,
-      data: {
-        user: { uid: userId, ...userData },
-        token
-      },
-      message: 'User registered successfully'
-    });
-  } catch (error) {
-    console.error('Signup error:', error);
-    return res.status(500).json({ success: false, message: 'Internal server error' });
-  }
+//     // Send welcome email (don't block on email failure)
+//     try {
+//       await emailService.sendWelcomeEmail(email, userData.username);
+//     } catch (emailError) {
+//       console.error('Failed to send welcome email:', emailError);
+//       // Don't fail the registration if email fails
+//     }
+
+//     console.log('User created successfully:', userId);
+//     return res.json({
+//       success: true,
+//       data: {
+//         user: { uid: userId, ...userData },
+//         token
+//       },
+//       message: 'User registered successfully'
+//     });
+//   } catch (error) {
+//     console.error('Signup error:', error);
+//     return res.status(500).json({ success: false, message: 'Internal server error' });
+//   }
+// });
+router.post('/signup', (req: Request, res: Response) => {
+  res.json({ success: true, message: 'Signup endpoint is working' });
 });
 
 // Login
