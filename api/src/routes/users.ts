@@ -66,6 +66,7 @@ const db = getDb();
 // });
 router.post('/signup', (req: Request, res: Response) => {
   res.json({ success: true, message: 'Signup endpoint is working' });
+  res.json({ success:false, message:"not working?"})
 });
 
 // Login
