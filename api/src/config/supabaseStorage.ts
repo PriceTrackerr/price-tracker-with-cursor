@@ -128,12 +128,14 @@ class SupabaseStorage {
   async getProducts(userId?: string): Promise<Product[]> {
     try {
       let query = supabase.from(TABLES.PRODUCTS).select('*');
-      
+
       if (userId) {
-        query = query.eq('userId', userId);
+        // DB uses snake_case: user_id
+        query = query.eq('user_id', userId);
       }
 
-      const { data, error } = await query.order('createdAt', { ascending: false });
+      // DB uses snake_case: created_at
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
       return data || [];

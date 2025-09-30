@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Wifi, WifiOff } from 'lucide-react';
+import { Wifi } from 'lucide-react';
 
 interface User {
   id: string;
@@ -60,6 +60,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [reconnecting, setReconnecting] = useState(false);
 
+  const API_BASE = (import.meta as any).env?.VITE_API_BASE as string | undefined;
+  const apiBaseNormalized = (API_BASE || '/api').replace(/\/$/, '');
+
   const fetchUser = useCallback(async (t: string, retryCount = 0) => {
     // Set reconnecting state if this is a retry
     if (retryCount > 0) {
@@ -67,7 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     
     try {
-      const res = await fetch('https://price-tracker-with-cursor-web-app-s.vercel.app/api/users/me', {
+      const res = await fetch(`${apiBaseNormalized}/users/me`, {
         headers: { Authorization: `Bearer ${t}` },
       });
       const data = await res.json();
@@ -203,7 +206,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
-      const res = await fetch('https://price-tracker-with-cursor-web-app-s.vercel.app/api/users/login', {
+      const res = await fetch(`${apiBaseNormalized}/users/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -237,7 +240,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signup = async (email: string, password: string) => {
     setLoading(true);
     try {
-      const res = await fetch('https://price-tracker-with-cursor-web-app-s.vercel.app/api/users/signup', {
+      const res = await fetch(`${apiBaseNormalized}/users/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),

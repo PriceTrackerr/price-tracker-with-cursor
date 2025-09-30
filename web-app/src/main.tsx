@@ -4,7 +4,7 @@ import App from './App'
 import './index.css'
 
 // Rewrite relative '/api' calls to the configured backend base URL if provided
-const API_BASE = (import.meta as any).env?.VITE_API_URL as string | undefined;
+const API_BASE = (import.meta as any).env?.VITE_API_BASE as string | undefined;
 if (typeof window !== 'undefined' && API_BASE && API_BASE !== '/api') {
 	const originalFetch = window.fetch.bind(window);
 	const normalizedBase = API_BASE.replace(/\/$/, '');
