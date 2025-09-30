@@ -11,6 +11,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { initializeCronJobs } from './services/cronJobs';
 import { getDb } from './config/database';
+import { isSupabaseConfigured } from './config/supabase';
 
 // Import routes
 import productRoutes from './routes/products';
@@ -27,67 +28,63 @@ import productMatchingRoutes from './routes/productMatching';
 import { errorHandler } from './middleware/errorHandler';
 import { notFound } from './middleware/notFound';
 
-
-
-
 const app = express();
 app.set('trust proxy', 1);
-app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', '*'); // or specific origin
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
 
+// CORS configuration
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+  })
+);
+
+// Handle preflight requests
+app.use((req, res, next) => {
   if (req.method === 'OPTIONS') {
     return res.sendStatus(204);
   }
-
   next();
 });
-
-
-
 
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
-    methods: ["GET", "POST"]
-  }
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    methods: ['GET', 'POST'],
+  },
 });
 
 const PORT = process.env.PORT || 3001;
 
 // Security middleware
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https:"],
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'"],
+        imgSrc: ["'self'", 'data:', 'https:'],
+      },
     },
-  },
-}));
-
+  })
+);
 
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // allow 1000 requests per 15 minutes per IP for development
+  max: process.env.NODE_ENV === 'production' ? 100 : 1000, // 100 in prod, 1000 in dev
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
 });
-// NOTE: For production, consider lowering this to 100-500 per 15 min per IP
 app.use('/api/', limiter);
 
 // Logging middleware
-if (process.env.NODE_ENV === 'development') {
-  app.use(morgan('dev'));
-} else {
-  app.use(morgan('combined'));
-}
+app.use(process.env.NODE_ENV === 'development' ? morgan('dev') : morgan('combined'));
 
 // Compression middleware
 app.use(compression());
@@ -102,7 +99,7 @@ app.get('/health', (req, res) => {
     status: 'OK',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
   });
 });
 
@@ -111,7 +108,8 @@ app.get('/health/database', async (req, res) => {
   try {
     const db = getDb();
     const dbType = db.constructor.name;
-    
+    const supabaseConfigured = isSupabaseConfigured();
+
     // Test database connection
     let connectionTest = 'unknown';
     try {
@@ -124,34 +122,35 @@ app.get('/health/database', async (req, res) => {
     } catch (error) {
       connectionTest = 'failed';
     }
-    
+
     res.json({
       status: 'ok',
       database: {
         type: dbType,
         connection: connectionTest,
         isSupabase: dbType === 'SupabaseStorage',
-        isFileStorage: dbType === 'FileStorage'
+        isFileStorage: dbType === 'FileStorage',
       },
       environment: {
         USE_SUPABASE: process.env.USE_SUPABASE,
         USE_LOCAL_DB: process.env.USE_LOCAL_DB,
         VERCEL: process.env.VERCEL,
-        SUPABASE_URL: process.env.SUPABASE_URL ? 'set' : 'not_set',
-        SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY ? 'set' : 'not_set'
+        NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'set' : 'not_set',
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'set' : 'not_set',
+        SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY ? 'set' : 'not_set',
       },
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     res.status(500).json({
       status: 'error',
       error: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 });
 
-// Root endpoint for deployments (e.g., Vercel) to avoid 404 on "/"
+// Root endpoint
 app.get('/', (req, res) => {
   res.status(200).json({
     name: 'Price Tracker Backend',
@@ -159,9 +158,9 @@ app.get('/', (req, res) => {
     message: 'API is running',
     endpoints: {
       health: '/health',
-      api: '/api'
+      api: '/api',
     },
-    version: '1.0.0'
+    version: '1.0.0',
   });
 });
 
@@ -178,12 +177,12 @@ app.get('/api', (req, res) => {
       '/api/payments',
       '/api/advanced',
       '/api/features',
-      '/api/product-matching'
-    ]
+      '/api/product-matching',
+    ],
   });
 });
 
-// Test endpoint for local storage
+// Test endpoint for storage
 app.get('/test-storage', async (req, res) => {
   try {
     const db = getDb();
@@ -233,12 +232,19 @@ app.use(errorHandler);
 // Initialize database and start server
 async function startServer() {
   try {
-    // No SQL database to initialize!
+    // Check Supabase configuration
+    if (!isSupabaseConfigured()) {
+      throw new Error('Supabase configuration incomplete, cannot start server');
+    }
+
+    // Test database connection
+    const db = getDb();
+    await db.getProducts(); // Test connection
     console.log('✅ Database connected successfully');
 
-    // Initialize cron jobs
-    // initializeCronJobs(); // TEMPORARILY DISABLED to fix connection issues
-    console.log('⚠️  Cron jobs temporarily disabled for debugging');
+    // Initialize cron jobs (disabled for debugging)
+    // initializeCronJobs();
+    console.log('⚠️ Cron jobs temporarily disabled for debugging');
 
     // Start server
     server.listen(PORT, () => {
