@@ -1,8 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// Accept both SUPABASE_* and NEXT_PUBLIC_SUPABASE_* env names
+const supabaseUrl = (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL) as string | undefined;
+const supabaseAnonKey = (process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) as string | undefined;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY as string | undefined;
 
 const configuredService = !!(supabaseUrl && supabaseServiceKey);
 const configuredPublic = !!(supabaseUrl && supabaseAnonKey);
@@ -56,10 +57,10 @@ export function isSupabaseConfigured(): boolean {
   console.log(
     'Supabase configured:',
     ready,
-    'NEXT_PUBLIC_SUPABASE_URL set:',
-    !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-    'NEXT_PUBLIC_SUPABASE_ANON_KEY set:',
-    !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    'SUPABASE_URL set:',
+    !!process.env.SUPABASE_URL || !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+    'SUPABASE_ANON_KEY set:',
+    !!process.env.SUPABASE_ANON_KEY || !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     'SUPABASE_SERVICE_ROLE_KEY set:',
     !!process.env.SUPABASE_SERVICE_ROLE_KEY
   );
