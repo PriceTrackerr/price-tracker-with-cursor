@@ -286,14 +286,18 @@ class SupabaseStorage {
   async addAlert(alertData: Omit<Alert, 'id' | 'createdAt'>): Promise<string> {
     try {
       const now = new Date().toISOString();
-      const alert: Omit<Alert, 'id'> = {
+      // Map to snake_case columns stored in Supabase
+      const alertToInsert: any = {
         ...alertData,
-        createdAt: now
+        user_id: (alertData as any).userId,
+        created_at: now
       };
+      delete (alertToInsert as any).userId;
+      delete (alertToInsert as any).createdAt;
 
       const { data, error } = await supabase
         .from(TABLES.ALERTS)
-        .insert(alert)
+        .insert(alertToInsert)
         .select()
         .single();
 
@@ -309,10 +313,10 @@ class SupabaseStorage {
       let query = supabase.from(TABLES.ALERTS).select('*');
       
       if (userId) {
-        query = query.eq('userId', userId);
+        query = query.eq('user_id', userId);
       }
 
-      const { data, error } = await query.order('createdAt', { ascending: false });
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
       return data || [];
@@ -327,7 +331,7 @@ class SupabaseStorage {
         .from(TABLES.ALERTS)
         .select('*')
         .eq('isActive', true)
-        .order('createdAt', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       return data || [];
@@ -383,14 +387,16 @@ class SupabaseStorage {
   async addNotification(notificationData: Omit<Notification, 'id' | 'timestamp'>): Promise<string> {
     try {
       const now = new Date().toISOString();
-      const notification: Omit<Notification, 'id'> = {
+      const notificationToInsert: any = {
         ...notificationData,
+        user_id: (notificationData as any).userId,
         timestamp: now
       };
+      delete (notificationToInsert as any).userId;
 
       const { data, error } = await supabase
         .from(TABLES.NOTIFICATIONS)
-        .insert(notification)
+        .insert(notificationToInsert)
         .select()
         .single();
 
@@ -406,7 +412,7 @@ class SupabaseStorage {
       let query = supabase.from(TABLES.NOTIFICATIONS).select('*');
       
       if (userId) {
-        query = query.eq('userId', userId);
+        query = query.eq('user_id', userId);
       }
 
       const { data, error } = await query.order('timestamp', { ascending: false });
@@ -466,7 +472,7 @@ class SupabaseStorage {
       const { error } = await supabase
         .from(TABLES.NOTIFICATIONS)
         .delete()
-        .eq('userId', userId);
+        .eq('user_id', userId);
 
       if (error) throw error;
     } catch (error) {
