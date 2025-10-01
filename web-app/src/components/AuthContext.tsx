@@ -244,6 +244,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         // Sync token to extension if available
         await syncTokenToExtension(data.data.token);
+        // Also sync refresh token if available
+        if (data.data.refreshToken) {
+          try {
+            if (typeof chrome !== 'undefined' && chrome.runtime) {
+              await chrome.runtime.sendMessage({
+                type: 'SYNC_REFRESH_TOKEN',
+                refreshToken: data.data.refreshToken
+              });
+            }
+          } catch {}
+        }
         
         const userData = await fetchUser(data.data.token);
         if (userData) {
@@ -281,6 +292,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         // Sync token to extension if available
         await syncTokenToExtension(data.data.token);
+        if (data.data.refreshToken) {
+          try {
+            if (typeof chrome !== 'undefined' && chrome.runtime) {
+              await chrome.runtime.sendMessage({
+                type: 'SYNC_REFRESH_TOKEN',
+                refreshToken: data.data.refreshToken
+              });
+            }
+          } catch {}
+        }
         
         const userData = await fetchUser(data.data.token);
         if (userData) {

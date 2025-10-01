@@ -222,8 +222,16 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Attempting to sync token from web app...');
             
             // Try to get token from web app's localStorage via content script
-            const tabs = await chrome.tabs.query({ url: `${WEBAPP_BASE_URL}/*` });
+            let tabs = await chrome.tabs.query({ url: `${WEBAPP_BASE_URL}/*` });
             
+            if (tabs.length === 0) {
+                console.log('No existing web app tab found, opening background tab...');
+                const created = await chrome.tabs.create({ url: WEBAPP_BASE_URL, active: false });
+                // Wait a moment for page to load
+                await new Promise(r => setTimeout(r, 1500));
+                tabs = [created];
+            }
+
             if (tabs.length > 0) {
                 const tab = tabs[0];
                 try {
@@ -231,21 +239,30 @@ document.addEventListener('DOMContentLoaded', function() {
                         target: { tabId: tab.id! },
                         func: () => {
                             const token = localStorage.getItem('token');
+                            const refreshToken = localStorage.getItem('refreshToken');
                             const user = localStorage.getItem('user');
-                            return { token, user };
+                            return { token, refreshToken, user };
                         }
                     });
-                    
                     if (result && result[0] && result[0].result) {
-                        const { token, user } = result[0].result;
+                        const { token, refreshToken, user } = result[0].result;
                         if (token) {
                             await chrome.storage.local.set({ 
                                 authToken: token,
+                                refreshToken,
                                 userData: user 
                             });
                             console.log('Token and user data synced from web app');
+                            // If we created this tab, close it quietly
+                            if (tabs.length === 1 && tab.active === false) {
+                                try { await chrome.tabs.remove(tab.id!); } catch {}
+                            }
                             return token;
                         }
+                    }
+                    // Close background tab if we created it and failed to read token
+                    if (tabs.length === 1 && tab.active === false) {
+                        try { await chrome.tabs.remove(tab.id!); } catch {}
                     }
                 } catch (error) {
                     console.log('Could not access web app tab:', error);

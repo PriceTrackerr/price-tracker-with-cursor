@@ -28,6 +28,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     });
     return true; // Indicate async response
   }
+
+  if (request.type === 'SYNC_REFRESH_TOKEN') {
+    console.log('Received refresh token sync request from web app');
+    chrome.storage.local.set({ refreshToken: request.refreshToken }, () => {
+      sendResponse({ success: true });
+    });
+    return true;
+  }
   
   if (request.type === 'LOGOUT') {
     console.log('Received logout request from web app');
