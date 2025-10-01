@@ -54,10 +54,12 @@ export default function Layout({ children }: LayoutProps) {
   const notifPopupRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
 
-  // Fetch notifications
+  // Fetch notifications only when token is available
   useEffect(() => {
-    fetchNotifications();
-  }, [user]);
+    if (token) {
+      fetchNotifications();
+    }
+  }, [token]);
 
   // Fetch search suggestions
   useEffect(() => {

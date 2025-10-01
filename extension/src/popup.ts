@@ -227,8 +227,14 @@ document.addEventListener('DOMContentLoaded', function() {
             if (tabs.length === 0) {
                 console.log('No existing web app tab found, opening background tab...');
                 const created = await chrome.tabs.create({ url: WEBAPP_BASE_URL, active: false });
-                // Wait a moment for page to load
-                await new Promise(r => setTimeout(r, 1500));
+                // Wait for page to finish loading (up to ~6s)
+                for (let i = 0; i < 24; i++) {
+                    try {
+                        const info = await chrome.tabs.get(created.id!);
+                        if ((info as any).status === 'complete') break;
+                    } catch {}
+                    await new Promise(r => setTimeout(r, 250));
+                }
                 tabs = [created];
             }
 
