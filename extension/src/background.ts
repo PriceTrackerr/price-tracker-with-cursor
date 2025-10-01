@@ -39,6 +39,36 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true; // Indicate async response
   }
   
+  // Handle product tracking via background to avoid CORS issues
+  if (request.type === 'TRACK_PRODUCT') {
+    const { token, productInfo } = request.payload || {};
+    const API_BASE_URL = 'https://price-tracker-with-cursor-web-app-s.vercel.app/api';
+    if (!token) {
+      sendResponse({ success: false, error: 'Missing auth token' });
+      return true;
+    }
+    fetch(`${API_BASE_URL}/products/track`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(productInfo)
+    })
+      .then(async (res) => {
+        if (res.ok) {
+          const data = await res.json().catch(() => ({}));
+          sendResponse({ success: true, data });
+        } else {
+          const err = await res.json().catch(() => ({}));
+          sendResponse({ success: false, error: err.message || 'Failed to track product' });
+        }
+      })
+      .catch((err) => {
+        sendResponse({ success: false, error: err?.message || 'Network error' });
+      });
+    return true;
+  }
 
   
   if (request.type === 'PRICE_DROP_ALERT') {

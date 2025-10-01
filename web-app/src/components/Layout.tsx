@@ -75,7 +75,7 @@ export default function Layout({ children }: LayoutProps) {
 
   const fetchSearchSuggestions = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE}/products/search?q=${encodeURIComponent(searchTerm)}&limit=5`, {
+      const response = await fetch(`/api/products/search?q=${encodeURIComponent(searchTerm)}&limit=5`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
@@ -98,7 +98,7 @@ export default function Layout({ children }: LayoutProps) {
       console.log('Fetching notifications...');
       console.log('Token for notifications:', token ? 'Present' : 'Missing');
       
-      const res = await fetch(`${import.meta.env.VITE_API_BASE}/notifications`, {
+      const res = await fetch('/api/notifications', {
         headers: { ...((token) ? { Authorization: `Bearer ${token}` } : {}) },
       });
       const data = await res.json();
@@ -159,7 +159,7 @@ export default function Layout({ children }: LayoutProps) {
 
   const markAllNotificationsRead = async () => {
     try {
-      await fetch(`${import.meta.env.VITE_API_BASE}/notifications/mark-read`, {
+      await fetch('/api/notifications/mark-read', {
         method: 'POST',
         headers: { ...((token) ? { Authorization: `Bearer ${token}` } : {}) },
       });
@@ -175,7 +175,7 @@ export default function Layout({ children }: LayoutProps) {
       const priceDropNotifications = notifications.filter(n => n.type === 'price_drop');
       for (const notification of priceDropNotifications) {
         if (notification.productId) {
-          await fetch(`${import.meta.env.VITE_API_BASE}/users/mark-price-drop-seen`, {
+          await fetch('/api/users/mark-price-drop-seen', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -187,7 +187,7 @@ export default function Layout({ children }: LayoutProps) {
       }
       
       // Clear all notifications
-      await fetch(`${import.meta.env.VITE_API_BASE}/notifications/clear`, {
+      await fetch('/api/notifications/clear', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });

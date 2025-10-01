@@ -80,6 +80,7 @@ router.post('/signup', async (req: Request, res: Response) => {
       data: {
         user: { uid: authData.user!.id, email, username },
         token: authData.session?.access_token,
+        refreshToken: authData.session?.refresh_token,
       },
       message: 'User registered successfully',
     });
@@ -133,6 +134,7 @@ router.post('/login', async (req: Request, res: Response) => {
       data: {
         user: { uid: data.user!.id, email: data.user!.email, username: userData.username },
         token: data.session!.access_token,
+        refreshToken: data.session!.refresh_token,
       },
       message: 'Login successful',
     });
@@ -140,6 +142,36 @@ router.post('/login', async (req: Request, res: Response) => {
     console.error('Login error:', error);
     const errorMessage = error instanceof Error ? error.message : String(error);
     return res.status(500).json({ success: false, message: 'Internal server error', error: errorMessage });
+  }
+});
+
+// Refresh access token using Supabase refresh token
+router.post('/refresh', async (req: Request, res: Response) => {
+  try {
+    const { refreshToken } = req.body as { refreshToken?: string };
+    if (!refreshToken) {
+      return res.status(400).json({ success: false, message: 'Missing refreshToken' });
+    }
+
+    const { data, error } = await supabasePublic.auth.refreshSession({ refresh_token: refreshToken });
+    if (error || !data?.session) {
+      return res.status(401).json({ success: false, message: 'Invalid refresh token' });
+    }
+
+    return res.json({
+      success: true,
+      data: {
+        token: data.session.access_token,
+        refreshToken: data.session.refresh_token,
+        user: {
+          uid: data.user?.id,
+          email: data.user?.email,
+        }
+      }
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return res.status(500).json({ success: false, message });
   }
 });
 

@@ -150,29 +150,21 @@ async function trackProductToBackend(productInfo: ProductInfo): Promise<any> {
       return { success: false, error: 'No authentication token found. Please log in to the web app first.' };
     }
 
-    console.log('🔍 [Content Script] Making request to backend...');
-    const response = await fetch('http://localhost:3001/api/products/track', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(productInfo)
+    console.log('🔍 [Content Script] Sending track request to background...');
+    const response = await chrome.runtime.sendMessage({
+      type: 'TRACK_PRODUCT',
+      payload: {
+        token,
+        productInfo
+      }
     });
 
-    console.log('🔍 [Content Script] Backend response status:', response.status);
-    console.log('🔍 [Content Script] Backend response ok:', response.ok);
+    console.log('🔍 [Content Script] Background response:', response);
 
-    if (response.ok) {
-      const responseData = await response.json();
-      console.log('🔍 [Content Script] Backend response data:', responseData);
-      
-      // Don't show notification here - let popup handle it
-      return { success: true, data: responseData };
+    if (response && response.success) {
+      return { success: true, data: response.data };
     } else {
-      const errorData = await response.json().catch(() => ({}));
-      console.log('🔍 [Content Script] Backend error data:', errorData);
-      return { success: false, error: errorData.message || 'Failed to track product' };
+      return { success: false, error: response?.error || 'Failed to track product' };
     }
   } catch (error: any) {
     console.log('🔍 [Content Script] Network error:', error);

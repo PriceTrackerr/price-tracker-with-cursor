@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Wifi } from 'lucide-react';
+import { Wifi, WifiOff } from 'lucide-react';
 
 interface User {
   id: string;
@@ -60,9 +60,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [reconnecting, setReconnecting] = useState(false);
 
-  const API_BASE = (import.meta as any).env?.VITE_API_BASE as string | undefined;
-  const apiBaseNormalized = (API_BASE || '/api').replace(/\/$/, '');
-
   const fetchUser = useCallback(async (t: string, retryCount = 0) => {
     // Set reconnecting state if this is a retry
     if (retryCount > 0) {
@@ -70,7 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     
     try {
-      const res = await fetch(`${apiBaseNormalized}/users/me`, {
+      const res = await fetch('https://price-tracker-with-cursor-web-app-s.vercel.app/api/users/me', {
         headers: { Authorization: `Bearer ${t}` },
       });
       const data = await res.json();
@@ -130,6 +127,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const t = localStorage.getItem('token');
+    const refreshToken = localStorage.getItem('refreshToken');
     if (t) {
       setToken(t);
 
@@ -160,7 +158,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
       }
     } else {
-      setLoading(false);
+      // Try refresh flow if we have a refresh token but no access token
+      if (refreshToken) {
+        (async () => {
+          try {
+            const resp = await fetch('https://price-tracker-with-cursor-web-app-s.vercel.app/api/users/refresh', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ refreshToken })
+            });
+            const json = await resp.json();
+            if (json?.success && json.data?.token) {
+              localStorage.setItem('token', json.data.token);
+              sessionStorage.setItem('token', json.data.token);
+              setToken(json.data.token);
+              fetchUser(json.data.token);
+            } else {
+              setLoading(false);
+            }
+          } catch (_) {
+            setLoading(false);
+          }
+        })();
+      } else {
+        setLoading(false);
+      }
     }
 
     // Default return for when no cleanup is needed
@@ -206,7 +228,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
-      const res = await fetch(`${apiBaseNormalized}/users/login`, {
+      const res = await fetch('https://price-tracker-with-cursor-web-app-s.vercel.app/api/users/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -216,6 +238,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setToken(data.data.token);
         localStorage.setItem('token', data.data.token);
         sessionStorage.setItem('token', data.data.token); // Backup storage
+        if (data.data.refreshToken) {
+          localStorage.setItem('refreshToken', data.data.refreshToken);
+        }
         
         // Sync token to extension if available
         await syncTokenToExtension(data.data.token);
@@ -240,7 +265,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signup = async (email: string, password: string) => {
     setLoading(true);
     try {
-      const res = await fetch(`${apiBaseNormalized}/users/signup`, {
+      const res = await fetch('https://price-tracker-with-cursor-web-app-s.vercel.app/api/users/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -250,6 +275,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setToken(data.data.token);
         localStorage.setItem('token', data.data.token);
         sessionStorage.setItem('token', data.data.token); // Backup storage
+        if (data.data.refreshToken) {
+          localStorage.setItem('refreshToken', data.data.refreshToken);
+        }
         
         // Sync token to extension if available
         await syncTokenToExtension(data.data.token);
@@ -302,6 +330,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setToken(null);
     localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
     localStorage.removeItem('user'); // Clear user data too
     sessionStorage.removeItem('token'); // Clear backup storage too
     

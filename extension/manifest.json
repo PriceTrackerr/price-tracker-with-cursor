@@ -47,7 +47,9 @@
     "https://www.bestbuy.com/*",
     "https://www.target.com/*",
     "http://localhost:3001/*",
-    "http://localhost:3000/*"
+    "http://localhost:3000/*",
+    "https://price-tracker-with-cursor-web-app.vercel.app/*",
+    "https://price-tracker-with-cursor-web-app-s.vercel.app/*"
   ],
   "background": {
     "service_worker": "background.js"

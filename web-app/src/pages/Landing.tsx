@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../components/AuthContext';
 import { 
   Menu, 
   X, 
@@ -34,6 +35,7 @@ interface PricingCardProps {
 }
 
 function PricingCard({ title, isPopular, monthlyPrice, yearlyPrice, features, buttonText, buttonColor }: PricingCardProps) {
+  const { user } = useAuth();
   const [isYearly, setIsYearly] = useState(false);
   
   const currentPrice = isYearly ? yearlyPrice : monthlyPrice;
@@ -114,7 +116,7 @@ function PricingCard({ title, isPopular, monthlyPrice, yearlyPrice, features, bu
         ))}
       </ul>
       
-      <Link to="/auth" className={getButtonClasses()}>
+      <Link to={user ? "/dashboard" : "/auth"} className={getButtonClasses()}>
         {buttonText}
       </Link>
     </div>
@@ -123,6 +125,7 @@ function PricingCard({ title, isPopular, monthlyPrice, yearlyPrice, features, bu
 
 // Navigation Component
 function Navigation() {
+  const { user } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
@@ -159,13 +162,27 @@ function Navigation() {
 
           {/* Desktop Auth Buttons */}
           <div className="hidden md:flex items-center gap-4">
-            <Link to="/auth" className="text-gray-600 hover:text-gray-900 transition-colors flex items-center">
-              <LogIn className="w-4 h-4 mr-2" />
-              Login
-            </Link>
-            <Link to="/auth" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
-              Get Started
-            </Link>
+            {user ? (
+              <>
+                <Link to="/dashboard" className="text-gray-600 hover:text-gray-900 transition-colors flex items-center">
+                  <LogIn className="w-4 h-4 mr-2" />
+                  Dashboard
+                </Link>
+                <Link to="/dashboard" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+                  Go to Dashboard
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link to="/auth" className="text-gray-600 hover:text-gray-900 transition-colors flex items-center">
+                  <LogIn className="w-4 h-4 mr-2" />
+                  Login
+                </Link>
+                <Link to="/auth" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+                  Get Started
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -215,13 +232,27 @@ function Navigation() {
                 FAQ
               </a>
               <div className="pt-4 border-t border-gray-200 space-y-2">
-                <Link to="/dashboard" className="block text-gray-600 hover:text-gray-900 transition-colors flex items-center">
-                  <LogIn className="w-4 h-4 mr-2" />
-                  Login
-                </Link>
-                <Link to="/dashboard" className="block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors text-center">
-                  Dashboard
-                </Link>
+                {user ? (
+                  <>
+                    <Link to="/dashboard" className="block text-gray-600 hover:text-gray-900 transition-colors flex items-center">
+                      <LogIn className="w-4 h-4 mr-2" />
+                      Dashboard
+                    </Link>
+                    <Link to="/dashboard" className="block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors text-center">
+                      Go to Dashboard
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Link to="/auth" className="block text-gray-600 hover:text-gray-900 transition-colors flex items-center">
+                      <LogIn className="w-4 h-4 mr-2" />
+                      Login
+                    </Link>
+                    <Link to="/auth" className="block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors text-center">
+                      Get Started
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </div>
