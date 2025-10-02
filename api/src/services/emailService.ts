@@ -501,7 +501,7 @@ class EmailService {
                     <!-- CTA -->
                     <tr>
                       <td style="text-align: center; padding-top: 32px;">
-                        <a href="http://localhost:3000" style="display: inline-block; background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: white; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: bold; font-size: 18px; font-family: Arial, Helvetica, sans-serif;">
+                        <a href="${process.env.FRONTEND_URL || 'https://price-tracker-with-cursor-web-app.vercel.app'}" style="display: inline-block; background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: white; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: bold; font-size: 18px; font-family: Arial, Helvetica, sans-serif;">
                           Start Tracking Now →
                         </a>
                       </td>
