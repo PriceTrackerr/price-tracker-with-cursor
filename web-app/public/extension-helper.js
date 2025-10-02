@@ -15,8 +15,8 @@
         }
     });
     
-    // Also listen for chrome extension messages
-    if (typeof chrome !== 'undefined' && chrome.runtime) {
+    // Also listen for chrome extension messages (guard every access)
+    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage && typeof chrome.runtime.onMessage.addListener === 'function') {
         chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             if (request.action === 'getAuthToken') {
                 const token = localStorage.getItem('token');

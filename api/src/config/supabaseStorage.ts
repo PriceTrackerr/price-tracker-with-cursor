@@ -509,14 +509,17 @@ class SupabaseStorage {
   async addPriceHistory(historyData: Omit<PriceHistory, 'id' | 'timestamp'>): Promise<string> {
     try {
       const now = new Date().toISOString();
-      const history: Omit<PriceHistory, 'id'> = {
-        ...historyData,
+      // Map to snake_case columns
+      const toInsert: any = {
+        product_id: (historyData as any).productId,
+        price: (historyData as any).price,
+        currency: (historyData as any).currency,
         timestamp: now
       };
 
       const { data, error } = await supabase
         .from(TABLES.PRICE_HISTORY)
-        .insert(history)
+        .insert(toInsert)
         .select()
         .single();
 
@@ -532,7 +535,7 @@ class SupabaseStorage {
       const { data, error } = await supabase
         .from(TABLES.PRICE_HISTORY)
         .select('*')
-        .eq('productId', productId)
+        .eq('product_id', productId)
         .order('timestamp', { ascending: true });
 
       if (error) throw error;

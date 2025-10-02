@@ -190,6 +190,47 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.log('Authentication check: User is banned');
                     await clearExtensionData();
                     showBannedUserMessage();
+                } else if (response.status === 401) {
+                    // Try to refresh the token once, then retry /users/me
+                    console.log('Auth check 401, attempting refresh...');
+                    const refreshed = await (async () => {
+                        try {
+                            const stored = await new Promise<any>(resolve => chrome.storage.local.get(['refreshToken'], resolve));
+                            const rt = stored?.refreshToken as string | undefined;
+                            if (!rt) return null;
+                            const resp = await fetch(`${API_BASE_URL}/users/refresh`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ refreshToken: rt })
+                            });
+                            if (!resp.ok) return null;
+                            const data = await resp.json();
+                            const newToken = data?.data?.token as string | undefined;
+                            if (newToken) {
+                                await chrome.storage.local.set({ authToken: newToken });
+                                return newToken;
+                            }
+                            return null;
+                        } catch {
+                            return null;
+                        }
+                    })();
+                    if (refreshed) {
+                        const retry = await fetch(`${API_BASE_URL}/users/me`, {
+                            headers: {
+                                'Authorization': `Bearer ${refreshed}`,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        if (retry.ok) {
+                            isUserLoggedIn = true;
+                            console.log('Authentication check: User logged in (after refresh)');
+                            return;
+                        }
+                    }
+                    isUserLoggedIn = false;
+                    console.log('Authentication check: User not logged in');
+                    await clearExtensionData();
                 } else {
                     isUserLoggedIn = false;
                     console.log('Authentication check: User not logged in');
