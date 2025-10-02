@@ -141,6 +141,34 @@ router.get('/search', authMiddleware, async (req: AuthRequest, res: Response) =>
 
 
 
+function canonicalizeUrl(url: string, platform: 'amazon'|'aliexpress'|'ebay'|'walmart'|'shein'|'bestbuy'|'target'): string {
+  try {
+    const u = new URL(url);
+    u.hash = '';
+    // Remove common tracking params
+    const dropParams = new Set(['utm_source','utm_medium','utm_campaign','utm_term','utm_content','tag','aff_platform','aff_short_key','spm','source','adsRedirect','athbdg','classType','ref']);
+    [...u.searchParams.keys()].forEach(k => { if (dropParams.has(k)) u.searchParams.delete(k); });
+    const host = u.hostname.toLowerCase();
+    if (platform === 'amazon') {
+      // Normalize to /dp/ASIN
+      const m = u.pathname.match(/\/dp\/([A-Z0-9]{10})/i) || u.pathname.match(/\/gp\/product\/([A-Z0-9]{10})/i) || u.pathname.match(/\/product\/([A-Z0-9]{10})/i);
+      if (m) return `https://${host}/dp/${m[1].toUpperCase()}`;
+    }
+    if (platform === 'walmart') {
+      const m = u.pathname.match(/\/ip\/([0-9]+)/i);
+      if (m) return `https://${host}/ip/${m[1]}`;
+    }
+    if (platform === 'ebay') {
+      const m = u.pathname.match(/\/itm\/([0-9]+)/i);
+      if (m) return `https://${host}/itm/${m[1]}`;
+    }
+    // Fallback to cleaned URL
+    return u.toString();
+  } catch {
+    return url;
+  }
+}
+
 // Track a new product
 router.post('/track', authMiddleware, validateProduct, async (req: AuthRequest, res: Response) => {
   try {
@@ -161,13 +189,16 @@ router.post('/track', authMiddleware, validateProduct, async (req: AuthRequest, 
     console.log(`[DEBUG] Checking for duplicates - User: ${userId}, URL: ${url}`);
     console.log(`[DEBUG] User has ${products.length} products`);
     
-    const existing = products.find((p: any) => p.url === url);
+    const incomingCanonical = canonicalizeUrl(url, platform);
+    const existing = products.find((p: any) => canonicalizeUrl(p.url, p.platform) === incomingCanonical);
     
     if (existing) {
       console.log(`[DEBUG] Found existing product: ${existing.title}`);
-      return res.status(409).json({
-        success: false,
-        error: 'Product already tracked'
+      // Return success with existing product to avoid showing an error in the extension
+      return res.status(200).json({
+        success: true,
+        data: existing,
+        message: 'Product already tracked'
       });
     }
     
@@ -175,7 +206,7 @@ router.post('/track', authMiddleware, validateProduct, async (req: AuthRequest, 
 
     // Add the new product
     const id = await db.addProduct({ 
-      url, 
+      url: incomingCanonical, 
       title, 
       price: typeof price === 'string' ? parseFloat(price) : price, 
       currency: currency || '$', 

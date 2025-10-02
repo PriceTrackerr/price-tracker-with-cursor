@@ -265,32 +265,32 @@ function Navigation() {
 // Hero Section Component
 function HeroSection() {
   return (
-    <section className="relative bg-gradient-to-br from-blue-50 to-indigo-100 py-20 px-4 overflow-hidden">
+    <section className="relative bg-gradient-to-br from-blue-50 to-indigo-100 py-16 sm:py-20 px-4 overflow-hidden">
       <div className="max-w-6xl mx-auto">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div className="space-y-8">
             <div className="space-y-4">
-              <h1 className="text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
+              <h1 className="text-3xl sm:text-4xl lg:text-6xl font-bold text-gray-900 leading-tight">
                 Track Prices Across Top Stores.{" "}
                 <span className="text-blue-600">Save Big.</span>{" "}
                 <span className="text-indigo-600">Shop Smarter.</span>
               </h1>
-              <p className="text-xl text-gray-600 leading-relaxed">
+              <p className="text-base sm:text-lg lg:text-xl text-gray-600 leading-relaxed">
                 Your ultimate price tracking solution for AliExpress, eBay, Amazon, Shein, and Walmart. 
                 Get alerts, see history, and never miss a deal.
               </p>
             </div>
             
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               <button 
-                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center gap-2"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 sm:px-8 py-4 sm:py-6 rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center gap-2"
                 onClick={() => window.open('https://chrome.google.com/webstore', '_blank')}
               >
                 <Chrome className="w-5 h-5" />
                 Add to Chrome (It's Free!)
               </button>
               <button 
-                className="px-8 py-6 rounded-xl border-2 border-gray-300 hover:border-blue-600 transition-all duration-300 flex items-center justify-center gap-2"
+                className="px-6 sm:px-8 py-4 sm:py-6 rounded-xl border-2 border-gray-300 hover:border-blue-600 transition-all duration-300 flex items-center justify-center gap-2"
                 onClick={() => {
                   document.getElementById('how-it-works')?.scrollIntoView({ 
                     behavior: 'smooth' 
@@ -319,7 +319,7 @@ function HeroSection() {
           </div>
 
           <div className="relative">
-            <div className="bg-white rounded-3xl shadow-2xl p-8 transform rotate-3 hover:rotate-0 transition-transform duration-500">
+            <div className="bg-white rounded-3xl shadow-2xl p-6 sm:p-8 transform rotate-3 hover:rotate-0 transition-transform duration-500">
               <div className="w-full h-64 bg-gradient-to-br from-blue-100 to-indigo-200 rounded-2xl flex items-center justify-center">
                 <div className="text-center">
                   <div className="w-16 h-16 bg-[#2563EB] rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">

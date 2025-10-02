@@ -447,7 +447,12 @@ const ProductCard: React.FC<{
       <div className="relative h-64 bg-gray-100">
           <img
             src={product.imageUrl || 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400&h=300&fit=crop'}
-            alt={product.title}
+            alt={product.title || 'Product image'}
+            loading="lazy"
+            onError={(e) => {
+              const el = e.target as HTMLImageElement;
+              el.src = 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400&h=300&fit=crop';
+            }}
           className="w-full h-full object-cover"
         />
         

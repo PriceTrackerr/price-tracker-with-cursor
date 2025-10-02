@@ -732,13 +732,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (response && (
                     (response as any).success === true || 
                     (response as any).data || 
-                    (response as any).message?.includes('successfully')
+                    (response as any).message?.includes('successfully') ||
+                    (response as any).message?.toLowerCase()?.includes('already tracked')
                 )) {
-                    const message = (response as any).message || 'Product tracked successfully!';
+                    const message = (response as any).message?.toLowerCase()?.includes('already tracked')
+                      ? 'Already tracked — opening dashboard'
+                      : ((response as any).message || 'Product tracked successfully!');
                     showSuccessMessage(message);
                     
                     // Refresh data after tracking
                     await refreshExtensionData();
+                    // Optional: open dashboard when already tracked
+                    if ((response as any).message?.toLowerCase()?.includes('already tracked')) {
+                      try { chrome.tabs.create({ url: `${WEBAPP_BASE_URL}/products` }); } catch {}
+                    }
                 } else {
                     // Check if there's an error message
                     const errorMsg = (response as any)?.error || 'Failed to track product';
