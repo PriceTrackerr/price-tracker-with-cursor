@@ -51,6 +51,11 @@
     "https://price-tracker-with-cursor-web-app.vercel.app/*",
     "https://price-tracker-with-cursor-web-app-s.vercel.app/*"
   ],
+  "externally_connectable": {
+    "matches": [
+      "https://price-tracker-with-cursor-web-app.vercel.app/*"
+    ]
+  },
   "background": {
     "service_worker": "background.js"
   },

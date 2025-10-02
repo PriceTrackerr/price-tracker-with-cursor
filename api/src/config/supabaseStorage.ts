@@ -104,17 +104,24 @@ class SupabaseStorage {
   async addProduct(productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
     try {
       const now = new Date().toISOString();
-      const product: Omit<Product, 'id'> = {
-        ...productData,
-        stockStatus: productData.stockStatus || 'unknown',
-        discountInfo: productData.discountInfo ?? undefined,
-        createdAt: now,
-        updatedAt: now
+      // Map to snake_case columns expected by Supabase
+      const toInsert: any = {
+        url: (productData as any).url,
+        title: (productData as any).title,
+        price: (productData as any).price,
+        currency: (productData as any).currency,
+        platform: (productData as any).platform,
+        image_url: (productData as any).imageUrl || '',
+        user_id: (productData as any).userId,
+        stock_status: (productData as any).stockStatus || 'unknown',
+        discount_info: (productData as any).discountInfo ?? undefined,
+        created_at: now,
+        updated_at: now
       };
 
       const { data, error } = await supabase
         .from(TABLES.PRODUCTS)
-        .insert(product)
+        .insert(toInsert)
         .select()
         .single();
 
@@ -175,9 +182,27 @@ class SupabaseStorage {
 
   async updateProduct(id: string, update: Partial<Product>): Promise<boolean> {
     try {
+      // Map known camelCase fields to snake_case
+      const mapped: any = {};
+      const mapField = (from: string, to: string) => {
+        if ((update as any)[from] !== undefined) mapped[to] = (update as any)[from];
+      };
+      mapField('url', 'url');
+      mapField('title', 'title');
+      mapField('price', 'price');
+      mapField('currency', 'currency');
+      mapField('platform', 'platform');
+      mapField('imageUrl', 'image_url');
+      mapField('userId', 'user_id');
+      mapField('stockStatus', 'stock_status');
+      mapField('discountInfo', 'discount_info');
+      mapField('matchedProducts', 'matched_products');
+      mapField('totalMatches', 'total_matches');
+      mapped['updated_at'] = new Date().toISOString();
+
       const { error } = await supabase
         .from(TABLES.PRODUCTS)
-        .update({ ...update, updatedAt: new Date().toISOString() })
+        .update(mapped)
         .eq('id', id);
 
       if (error) throw error;

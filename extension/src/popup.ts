@@ -84,6 +84,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     <button class="btn btn-primary" id="loginBtn" style="margin-top: 12px;">
                         Log In
                     </button>
+                    <button class="btn" id="pasteTokenBtn" style="margin-top: 8px; margin-left: 8px;">
+                        Paste Token Manually
+                    </button>
                 </div>
             `;
             
@@ -92,6 +95,23 @@ document.addEventListener('DOMContentLoaded', function() {
             if (loginBtn) {
                 loginBtn.addEventListener('click', () => {
                     chrome.tabs.create({ url: WEBAPP_BASE_URL });
+                });
+            }
+
+            // Manual token paste for fallback
+            const pasteBtn = document.getElementById('pasteTokenBtn');
+            if (pasteBtn) {
+                pasteBtn.addEventListener('click', async () => {
+                    try {
+                        const token = window.prompt('Paste access token (token):');
+                        if (!token) return;
+                        const refreshToken = window.prompt('Paste refresh token (optional):') || '';
+                        await chrome.storage.local.set({ authToken: token, refreshToken });
+                        showSuccessMessage('Token saved. You can track now.');
+                        await refreshExtensionData();
+                    } catch (e) {
+                        showErrorMessage('Failed to save token');
+                    }
                 });
             }
         }
@@ -201,19 +221,35 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Get stored token from extension storage
+    // Get stored token; if missing, attempt refresh via refreshToken
     async function getStoredToken(): Promise<string | null> {
-        return new Promise((resolve) => {
-            chrome.storage.local.get(['authToken'], (result) => {
-                if (result.authToken) {
-                    console.log('Token found in extension storage');
-                    resolve(result.authToken);
-                } else {
-                    console.log('No token in extension storage');
-                    resolve(null);
+        const stored = await new Promise<any>(resolve => chrome.storage.local.get(['authToken','refreshToken'], resolve));
+        if (stored?.authToken) {
+            console.log('Token found in extension storage');
+            return stored.authToken as string;
+        }
+        console.log('No token in extension storage, attempting refresh...');
+        if (stored?.refreshToken) {
+            try {
+                const resp = await fetch(`${API_BASE_URL}/users/refresh`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ refreshToken: stored.refreshToken })
+                });
+                if (resp.ok) {
+                    const data = await resp.json();
+                    const newToken = data?.data?.token as string | undefined;
+                    if (newToken) {
+                        await chrome.storage.local.set({ authToken: newToken });
+                        console.log('Token refreshed via API');
+                        return newToken;
+                    }
                 }
-            });
-        });
+            } catch (e) {
+                console.log('Refresh attempt failed');
+            }
+        }
+        return null;
     }
 
     // Manual token sync function
@@ -221,6 +257,18 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             console.log('Attempting to sync token from web app...');
             
+            // Ensure we have host permission for the web app origin
+            try {
+                const granted = await (chrome.permissions as any).request?.({
+                    origins: [`${WEBAPP_BASE_URL}/*`]
+                });
+                if (granted) {
+                    console.log('Host permission granted for web app');
+                }
+            } catch (e) {
+                console.log('Permission request failed or not supported:', e);
+            }
+
             // Try to get token from web app's localStorage via content script
             let tabs = await chrome.tabs.query({ url: `${WEBAPP_BASE_URL}/*` });
             
