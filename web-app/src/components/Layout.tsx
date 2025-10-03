@@ -344,67 +344,35 @@ export default function Layout({ children }: LayoutProps) {
       }`}>
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="p-4 border-b border-gray-200">
-            <div className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'justify-between'}`}>
-              {!sidebarCollapsed && (
-                <div className="flex flex-col items-center gap-2">
-                  <div className="w-16 h-16 bg-[#2563EB] rounded-lg flex items-center justify-center shadow-sm">
-                    <svg width="40" height="40" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <rect x="0" y="0" width="100" height="100" rx="20" fill="#2563EB"/>
-                      <path d="M25 70 C35 50, 65 50, 75 30" stroke="white" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round"/>
-                      <circle cx="75" cy="30" r="6" fill="white"/>
-                    </svg>
-                  </div>
-                  <span className="font-bold text-lg text-gray-900 text-center">Price Tracker</span>
-                </div>
-              )}
-              {sidebarCollapsed && (
-                <div className="w-10 h-10 bg-[#2563EB] rounded-lg flex items-center justify-center shadow-sm mx-auto">
-                  <svg width="24" height="24" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <div className={`border-b border-gray-200 ${sidebarCollapsed ? 'p-2' : 'p-4'}`}>
+            {!sidebarCollapsed && (
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-16 h-16 bg-[#2563EB] rounded-lg flex items-center justify-center shadow-sm">
+                  <svg width="40" height="40" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <rect x="0" y="0" width="100" height="100" rx="20" fill="#2563EB"/>
                     <path d="M25 70 C35 50, 65 50, 75 30" stroke="white" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round"/>
                     <circle cx="75" cy="30" r="6" fill="white"/>
                   </svg>
                 </div>
-              )}
-              {!sidebarCollapsed && (
+                <span className="font-bold text-lg text-gray-900 text-center">Price Tracker</span>
                 <button
-                  onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                  onClick={() => setSidebarCollapsed(true)}
                   className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  title="Collapse sidebar"
                 >
                   <X className="w-4 h-4" />
                 </button>
-              )}
-            </div>
-          </div>
-
-          {/* Navigation */}
-          <nav className="flex-1 p-4">
-            <div className="space-y-2">
-              {navigation.map((item) => {
-                const Icon = item.icon;
-                const isActive = location.pathname === item.href;
-                
-                return (
-                  <Link
-                    key={item.id}
-                    to={item.href}
-                    className={`w-full flex items-center gap-3 h-12 px-3 rounded-lg transition-all duration-200 ${
-                      isActive 
-                        ? "bg-blue-600 text-white shadow-lg shadow-blue-600/25" 
-                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                    } ${sidebarCollapsed ? "justify-center px-2" : ""}`}
-                  >
-                    <Icon className={`w-5 h-5 ${sidebarCollapsed ? "mx-0" : "mr-0"}`} />
-                    {!sidebarCollapsed && <span>{item.label}</span>}
-                  </Link>
-                );
-              })}
-            </div>
-            
-            {/* Toggle Button for Collapsed State */}
+              </div>
+            )}
             {sidebarCollapsed && (
-              <div className="mt-4 flex justify-center">
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-12 h-12 bg-[#2563EB] rounded-lg flex items-center justify-center shadow-sm">
+                  <svg width="28" height="28" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="0" y="0" width="100" height="100" rx="20" fill="#2563EB"/>
+                    <path d="M25 70 C35 50, 65 50, 75 30" stroke="white" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round"/>
+                    <circle cx="75" cy="30" r="6" fill="white"/>
+                  </svg>
+                </div>
                 <button
                   onClick={() => setSidebarCollapsed(false)}
                   className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -414,6 +382,32 @@ export default function Layout({ children }: LayoutProps) {
                 </button>
               </div>
             )}
+          </div>
+
+          {/* Navigation */}
+          <nav className={`flex-1 ${sidebarCollapsed ? 'p-2' : 'p-4'}`}>
+            <div className="space-y-2">
+              {navigation.map((item) => {
+                const Icon = item.icon;
+                const isActive = location.pathname === item.href;
+                
+                return (
+                  <Link
+                    key={item.id}
+                    to={item.href}
+                    className={`w-full flex items-center rounded-lg transition-all duration-200 ${
+                      isActive 
+                        ? "bg-blue-600 text-white shadow-lg shadow-blue-600/25" 
+                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                    } ${sidebarCollapsed ? "justify-center h-12 px-2" : "gap-3 h-12 px-3"}`}
+                    title={sidebarCollapsed ? item.label : undefined}
+                  >
+                    <Icon className={`${sidebarCollapsed ? "w-6 h-6" : "w-5 h-5"}`} />
+                    {!sidebarCollapsed && <span>{item.label}</span>}
+                  </Link>
+                );
+              })}
+            </div>
           </nav>
 
           {/* User Section */}

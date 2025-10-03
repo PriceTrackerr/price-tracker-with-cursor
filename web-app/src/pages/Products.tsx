@@ -444,8 +444,8 @@ const ProductCard: React.FC<{
       }`}
       onClick={() => navigate(`/products/${product.id}`)}
     >
-      {/* Product Image - Bigger */}
-      <div className="relative h-64 bg-gray-100">
+      {/* Product Image - Responsive */}
+      <div className="relative h-48 sm:h-56 md:h-64 bg-gray-100">
           <img
             src={product.imageUrl || 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400&h=300&fit=crop'}
             alt={product.title || 'Product image'}
@@ -515,17 +515,17 @@ const ProductCard: React.FC<{
         </div>
 
       {/* Content */}
-      <div className="p-4">
+      <div className="p-3 md:p-4">
         {/* Title */}
-        <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 leading-tight mb-2">
+        <h3 className="text-sm md:text-base font-semibold text-gray-900 line-clamp-2 leading-tight mb-2">
               {product.title}
             </h3>
 
         {/* Price Section */}
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
           <div className="flex items-center gap-2">
             <DollarSign className="w-4 h-4 text-gray-500" />
-            <span className="text-xl font-bold text-gray-900">
+            <span className="text-lg md:text-xl font-bold text-gray-900">
               {product.currency}{product.price.toFixed(2)}
                           </span>
             {priceChange && (
@@ -584,20 +584,20 @@ const ProductCard: React.FC<{
             </div>
         )}
 
-                {/* Action Buttons - Bottom Right */}
-        <div className="flex items-center justify-between">
-          {/* Left side - Buy Now button */}
+                {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          {/* Buy Now button */}
           <a
             href={product.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
+            className="flex-1 px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors text-center"
           >
               Buy Now
           </a>
             
-          {/* Right side - Action buttons */}
-          <div className="flex items-center gap-1">
+          {/* Action buttons */}
+          <div className="flex items-center justify-center gap-1">
             <button 
               onClick={(e) => {
                 e.stopPropagation();
@@ -1175,31 +1175,30 @@ export default function Products() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gray-50 p-3 md:p-6">
+      <div className="max-w-7xl mx-auto space-y-4 md:space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-semibold text-gray-900">Products</h2>
-            <p className="text-gray-600 mt-1">{filteredProducts.length} tracked products</p>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <div className="relative">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h2 className="text-xl md:text-2xl font-semibold text-gray-900">Products</h2>
+              <p className="text-sm md:text-base text-gray-600 mt-1">{filteredProducts.length} tracked products</p>
+            </div>
+            
+            {/* Mobile: Stack controls vertically, Desktop: Horizontal */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               <button
                 onClick={() => handleExport('csv')}
-                className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <Download className="-ml-1 mr-2 h-4 w-4" />
                 Export CSV
               </button>
-            </div>
 
-            <div className="relative">
               <select
                 value={filters.sortBy}
                 onChange={(e) => handleSort(e.target.value)}
-                className="w-48 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-500 focus:outline-none appearance-none bg-white"
+                className="w-full sm:w-48 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-500 focus:outline-none appearance-none bg-white"
               >
                 <option value="createdAt">Date Added</option>
                 <option value="price">Price</option>
@@ -1209,19 +1208,20 @@ export default function Products() {
                 <option value="platform">Platform</option>
               </select>
             </div>
-            
-            <div className="relative">
-              <select
-                value={filters.stockStatus}
-                onChange={(e) => handleFilterChange('stockStatus', e.target.value)}
-                className="w-40 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-500 focus:outline-none appearance-none bg-white"
-              >
-                <option value="">All Status</option>
-                <option value="in_stock">In Stock</option>
-                <option value="out_of_stock">Out of Stock</option>
-                <option value="unknown">Unknown</option>
-              </select>
+          </div>
+
+          {/* Search Bar */}
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-5 w-5 text-gray-400" />
             </div>
+            <input
+              type="text"
+              placeholder="Search products..."
+              value={filters.search}
+              onChange={(e) => handleFilterChange('search', e.target.value)}
+              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-500 focus:outline-none bg-white text-sm"
+            />
           </div>
         </div>
 
@@ -1253,7 +1253,7 @@ export default function Products() {
         )}
 
         {/* Products Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 lg:gap-8">
           {filteredProducts.map((product) => (
             <ProductCard
               key={product.id}
@@ -1449,12 +1449,13 @@ export default function Products() {
       )}
 
       {/* Add Product Button */}
-      <div className="fixed bottom-6 right-6">
+      <div className="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-40">
         <button
           onClick={() => setShowAddModal(true)}
-          className="bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition-colors"
+          className="bg-blue-600 text-white p-3 md:p-4 rounded-full shadow-lg hover:bg-blue-700 transition-colors"
+          title="Add Product"
         >
-          <Plus className="h-6 w-6" />
+          <Plus className="h-5 w-5 md:h-6 md:w-6" />
         </button>
       </div>
     </div>
