@@ -145,7 +145,23 @@ class SupabaseStorage {
       const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      const mapped = (data || []).map((row: any) => ({
+        id: row.id,
+        url: row.url,
+        title: row.title,
+        price: row.price,
+        currency: row.currency,
+        platform: row.platform,
+        imageUrl: row.image_url || '',
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        userId: row.user_id,
+        stockStatus: row.stock_status || 'unknown',
+        discountInfo: row.discount_info,
+        matchedProducts: row.matched_products || [],
+        totalMatches: row.total_matches || (row.matched_products ? row.matched_products.length : 0),
+      }));
+      return mapped;
     } catch (error) {
       handleSupabaseError(error, 'getProducts');
     }
@@ -160,7 +176,24 @@ class SupabaseStorage {
         .single();
 
       if (error && error.code !== 'PGRST116') throw error; // PGRST116 = no rows returned
-      return data || undefined;
+      if (!data) return undefined;
+      const row: any = data;
+      return {
+        id: row.id,
+        url: row.url,
+        title: row.title,
+        price: row.price,
+        currency: row.currency,
+        platform: row.platform,
+        imageUrl: row.image_url || '',
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        userId: row.user_id,
+        stockStatus: row.stock_status || 'unknown',
+        discountInfo: row.discount_info,
+        matchedProducts: row.matched_products || [],
+        totalMatches: row.total_matches || (row.matched_products ? row.matched_products.length : 0),
+      } as any;
     } catch (error) {
       handleSupabaseError(error, 'getProductById');
     }

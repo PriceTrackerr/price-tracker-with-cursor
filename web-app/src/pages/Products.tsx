@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import toast from 'react-hot-toast';
 import { useAuth } from '../components/AuthContext';
 import ProductMatching from '../components/ProductMatching';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -996,7 +997,7 @@ export default function Products() {
     };
 
     try {
-      const response = await fetch('/api/products', {
+      const response = await fetch('/api/products/track', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1007,15 +1008,23 @@ export default function Products() {
 
       const data = await response.json();
       if (data.success) {
-        console.log('Product added successfully!');
+        // Treat both new and already-tracked as success
+        const msg: string = (data.message || '').toLowerCase();
+        if (msg.includes('already')) {
+          toast.success('Already tracked — opening details.');
+        } else {
+          toast.success('Product tracked successfully');
+        }
         setShowAddModal(false);
         fetchProducts();
         (e.target as HTMLFormElement).reset();
       } else {
         console.error('Failed to add product:', data.message);
+        toast.error(data.message || 'Failed to track product');
       }
     } catch (error) {
       console.error('Error adding product:', error);
+      toast.error('Failed to track product');
     }
   };
 

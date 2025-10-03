@@ -170,7 +170,7 @@ export default function AdvancedFeatures({ product }: AdvancedFeaturesProps) {
 
   const loadConditionAnalysis = async () => {
     try {
-      const response = await fetch(`http://localhost:3001/api/advanced/condition-analysis/${product.id}`);
+      const response = await fetch(`/api/advanced/condition-analysis/${product.id}`);
       if (response.ok) {
         const data = await response.json();
         setConditionAnalysis({

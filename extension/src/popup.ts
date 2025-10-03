@@ -661,7 +661,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
     // Handle track product
+    let lastTrackClickAt = 0;
     async function handleTrackProduct() {
+        const now = Date.now();
+        if (now - lastTrackClickAt < 2000) {
+          return;
+        }
+        lastTrackClickAt = now;
         if (!trackProductBtn) return;
 
         // Show loading state
@@ -774,6 +780,8 @@ document.addEventListener('DOMContentLoaded', function() {
             trackProductBtn.disabled = false;
             if (btnText) btnText.textContent = 'Track This Product';
             if (btnIcon) btnIcon.style.animation = '';
+            // allow next click after short delay
+            setTimeout(() => { lastTrackClickAt = 0; }, 500);
         }
     }
 
