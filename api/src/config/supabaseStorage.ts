@@ -346,24 +346,20 @@ class SupabaseStorage {
       const now = new Date().toISOString();
       // Map to snake_case columns stored in Supabase
       const alertToInsert: any = {
-        ...alertData,
         user_id: (alertData as any).userId,
         product_id: (alertData as any).productId,
         product_title: (alertData as any).productTitle,
         target_price: (alertData as any).targetPrice,
         current_price: (alertData as any).currentPrice,
         is_active: (alertData as any).isActive,
-        notify_on_restock: (alertData as any).notifyOnRestock || false,
+        email: (alertData as any).email || null,
         created_at: now
       };
-      delete (alertToInsert as any).userId;
-      delete (alertToInsert as any).productId;
-      delete (alertToInsert as any).productTitle;
-      delete (alertToInsert as any).targetPrice;
-      delete (alertToInsert as any).currentPrice;
-      delete (alertToInsert as any).isActive;
-      delete (alertToInsert as any).notifyOnRestock;
-      delete (alertToInsert as any).createdAt;
+
+      // Skip notify_on_restock for now - column might not exist in schema
+      // TODO: Add notify_on_restock column to Supabase alerts table
+
+      console.log('🔍 Inserting alert with data:', alertToInsert);
 
       const { data, error } = await supabase
         .from(TABLES.ALERTS)
@@ -371,9 +367,15 @@ class SupabaseStorage {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('🚨 Supabase insert error:', error);
+        throw error;
+      }
+      
+      console.log('✅ Alert created successfully with ID:', data.id);
       return data.id;
     } catch (error) {
+      console.error('🚨 addAlert error:', error);
       handleSupabaseError(error, 'addAlert');
     }
   }
@@ -399,7 +401,7 @@ class SupabaseStorage {
         currentPrice: alert.current_price,
         isActive: alert.is_active,
         email: alert.email,
-        notifyOnRestock: alert.notify_on_restock || false,
+        notifyOnRestock: alert.notify_on_restock || false, // Default to false if column doesn't exist
         createdAt: alert.created_at,
         userId: alert.user_id
       }));

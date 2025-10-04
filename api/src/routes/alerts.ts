@@ -61,11 +61,24 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
       userId,
     };
     
+    console.log('🔍 Creating alert with data:', newAlert);
     const alertId = await db.addAlert(newAlert);
+    console.log('✅ Alert created successfully with ID:', alertId);
     return res.json({ success: true, data: { id: alertId, ...newAlert }, message: 'Alert created successfully' });
   } catch (error: unknown) {
-    console.error('Error creating alert:', error);
-    return res.status(500).json({ success: false, message: 'Failed to create alert' });
+    console.error('🚨 Error creating alert:', error);
+    
+    // Provide more detailed error information
+    let errorMessage = 'Failed to create alert';
+    if (error instanceof Error) {
+      errorMessage = `Failed to create alert: ${error.message}`;
+    }
+    
+    return res.status(500).json({ 
+      success: false, 
+      message: errorMessage,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 });
 
