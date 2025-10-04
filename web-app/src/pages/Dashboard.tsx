@@ -587,6 +587,31 @@ export default function Dashboard() {
     }
   };
 
+  const updatePriceHistory = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      // Update price history for all products
+      const updatePromises = products.map(product => 
+        fetch(`/api/alerts/update-price-history/${product.id}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        })
+      );
+
+      await Promise.all(updatePromises);
+      toast.success('Price history updated for all products!');
+      fetchDashboardData();
+    } catch (error) {
+      console.error('Error updating price history:', error);
+      toast.error('Error updating price history');
+    }
+  };
+
   // Fetch seen price drops first, then dashboard data
   const fetchSeenPriceDrops = async () => {
     if (!token) {
@@ -750,6 +775,15 @@ export default function Dashboard() {
               <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c1.5 0 2.9.37 4.13 1.02"></path>
             </svg>
             Check Prices
+          </button>
+          <button
+            onClick={updatePriceHistory}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+            </svg>
+            Update History
           </button>
           <button
             onClick={() => {

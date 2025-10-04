@@ -46,7 +46,7 @@ export class ProductMatchScraper {
             sourceProductId: sourceProduct.id,
             matchedProductId: match.product.id,
             confidence: match.confidence || match.score || 0.5,
-            similarity: match.similarity || 0.5,
+            similarity: (match as any).similarity || 0.5,
             matchReason: match.matchReason || 'Product similarity match',
             priceDifference: match.priceDifference || 0,
             priceDifferencePercent: match.priceDifferencePercent || 0,

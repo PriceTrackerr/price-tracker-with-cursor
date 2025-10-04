@@ -159,13 +159,106 @@ router.get('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
 // Manual trigger for price drop check (for testing)
 router.post('/trigger-check', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const { checkPriceAlerts } = require('../services/cronJobs');
+    const { checkPriceAlerts } = await import('../services/cronJobs');
     console.log('🔔 Manual price drop check triggered');
+    
+    // First, update price history for all products to capture manual price changes
+    await updatePriceHistoryForAllProducts();
+    
+    // Then run the price drop check
     await checkPriceAlerts();
     res.json({ success: true, message: 'Price drop check completed' });
   } catch (error: unknown) {
     console.error('Error triggering price check:', error);
     res.status(500).json({ success: false, message: 'Failed to trigger price check' });
+  }
+});
+
+// Helper function to update price history for all products
+async function updatePriceHistoryForAllProducts() {
+  try {
+    console.log('📊 Updating price history for all products...');
+    const allProducts = await db.getProducts();
+    
+    for (const product of allProducts) {
+      // Get the latest price history entry
+      const history = await db.getPriceHistory(product.id);
+      const latestEntry = history[history.length - 1];
+      
+      // If current price is different from latest history entry, add new entry
+      if (!latestEntry || latestEntry.price !== product.price) {
+        console.log(`📈 Price changed for ${product.title}: ${latestEntry?.price || 'N/A'} → ${product.price}`);
+        await db.addPriceHistory({
+          productId: product.id,
+          price: product.price,
+          currency: product.currency || 'USD'
+        });
+      }
+    }
+    
+    console.log('✅ Price history updated for all products');
+  } catch (error) {
+    console.error('❌ Error updating price history:', error);
+  }
+}
+
+// Update price history for a specific product (for manual price changes)
+router.post('/update-price-history/:productId', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const { productId } = req.params;
+    const userId = req.user?.uid;
+    
+    if (!productId) {
+      return res.status(400).json({ success: false, message: 'Product ID is required' });
+    }
+    
+    // Get the product
+    const product = await db.getProductById(productId);
+    if (!product) {
+      return res.status(404).json({ success: false, message: 'Product not found' });
+    }
+    
+    // Check if user owns this product
+    if (product.userId !== userId) {
+      return res.status(403).json({ success: false, message: 'Not authorized' });
+    }
+    
+    // Get the latest price history entry
+    const history = await db.getPriceHistory(productId);
+    const latestEntry = history[history.length - 1];
+    
+    // If current price is different from latest history entry, add new entry
+    if (!latestEntry || latestEntry.price !== product.price) {
+      console.log(`📈 Price changed for ${product.title}: ${latestEntry?.price || 'N/A'} → ${product.price}`);
+      await db.addPriceHistory({
+        productId: productId,
+        price: product.price,
+        currency: product.currency || 'USD'
+      });
+      
+      res.json({ 
+        success: true, 
+        message: 'Price history updated',
+        data: {
+          previousPrice: latestEntry?.price || null,
+          currentPrice: product.price,
+          priceChange: latestEntry ? product.price - latestEntry.price : 0
+        }
+      });
+    } else {
+      res.json({ 
+        success: true, 
+        message: 'No price change detected',
+        data: {
+          currentPrice: product.price,
+          priceChange: 0
+        }
+      });
+    }
+    
+  } catch (error: unknown) {
+    console.error('Error updating price history:', error);
+    res.status(500).json({ success: false, message: 'Failed to update price history' });
   }
 });
 
