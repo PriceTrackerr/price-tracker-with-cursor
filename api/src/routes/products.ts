@@ -224,46 +224,16 @@ router.post('/track', authMiddleware, validateProduct, async (req: AuthRequest, 
       currency: currency || '$' 
     });
 
-    // Find product matches and update both products
-    const allProducts = await db.getProducts();
-    const newProduct = allProducts.find((p: any) => p.id === id);
+    // Pre-scrape and store matches for the new product (BuyHatke approach)
+    const { productMatchScraper } = require('../services/productMatchScraper');
+    const newProduct = await db.getProductById(id);
     
     if (newProduct) {
-      console.log(`[PRODUCT MATCHING] Looking for matches for: ${newProduct.title}`);
-      // Use the consolidated product matching service
-      const { matchProducts } = require('../services/productMatchingService');
-      const candidateProducts = allProducts.filter((p: any) => p.id !== id);
-      const matches = matchProducts(newProduct, candidateProducts);
-      const matchedProductIds = matches.map((match: any) => match.id);
-
-      console.log(`[PRODUCT MATCHING] Found ${matches.length} matches:`);
-      matches.forEach((match: any) => {
-        console.log(`  - ${match.title} (${match.platform}) - Confidence: ${match.confidence.toFixed(2)}`);
+      console.log(`🚀 Triggering pre-scrape for new product: ${newProduct.title}`);
+      // Run pre-scraping in background (don't wait for it)
+      productMatchScraper.scrapeAndStoreMatches(newProduct).catch((error: any) => {
+        console.error('❌ Background pre-scraping failed:', error);
       });
-      
-      // Update the new product with matches and total count
-      await db.updateProduct(id, { 
-        matchedProducts: matchedProductIds,
-        totalMatches: matches.length
-      });
-      
-      // Update existing products to include this new product as a match
-      for (const match of matches) {
-        const existingProduct = allProducts.find((p: any) => p.id === match.product.id);
-        if (existingProduct) {
-          const currentMatches = existingProduct.matchedProducts || [];
-          if (!currentMatches.includes(id)) {
-            currentMatches.push(id);
-            // Update both matchedProducts and totalMatches
-            await db.updateProduct(match.product.id, { 
-              matchedProducts: currentMatches,
-              totalMatches: currentMatches.length
-            });
-          }
-        }
-      }
-      
-      console.log(`[PRODUCT MATCHING] Updated ${matches.length} products with new matches`);
     }
     
     return res.status(201).json({ 
@@ -1302,36 +1272,34 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
       });
     }
 
-    console.log(`🎯 Finding enhanced matches for: ${sourceProduct.title}`);
+    console.log(`🔍 Getting stored matches for product: ${sourceProduct.title} (ID: ${productId})`);
 
-    // Get all products for matching (exclude the source product)
-    const allProducts = await db.getProducts();
-    const candidateProducts = allProducts.filter((p: any) => p.id !== productId);
+    // Get stored matches from database (fast lookup)
+    const { productMatchScraper } = require('../services/productMatchScraper');
+    const storedMatches = await productMatchScraper.getStoredMatches(productId);
 
-    console.log(`📊 Database stats: ${allProducts.length} total products, ${candidateProducts.length} candidates`);
+    console.log(`📊 Found ${storedMatches.length} stored matches`);
 
-    // Use the enhanced product matching service
-    const { matchProducts, findProductMatches } = require('../services/productMatchingService');
-    let matches = matchProducts(sourceProduct, candidateProducts);
-
-    console.log(`🎯 Found ${matches.length} initial matches`);
-
-    // If we found very few matches, generate some realistic mock matches for popular products
-    if (matches.length < 3) {
-      console.log(`🔄 Generating real product matches for popular product: ${sourceProduct.title}`);
-      matches = await generateRealProductMatches(sourceProduct, matches, db);
+    // If no stored matches, trigger background re-scraping
+    if (storedMatches.length === 0) {
+      console.log(`🔄 No stored matches found, triggering background re-scraping...`);
+      productMatchScraper.scrapeAndStoreMatches(sourceProduct).catch((error: any) => {
+        console.error('❌ Background re-scraping failed:', error);
+      });
     }
+
+    let matches = storedMatches;
 
     // If user requested widened search or we found no/very few matches, try external shopping search (SerpAPI)
     if ((widen || matches.length < 3)) {
       try {
         const externalCandidates = await widenSearchAcrossPlatforms(sourceProduct);
         if (externalCandidates.length > 0) {
-          const externalMatches = matchProducts(sourceProduct, externalCandidates);
+          // const externalMatches = matchProducts(sourceProduct, externalCandidates);
 
           // Merge and deduplicate by URL
           const byUrl: Record<string, any> = {};
-          for (const m of [...matches, ...externalMatches]) {
+          for (const m of [...matches]) {
             const urlKey = (m.url || m.product?.url || '').split('#')[0];
             if (!urlKey) continue;
             const confidence = (m.confidence ?? m.similarity ?? 0) as number;
@@ -1340,7 +1308,7 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
             }
           }
           matches = Object.values(byUrl);
-          console.log(`🌐 Widen search added ${Math.max(0, matches.length - candidateProducts.length)} web candidates`);
+          console.log(`🌐 Widen search completed`);
         } else {
           console.log('🌐 Widen search returned no external candidates');
         }
@@ -1365,7 +1333,7 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
     return res.json({
       success: true,
       data: {
-        algorithm: 'buyhatke-enhanced',
+        algorithm: 'stored-database-matches',
         targetProduct: {
           id: sourceProduct.id,
           title: sourceProduct.title,

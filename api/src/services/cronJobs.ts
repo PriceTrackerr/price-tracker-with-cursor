@@ -192,11 +192,11 @@ export async function checkPriceAlerts() {
 }
 
 export const initializeCronJobs = () => {
-  // Check for price drops every 10 minutes
-  cron.schedule('*/10 * * * *', async () => {
+  // Check for price drops every 30 minutes to avoid rate limiting
+  cron.schedule('*/30 * * * *', async () => {
     console.log('[CRON] Running scheduled price drop check...');
     await checkPriceAlerts();
     console.log('[CRON] Price drop check complete.');
   });
-  console.log('Cron jobs initialized');
+  console.log('Cron jobs initialized (checking every 30 minutes)');
 }; 

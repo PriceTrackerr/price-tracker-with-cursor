@@ -7,6 +7,21 @@ import type {
   AutomationRule
 } from './storage';
 
+// Product Match interface
+interface ProductMatch {
+  id?: string;
+  sourceProductId: string;
+  matchedProductId: string;
+  confidence: number;
+  similarity: number;
+  matchReason: string;
+  priceDifference: number;
+  priceDifferencePercent: number;
+  savings: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 class SupabaseStorage {
   // Subscription plan methods
   async getSubscriptionPlans(): Promise<SubscriptionPlan[]> {
@@ -562,6 +577,78 @@ class SupabaseStorage {
       if (error) throw error;
     } catch (error) {
       handleSupabaseError(error, 'clearNotifications');
+    }
+  }
+
+  // Product match methods
+  async addProductMatch(matchData: Omit<ProductMatch, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
+    try {
+      const now = new Date().toISOString();
+      const matchToInsert: any = {
+        source_product_id: matchData.sourceProductId,
+        matched_product_id: matchData.matchedProductId,
+        confidence: matchData.confidence,
+        similarity: matchData.similarity,
+        match_reason: matchData.matchReason,
+        price_difference: matchData.priceDifference,
+        price_difference_percent: matchData.priceDifferencePercent,
+        savings: matchData.savings,
+        created_at: now,
+        updated_at: now
+      };
+
+      const { data, error } = await supabase
+        .from(TABLES.PRODUCT_MATCHES)
+        .insert(matchToInsert)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data.id;
+    } catch (error) {
+      handleSupabaseError(error, 'addProductMatch');
+    }
+  }
+
+  async getProductMatches(sourceProductId: string): Promise<ProductMatch[]> {
+    try {
+      const { data, error } = await supabase
+        .from(TABLES.PRODUCT_MATCHES)
+        .select('*')
+        .eq('source_product_id', sourceProductId)
+        .order('confidence', { ascending: false });
+
+      if (error) throw error;
+      
+      return (data || []).map((match: any) => ({
+        id: match.id,
+        sourceProductId: match.source_product_id,
+        matchedProductId: match.matched_product_id,
+        confidence: match.confidence,
+        similarity: match.similarity,
+        matchReason: match.match_reason,
+        priceDifference: match.price_difference,
+        priceDifferencePercent: match.price_difference_percent,
+        savings: match.savings,
+        createdAt: match.created_at,
+        updatedAt: match.updated_at
+      }));
+    } catch (error) {
+      handleSupabaseError(error, 'getProductMatches');
+    }
+  }
+
+  async deleteProductMatches(sourceProductId: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from(TABLES.PRODUCT_MATCHES)
+        .delete()
+        .eq('source_product_id', sourceProductId);
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      handleSupabaseError(error, 'deleteProductMatches');
     }
   }
 

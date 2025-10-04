@@ -30,6 +30,7 @@ export const TABLES = {
   ALERTS: 'alerts',
   NOTIFICATIONS: 'notifications',
   PRICE_HISTORY: 'price_history',
+  PRODUCT_MATCHES: 'product_matches',
   PAYMENTS: 'payments',
   AFFILIATE_TRANSACTIONS: 'affiliate_transactions',
   PAYOUT_REQUESTS: 'payout_requests',
