@@ -103,11 +103,10 @@ export default function ProductMatching({ productId, onClose }: ProductMatchingP
           if (data.data.matches) {
             const totalMatches = data.data.matches.length;
             console.log(`🎯 Found ${totalMatches} matches`);
-            if (totalMatches === 0) {
-              console.warn('⚠️ No matches found - this might indicate:');
-              console.warn('1. Strict accuracy threshold - only very similar products match');
-              console.warn('2. Not enough similar products in database');
-              console.warn('3. Brand/model extraction differences');
+            
+            // Show success message for enhanced matches
+            if (data.data.algorithm === 'buyhatke-enhanced-fallback') {
+              console.log('🔄 Using enhanced fallback matches');
             }
           }
         } else {
@@ -340,13 +339,25 @@ export default function ProductMatching({ productId, onClose }: ProductMatchingP
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h4 className="font-medium text-gray-900">Found {matches.length} similar products across platforms</h4>
-              <div className="flex items-center gap-2 text-xs text-gray-500">
-                <Award className="w-3 h-3 text-green-500" />
-                <span>High confidence</span>
-                <Target className="w-3 h-3 text-yellow-500" />
-                <span>Medium confidence</span>
-                <Clock className="w-3 h-3 text-gray-400" />
-                <span>Low confidence</span>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <Award className="w-3 h-3 text-green-500" />
+                  <span>High confidence</span>
+                  <Target className="w-3 h-3 text-yellow-500" />
+                  <span>Medium confidence</span>
+                  <Clock className="w-3 h-3 text-gray-400" />
+                  <span>Low confidence</span>
+                </div>
+                <button
+                  onClick={() => {
+                    setError(null);
+                    fetchMatches(true);
+                  }}
+                  className="px-3 py-1 bg-blue-600 text-white text-xs font-medium rounded-md hover:bg-blue-700 transition-colors flex items-center gap-1"
+                >
+                  <Zap className="w-3 h-3" />
+                  Widen Search
+                </button>
               </div>
             </div>
 
