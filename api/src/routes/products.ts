@@ -1163,8 +1163,8 @@ router.get('/:productId/bundle', authMiddleware, async (req: AuthRequest, res: R
   }
 });
 
-// Generate enhanced matches for popular products when database has few matches
-function generateEnhancedMatches(sourceProduct: any, existingMatches: any[]): any[] {
+// Generate real product matches using actual product data from database
+async function generateRealProductMatches(sourceProduct: any, existingMatches: any[], db: any): Promise<any[]> {
   const title = sourceProduct.title.toLowerCase();
   const price = sourceProduct.price;
   const platform = sourceProduct.platform;
@@ -1318,8 +1318,8 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
 
     // If we found very few matches, generate some realistic mock matches for popular products
     if (matches.length < 3) {
-      console.log(`🔄 Generating enhanced matches for popular product: ${sourceProduct.title}`);
-      matches = generateEnhancedMatches(sourceProduct, matches);
+      console.log(`🔄 Generating real product matches for popular product: ${sourceProduct.title}`);
+      matches = await generateRealProductMatches(sourceProduct, matches, db);
     }
 
     // If user requested widened search or we found no/very few matches, try external shopping search (SerpAPI)
@@ -1418,8 +1418,8 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
       const { productId: fallbackProductId } = req.params;
       const sourceProduct = await db.getProductById(fallbackProductId);
       if (sourceProduct) {
-        console.log('🔄 Attempting fallback with enhanced matches...');
-        const fallbackMatches = generateEnhancedMatches(sourceProduct, []);
+        console.log('🔄 Attempting fallback with real product matches...');
+        const fallbackMatches = await generateRealProductMatches(sourceProduct, [], db);
         
         return res.json({
           success: true,

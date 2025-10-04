@@ -156,6 +156,19 @@ router.get('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
   }
 });
 
+// Manual trigger for price drop check (for testing)
+router.post('/trigger-check', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const { checkPriceAlerts } = require('../services/cronJobs');
+    console.log('🔔 Manual price drop check triggered');
+    await checkPriceAlerts();
+    res.json({ success: true, message: 'Price drop check completed' });
+  } catch (error: unknown) {
+    console.error('Error triggering price check:', error);
+    res.status(500).json({ success: false, message: 'Failed to trigger price check' });
+  }
+});
+
 // Check price drops and send notifications
 router.post('/check-price-drops', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
@@ -172,6 +185,13 @@ router.post('/check-price-drops', authMiddleware, async (req: AuthRequest, res: 
       if (!product) continue;
       const currentPrice = product.price || 0;
       const targetPrice = alert.targetPrice;
+      
+      // Update alert's current price if it has changed
+      if (alert.currentPrice !== currentPrice) {
+        console.log(`[DEBUG] Updating alert ${alert.id} current price from ${alert.currentPrice} to ${currentPrice}`);
+        await db.updateAlert(alert.id, { currentPrice });
+      }
+      
       // Check if price has dropped below target
       if (currentPrice <= targetPrice) {
         // Get previous price from price history

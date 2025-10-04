@@ -561,6 +561,32 @@ export default function Dashboard() {
     }
   };
 
+  const triggerPriceCheck = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch('/api/alerts/trigger-check', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        toast.success('Price check completed! Check notifications for any alerts.');
+        // Refresh dashboard data to show updated prices
+        fetchDashboardData();
+      } else {
+        toast.error('Failed to trigger price check');
+      }
+    } catch (error) {
+      console.error('Error triggering price check:', error);
+      toast.error('Error triggering price check');
+    }
+  };
+
   // Fetch seen price drops first, then dashboard data
   const fetchSeenPriceDrops = async () => {
     if (!token) {
@@ -714,20 +740,32 @@ export default function Dashboard() {
           <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
           <p className="text-gray-600 mt-1">Track your products and monitor price changes</p>
         </div>
-        <button
-          onClick={() => {
-            fetchSeenPriceDrops();
-          }}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
-            <path d="M21 3v5h-5"></path>
-            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
-            <path d="M3 21v-5h5"></path>
-          </svg>
-          Refresh
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={triggerPriceCheck}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M9 12l2 2 4-4"></path>
+              <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c1.5 0 2.9.37 4.13 1.02"></path>
+            </svg>
+            Check Prices
+          </button>
+          <button
+            onClick={() => {
+              fetchSeenPriceDrops();
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
+              <path d="M21 3v5h-5"></path>
+              <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
+              <path d="M3 21v-5h5"></path>
+            </svg>
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* Metrics Grid */}

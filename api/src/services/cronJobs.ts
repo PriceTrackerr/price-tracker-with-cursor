@@ -61,6 +61,15 @@ export async function checkPriceAlerts() {
     }
     const currentPrice = product.price || 0;
     const targetPrice = alert.targetPrice;
+    
+    console.log(`[DEBUG] Alert ${alert.id}: currentPrice=${currentPrice}, targetPrice=${targetPrice}, alert.currentPrice=${alert.currentPrice}`);
+    
+    // Update alert's current price if it has changed
+    if (alert.currentPrice !== currentPrice) {
+      console.log(`[DEBUG] Updating alert ${alert.id} current price from ${alert.currentPrice} to ${currentPrice}`);
+      await db.updateAlert(alert.id, { currentPrice });
+    }
+    
     // --- Price Drop Alert (existing) ---
     if (currentPrice <= targetPrice) {
       // Get previous price from price history
