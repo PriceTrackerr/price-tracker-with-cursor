@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../components/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { 
   Package, 
   DollarSign, 
@@ -125,16 +126,23 @@ function CreateAlertModal({ product, isOpen, onClose }: { product: any, isOpen: 
         body: JSON.stringify({
           productId: product.id,
           targetPrice: parseFloat(targetPrice),
-          currentPrice: product.price
+          notifyOnRestock: false
         })
       });
 
-      if (response.ok) {
+      const data = await response.json();
+      
+      if (data.success) {
+        toast.success('Alert created successfully!');
         onClose();
         setTargetPrice('');
+      } else {
+        console.error('Alert creation failed:', data);
+        toast.error(data.message || 'Failed to create alert');
       }
     } catch (error) {
       console.error('Error creating alert:', error);
+      toast.error('Error creating alert');
     } finally {
       setLoading(false);
     }

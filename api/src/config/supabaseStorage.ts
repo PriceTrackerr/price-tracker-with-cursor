@@ -348,9 +348,21 @@ class SupabaseStorage {
       const alertToInsert: any = {
         ...alertData,
         user_id: (alertData as any).userId,
+        product_id: (alertData as any).productId,
+        product_title: (alertData as any).productTitle,
+        target_price: (alertData as any).targetPrice,
+        current_price: (alertData as any).currentPrice,
+        is_active: (alertData as any).isActive,
+        notify_on_restock: (alertData as any).notifyOnRestock || false,
         created_at: now
       };
       delete (alertToInsert as any).userId;
+      delete (alertToInsert as any).productId;
+      delete (alertToInsert as any).productTitle;
+      delete (alertToInsert as any).targetPrice;
+      delete (alertToInsert as any).currentPrice;
+      delete (alertToInsert as any).isActive;
+      delete (alertToInsert as any).notifyOnRestock;
       delete (alertToInsert as any).createdAt;
 
       const { data, error } = await supabase
@@ -377,7 +389,20 @@ class SupabaseStorage {
       const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      
+      // Map snake_case columns back to camelCase
+      return (data || []).map((alert: any) => ({
+        id: alert.id,
+        productId: alert.product_id,
+        productTitle: alert.product_title,
+        targetPrice: alert.target_price,
+        currentPrice: alert.current_price,
+        isActive: alert.is_active,
+        email: alert.email,
+        notifyOnRestock: alert.notify_on_restock || false,
+        createdAt: alert.created_at,
+        userId: alert.user_id
+      }));
     } catch (error) {
       handleSupabaseError(error, 'getAlerts');
     }

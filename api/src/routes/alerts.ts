@@ -15,6 +15,7 @@ interface Alert {
   currentPrice: number;
   isActive: boolean;
   email?: string;
+  notifyOnRestock?: boolean;
   createdAt: string;
   userId: string;
 }
@@ -34,7 +35,7 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
 // Create new alert
 router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const { productId, targetPrice, email } = req.body;
+    const { productId, targetPrice, email, notifyOnRestock } = req.body;
     const userId = req.user?.uid;
     if (!productId || !targetPrice) {
       return res.status(400).json({ success: false, message: 'Product ID and target price are required' });
@@ -56,6 +57,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
       currentPrice: product.price || 0,
       isActive: true,
       email: email || undefined,
+      notifyOnRestock: notifyOnRestock || false,
       userId,
     };
     

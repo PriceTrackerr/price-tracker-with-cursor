@@ -458,7 +458,10 @@ export default function Alerts() {
     notifyOnRestock: boolean;
   }) => {
     const selectedProduct = products.find(p => p.id === newAlert.productId);
-    if (!selectedProduct) return;
+    if (!selectedProduct) {
+      toast.error('Product not found');
+      return;
+    }
 
     try {
       const response = await fetch('/api/alerts', {
@@ -491,8 +494,9 @@ export default function Alerts() {
         };
         
         setAlerts([alert, ...alerts]);
-        toast.success('Alert created successfully');
+        toast.success('Alert created successfully!');
       } else {
+        console.error('Alert creation failed:', data);
         toast.error(data.message || 'Failed to create alert');
       }
     } catch (error) {
