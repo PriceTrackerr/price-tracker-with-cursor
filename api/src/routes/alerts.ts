@@ -159,7 +159,8 @@ router.get('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
 // Manual trigger for price drop check (for testing)
 router.post('/trigger-check', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const { checkPriceAlerts } = await import('../services/cronJobs');
+    const cronJobs = await import('../services/cronJobs');
+    const checkPriceAlerts = cronJobs.checkPriceAlerts;
     console.log('🔔 Manual price drop check triggered');
     
     // First, update price history for all products to capture manual price changes

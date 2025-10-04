@@ -77,8 +77,15 @@ export async function checkPriceAlerts() {
       const history = await db.getPriceHistory(alert.productId);
       previousPrice = history.length > 1 ? history[history.length - 2]?.price || currentPrice : currentPrice;
       console.log(`[DEBUG] Alert ${alert.id}: currentPrice=${currentPrice}, targetPrice=${targetPrice}, previousPrice=${previousPrice}`);
-      // Only send notification if price actually dropped
-      if (currentPrice < previousPrice) {
+      
+      // Check if this is a new alert trigger (price reached target) or actual price drop
+      const isNewTrigger = alert.currentPrice > targetPrice && currentPrice <= targetPrice;
+      const isPriceDrop = currentPrice < previousPrice;
+      
+      console.log(`[DEBUG] Alert ${alert.id}: isNewTrigger=${isNewTrigger}, isPriceDrop=${isPriceDrop}`);
+      
+      // Send notification if price reached target OR if price actually dropped
+      if (isNewTrigger || isPriceDrop) {
         console.log(`[DEBUG] Price drop detected for alert ${alert.id} (product ${product.title})`);
         // Send email: use alert.email if present, otherwise fetch user by alert.userId
         let recipientEmail = alert.email;
