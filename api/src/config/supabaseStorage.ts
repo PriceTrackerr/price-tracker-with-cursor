@@ -430,7 +430,7 @@ class SupabaseStorage {
       const { data, error } = await supabase
         .from(TABLES.ALERTS)
         .select('*')
-        .eq('isActive', true)
+        .eq('is_active', true)
         .order('created_at', { ascending: false });
 
       if (error) throw error;

@@ -252,6 +252,24 @@ router.post('/track', authMiddleware, validateProduct, async (req: AuthRequest, 
     // Release lock
     trackLocks.delete(lockKey);
 
+  // Best-effort duplicate cleanup: if race inserted more than once, keep newest
+  try {
+    const allUserProducts = await db.getProducts(userId);
+    const dupeGroup = allUserProducts.filter((p: any) => canonicalizeUrl(p.url, p.platform) === incomingCanonical);
+    if (dupeGroup.length > 1) {
+      // sort by createdAt desc, keep first
+      const sorted = [...dupeGroup].sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+      const keep = sorted[0].id;
+      for (const d of sorted.slice(1)) {
+        if (d.id !== keep) {
+          await db.deleteProduct(d.id);
+        }
+      }
+    }
+  } catch (cleanupErr) {
+    console.warn('Duplicate cleanup failed:', cleanupErr);
+  }
+
     return res.status(201).json({ 
       success: true,
       data: { 
@@ -1314,20 +1332,37 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
       try {
         const externalCandidates = await widenSearchAcrossPlatforms(sourceProduct);
         if (externalCandidates.length > 0) {
-          // const externalMatches = matchProducts(sourceProduct, externalCandidates);
+          // Map external candidates to match objects and cap 3 per platform
+          const perPlatformCounts: Record<string, number> = {};
+          const externalMatches = externalCandidates
+            .filter(c => {
+              const n = perPlatformCounts[c.platform] || 0;
+              if (n >= 3) return false;
+              perPlatformCounts[c.platform] = n + 1;
+              return true;
+            })
+            .map(c => ({
+              product: c,
+              confidence: 0.6,
+              similarity: 0.6,
+              matchReason: `External shopping result on ${c.platform}`,
+              priceDifference: Math.abs(Number(sourceProduct.price) - Number(c.price || 0)),
+              priceDifferencePercent: Math.abs((Number(sourceProduct.price) - Number(c.price || 0)) / Math.max(1, Number(sourceProduct.price))) * 100,
+              savings: undefined as string | undefined,
+            }));
 
-          // Merge and deduplicate by URL
+          // Merge and deduplicate by URL (prefer higher confidence)
           const byUrl: Record<string, any> = {};
-          for (const m of [...matches]) {
-            const urlKey = (m.url || m.product?.url || '').split('#')[0];
+          for (const m of [...matches, ...externalMatches]) {
+            const urlKey = ((m as any).url || (m as any).product?.url || '').split('#')[0];
             if (!urlKey) continue;
-            const confidence = (m.confidence ?? m.similarity ?? 0) as number;
-            if (!byUrl[urlKey] || confidence > (byUrl[urlKey].confidence ?? byUrl[urlKey].similarity ?? 0)) {
+            const confidence = (m as any).confidence ?? (m as any).similarity ?? 0;
+            if (!byUrl[urlKey] || confidence > ((byUrl[urlKey] as any).confidence ?? (byUrl[urlKey] as any).similarity ?? 0)) {
               byUrl[urlKey] = m;
             }
           }
           matches = Object.values(byUrl);
-          console.log(`🌐 Widen search completed`);
+          console.log(`🌐 Widen search completed with ${externalMatches.length} external and ${matches.length} merged matches`);
         } else {
           console.log('🌐 Widen search returned no external candidates');
         }
