@@ -434,7 +434,18 @@ class SupabaseStorage {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      return (data || []).map((alert: any) => ({
+        id: alert.id,
+        productId: alert.product_id,
+        productTitle: alert.product_title,
+        targetPrice: alert.target_price,
+        currentPrice: alert.current_price,
+        isActive: alert.is_active,
+        email: alert.email,
+        notifyOnRestock: alert.notify_on_restock || false,
+        createdAt: alert.created_at,
+        userId: alert.user_id
+      }));
     } catch (error) {
       handleSupabaseError(error, 'getAllAlerts');
     }

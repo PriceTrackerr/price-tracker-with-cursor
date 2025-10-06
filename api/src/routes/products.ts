@@ -1523,33 +1523,50 @@ function urlToPlatform(url: string): Product['platform'] | 'unknown' {
 // External widen search using SerpAPI (Google Shopping). Returns lightweight candidate products
 async function widenSearchAcrossPlatforms(sourceProduct: any): Promise<any[]> {
   const serpKey = process.env.SERPAPI_KEY || process.env.SERP_API_KEY;
-  if (!serpKey || typeof fetch !== 'function') {
-    return [];
-  }
-  const q = encodeURIComponent(sourceProduct.title);
-  const url = `https://serpapi.com/search.json?engine=google_shopping&q=${q}&hl=en&gl=us&api_key=${serpKey}`;
-  const resp = await fetch(url);
-  if (!resp.ok) return [];
-  const data: any = await resp.json();
-  const items: any[] = data?.shopping_results || [];
-  const supported = new Set(['amazon', 'aliexpress', 'ebay', 'walmart', 'shein', 'bestbuy', 'target']);
+  if (!serpKey || typeof fetch !== 'function') return [];
+
+  const platforms = [
+    { name: 'amazon', domain: 'amazon.com' },
+    { name: 'ebay', domain: 'ebay.com' },
+    { name: 'walmart', domain: 'walmart.com' },
+    { name: 'bestbuy', domain: 'bestbuy.com' },
+    { name: 'target', domain: 'target.com' },
+    { name: 'aliexpress', domain: 'aliexpress.com' },
+    { name: 'shein', domain: 'shein.com' },
+  ];
   const candidates: any[] = [];
-  for (const it of items) {
-    const link: string = it?.link || '';
-    const title: string = it?.title || '';
-    const priceStr: string = (it?.price || '').replace(/[^0-9.]/g, '');
-    const price = Number(priceStr || 0);
-    const platform = urlToPlatform(link);
-    if (!link || !title || !price || platform === 'unknown' || !supported.has(platform)) continue;
-    candidates.push({
-      id: link,
-      title,
-      price,
-      currency: 'USD',
-      platform,
-      url: link,
-      imageUrl: it?.thumbnail || it?.product_link || ''
-    });
+
+  for (const p of platforms) {
+    try {
+      const q = encodeURIComponent(`site:${p.domain} ${sourceProduct.title}`);
+      const url = `https://serpapi.com/search.json?engine=google&q=${q}&tbm=shop&hl=en&gl=us&num=10&api_key=${serpKey}`;
+      const resp = await fetch(url);
+      if (!resp.ok) continue;
+      const data: any = await resp.json();
+      const items: any[] = data?.shopping_results || [];
+      let count = 0;
+      for (const it of items) {
+        if (count >= 3) break;
+        const link: string = it?.product_link || it?.link || '';
+        const title: string = it?.title || '';
+        const price = typeof it?.extracted_price === 'number' ? it.extracted_price : parseFloat(String(it?.price || '').replace(/[^0-9.]/g, ''));
+        if (!link || !title || !price) continue;
+        candidates.push({
+          id: `${p.name}_${it.position || ''}_${Date.now()}`,
+          title,
+          price,
+          currency: 'USD',
+          platform: p.name,
+          url: link,
+          imageUrl: it?.thumbnail || '',
+        });
+        count++;
+      }
+      // brief delay to be polite
+      await new Promise(r => setTimeout(r, 250));
+    } catch (e) {
+      console.warn('SerpAPI per-platform search failed:', p.name, e);
+    }
   }
   return candidates;
 }

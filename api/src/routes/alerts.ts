@@ -85,7 +85,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
 // Toggle alert status
 router.put('/:id/toggle', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
+  const { id } = req.params;
     if (!id) {
       return res.status(400).json({ success: false, message: 'Alert ID is required' });
     }
@@ -95,9 +95,13 @@ router.put('/:id/toggle', authMiddleware, async (req: AuthRequest, res: Response
       return res.status(404).json({ success: false, message: 'Alert not found' });
     }
     
-    if (alert.userId !== req.user!.uid) {
+  // Allow deletion if requester is the alert owner OR the owner of the product
+  if (alert.userId !== req.user!.uid) {
+    const product = await db.getProductById(alert.productId);
+    if (!product || product.userId !== req.user!.uid) {
       return res.status(403).json({ success: false, message: 'Not authorized' });
     }
+  }
     
     await db.updateAlert(id, { isActive: !alert.isActive });
     return res.json({ success: true, data: { ...alert, isActive: !alert.isActive, id } });
