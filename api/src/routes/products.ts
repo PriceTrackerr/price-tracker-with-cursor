@@ -1536,6 +1536,35 @@ async function widenSearchAcrossPlatforms(sourceProduct: any): Promise<any[]> {
   ];
   const candidates: any[] = [];
 
+  // Global query to catch additional variants not captured by site filters
+  try {
+    const q = encodeURIComponent(`${sourceProduct.title}`);
+    const url = `https://serpapi.com/search.json?engine=google&q=${q}&tbm=shop&hl=en&gl=us&num=20&api_key=${serpKey}`;
+    const resp = await fetch(url);
+    if (resp.ok) {
+      const data: any = await resp.json();
+      const items: any[] = data?.shopping_results || [];
+      for (const it of items) {
+        const link: string = it?.product_link || it?.link || '';
+        const title: string = it?.title || '';
+        const price = typeof it?.extracted_price === 'number' ? it.extracted_price : parseFloat(String(it?.price || '').replace(/[^0-9.]/g, ''));
+        const platform = urlToPlatform(link);
+        if (!link || !title || !price || platform === 'unknown') continue;
+        candidates.push({
+          id: `${platform}_${it.position || ''}_${Date.now()}`,
+          title,
+          price,
+          currency: 'USD',
+          platform,
+          url: link,
+          imageUrl: it?.thumbnail || '',
+        });
+      }
+    }
+  } catch (e) {
+    console.warn('SerpAPI global search failed:', e);
+  }
+
   for (const p of platforms) {
     try {
       const q = encodeURIComponent(`site:${p.domain} ${sourceProduct.title}`);

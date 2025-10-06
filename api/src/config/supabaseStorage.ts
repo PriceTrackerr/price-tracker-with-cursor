@@ -460,7 +460,20 @@ class SupabaseStorage {
         .single();
 
       if (error && error.code !== 'PGRST116') throw error;
-      return data || undefined;
+      if (!data) return undefined;
+      // Map snake_case to camelCase
+      return {
+        id: data.id,
+        productId: data.product_id,
+        productTitle: data.product_title,
+        targetPrice: data.target_price,
+        currentPrice: data.current_price,
+        isActive: data.is_active,
+        email: data.email,
+        notifyOnRestock: data.notify_on_restock || false,
+        createdAt: data.created_at,
+        userId: data.user_id,
+      } as any;
     } catch (error) {
       handleSupabaseError(error, 'getAlertById');
     }
