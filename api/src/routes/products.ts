@@ -169,6 +169,9 @@ function canonicalizeUrl(url: string, platform: 'amazon'|'aliexpress'|'ebay'|'wa
   }
 }
 
+// Simple in-memory lock to avoid rapid duplicate inserts per user+url
+const trackLocks = new Map<string, number>();
+
 // Track a new product
 router.post('/track', authMiddleware, validateProduct, async (req: AuthRequest, res: Response) => {
   try {
@@ -202,6 +205,16 @@ router.post('/track', authMiddleware, validateProduct, async (req: AuthRequest, 
       });
     }
     
+    // Lock key to prevent multi-click duplicates (auto-release after 15s)
+    const lockKey = `${userId}:${incomingCanonical}`;
+    const now = Date.now();
+    const lockUntil = trackLocks.get(lockKey) || 0;
+    if (now < lockUntil) {
+      console.log(`[DEBUG] Duplicate track attempt suppressed for ${lockKey}`);
+      return res.status(200).json({ success: true, data: null, message: 'Already tracking in progress' });
+    }
+    trackLocks.set(lockKey, now + 15000);
+
     console.log(`[DEBUG] No existing product found, proceeding to add new product`);
 
     // Add the new product
@@ -236,6 +249,9 @@ router.post('/track', authMiddleware, validateProduct, async (req: AuthRequest, 
       });
     }
     
+    // Release lock
+    trackLocks.delete(lockKey);
+
     return res.status(201).json({ 
       success: true,
       data: { 
@@ -252,6 +268,9 @@ router.post('/track', authMiddleware, validateProduct, async (req: AuthRequest, 
       } 
     });
   } catch (error: unknown) {
+    // Release all expired locks periodically
+    const now = Date.now();
+    for (const [k, until] of trackLocks) { if (now > until) trackLocks.delete(k); }
     const message = error instanceof Error ? error.message : 'Unknown error';
     return res.status(500).json({
       success: false,

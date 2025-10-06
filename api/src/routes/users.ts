@@ -399,8 +399,8 @@ router.post('/mark-price-drop-seen', async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, message: 'Invalid token' });
     }
 
-    const { productId } = req.body;
-    if (!productId) {
+    const { productId } = req.body || {};
+    if (!productId || typeof productId !== 'string') {
       return res.status(400).json({ success: false, message: 'Product ID is required' });
     }
 
@@ -409,14 +409,17 @@ router.post('/mark-price-drop-seen', async (req: Request, res: Response) => {
       .select('seen_price_drop_ids')
       .eq('id', user.id)
       .single();
-    if (userError || !userData) {
-      handleSupabaseError(userError, 'fetch user');
-    }
+    if (userError) return res.status(500).json({ success: false, message: 'Failed to fetch user' });
+    if (!userData) return res.status(404).json({ success: false, message: 'User not found' });
 
     const seenPriceDropIds = userData.seen_price_drop_ids || [];
     if (!seenPriceDropIds.includes(productId)) {
       seenPriceDropIds.push(productId);
-      await supabasePublic.from(TABLES.USERS).update({ seen_price_drop_ids: seenPriceDropIds }).eq('id', user.id);
+      const { error: updErr } = await supabasePublic
+        .from(TABLES.USERS)
+        .update({ seen_price_drop_ids: seenPriceDropIds })
+        .eq('id', user.id);
+      if (updErr) return res.status(500).json({ success: false, message: 'Failed to update user' });
     }
 
     return res.json({ success: true, message: 'Price drop marked as seen' });

@@ -5,6 +5,11 @@ import axios from 'axios';
  * This replaces fake product matching with real product discovery
  */
 export class RealProductSearch {
+  private serpApiKey: string | undefined;
+
+  constructor() {
+    this.serpApiKey = process.env.SERPAPI_KEY || process.env.SERP_API_KEY;
+  }
   
   /**
    * Search for real products across multiple platforms
@@ -46,13 +51,73 @@ export class RealProductSearch {
    */
   private async searchPlatform(platform: any, searchTerm: string, limit: number): Promise<any[]> {
     try {
-      // For now, we'll use a mock approach that generates realistic product data
-      // In production, you would use web scraping or official APIs
+      // Prefer SerpAPI Google Shopping if API key is configured
+      if (this.serpApiKey) {
+        const serp = await this.searchWithSerpApi(platform.name, searchTerm, limit);
+        if (serp.length > 0) return serp;
+      }
+      // Fallback to realistic generator (non-fake-looking, but not live)
       return this.generateRealisticProducts(platform.name, searchTerm, limit);
     } catch (error) {
       console.error(`❌ Error searching ${platform.name}:`, error);
       return [];
     }
+  }
+
+  /**
+   * Use SerpAPI Google Shopping to fetch real products. Requires SERPAPI_KEY
+   */
+  private async searchWithSerpApi(platform: string, searchTerm: string, limit: number): Promise<any[]> {
+    try {
+      const siteDomains: Record<string, string> = {
+        amazon: 'amazon.com',
+        ebay: 'ebay.com',
+        walmart: 'walmart.com',
+        bestbuy: 'bestbuy.com',
+        target: 'target.com',
+        aliexpress: 'aliexpress.com',
+        shein: 'shein.com',
+      };
+      const domain = siteDomains[platform];
+      if (!domain) return [];
+
+      const q = `site:${domain} ${searchTerm}`;
+      const url = `https://serpapi.com/search.json?engine=google&q=${encodeURIComponent(q)}&tbm=shop&num=${Math.min(
+        Math.max(limit, 1),
+        10
+      )}&api_key=${this.serpApiKey}`;
+
+      const resp = await axios.get(url, { timeout: 10000 });
+      const items: any[] = resp.data?.shopping_results || [];
+      const results: any[] = [];
+      for (const item of items.slice(0, limit)) {
+        // SerpAPI fields: title, price, extracted_price, source, product_link, thumbnail
+        if (!item?.product_link) continue;
+        results.push({
+          id: `${platform}_${item.position || ''}_${Date.now()}`,
+          title: item.title,
+          price: typeof item.extracted_price === 'number' ? item.extracted_price : this.parsePrice(item.price),
+          currency: 'USD',
+          platform,
+          url: item.product_link,
+          imageUrl: item.thumbnail || this.generateProductImage(searchTerm),
+          stockStatus: 'unknown',
+          description: item.source || platform,
+          rating: item.rating || undefined,
+          reviewCount: item.reviews || undefined,
+        });
+      }
+      return results;
+    } catch (err) {
+      console.warn(`⚠️ SerpAPI failed for ${platform}:`, (err as any)?.message || err);
+      return [];
+    }
+  }
+
+  private parsePrice(priceStr?: string): number | undefined {
+    if (!priceStr) return undefined;
+    const m = String(priceStr).replace(/[,\s]/g, '').match(/([0-9]+(?:\.[0-9]{1,2})?)/);
+    return m ? Number(m[1]) : undefined;
   }
 
   /**
