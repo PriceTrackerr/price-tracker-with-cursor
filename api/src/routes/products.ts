@@ -1327,8 +1327,8 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
 
     let matches = storedMatches;
 
-    // If user requested widened search or we found no/very few matches, try external shopping search (SerpAPI)
-    if ((widen || matches.length < 3)) {
+    // Always try to augment with external shopping results until we have up to 21 totals
+    if (widen || matches.length < 21) {
       try {
         const externalCandidates = await widenSearchAcrossPlatforms(sourceProduct);
         if (externalCandidates.length > 0) {
@@ -1361,7 +1361,7 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
               byUrl[urlKey] = m;
             }
           }
-          matches = Object.values(byUrl);
+          matches = Object.values(byUrl).slice(0, 21);
           console.log(`🌐 Widen search completed with ${externalMatches.length} external and ${matches.length} merged matches`);
         } else {
           console.log('🌐 Widen search returned no external candidates');
