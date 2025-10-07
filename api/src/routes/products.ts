@@ -1280,7 +1280,8 @@ async function generateRealProductMatches(sourceProduct: any, existingMatches: a
 router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const { productId } = req.params;
-    const widen = String((req.query as any)?.widen || '').toLowerCase() === '1' || String((req.query as any)?.widen || '').toLowerCase() === 'true';
+    const q = String((req.query as any)?.q || '').trim();
+    let widen = String((req.query as any)?.widen || '').toLowerCase() === '1' || String((req.query as any)?.widen || '').toLowerCase() === 'true';
     const userId = req.user!.uid;
     
     if (!productId) {
@@ -1291,34 +1292,51 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
     }
 
     // Get the source product
+    // If q is provided, build a synthetic source product from the query (name-based search)
     let sourceProduct: any;
-    try {
-      sourceProduct = await db.getProductById(productId);
-    } catch (e) {
-      console.warn('getProductById failed:', e);
-      sourceProduct = undefined;
-    }
-    if (!sourceProduct) {
-      return res.status(404).json({
-        success: false,
-        error: 'Product not found'
-      });
+    if (q) {
+      sourceProduct = {
+        id: `query-${Date.now()}`,
+        title: q,
+        price: 0,
+        currency: 'USD',
+        platform: 'unknown',
+        imageUrl: '',
+        url: ''
+      };
+    } else {
+      try {
+        sourceProduct = await db.getProductById(productId);
+      } catch (e) {
+        console.warn('getProductById failed:', e);
+        sourceProduct = undefined;
+      }
+      if (!sourceProduct) {
+        return res.status(404).json({
+          success: false,
+          error: 'Product not found'
+        });
+      }
     }
 
     // Verify user owns the product or is admin
     let isAdmin = false;
-    try {
-      const user = await db.getUserById(userId) as any;
-      isAdmin = user?.role === 'admin';
-    } catch (e) {
-      console.warn('getUserById failed (continuing as non-admin):', e);
-      isAdmin = false;
+    if (!q) { // skip ownership checks for name-based query
+      try {
+        const user = await db.getUserById(userId) as any;
+        isAdmin = user?.role === 'admin';
+      } catch (e) {
+        console.warn('getUserById failed (continuing as non-admin):', e);
+        isAdmin = false;
+      }
     }
-    if (sourceProduct.userId !== userId && !isAdmin) {
-      return res.status(403).json({
-        success: false,
-        error: 'Not authorized'
-      });
+    if (!q) {
+      if (sourceProduct.userId !== userId && !isAdmin) {
+        return res.status(403).json({
+          success: false,
+          error: 'Not authorized'
+        });
+      }
     }
 
     console.log(`🔍 Getting stored matches for product: ${sourceProduct.title} (ID: ${productId})`);
@@ -1337,6 +1355,8 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
 
     // If no stored matches, trigger background re-scraping
     if (storedMatches.length === 0) {
+      // Auto-widen when there are no stored matches
+      widen = true;
       try {
         console.log(`🔄 No stored matches found, triggering background re-scraping...`);
         const { productMatchScraper } = require('../services/productMatchScraper');
@@ -1414,7 +1434,7 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
     return res.json({
       success: true,
       data: {
-        algorithm: usedExternal ? 'serpapi-widened' : 'stored-database-matches',
+        algorithm: q ? (usedExternal ? 'query-serp-widened' : 'query-stored') : (usedExternal ? 'serpapi-widened' : 'stored-database-matches'),
         targetProduct: {
           id: sourceProduct.id,
           title: sourceProduct.title,

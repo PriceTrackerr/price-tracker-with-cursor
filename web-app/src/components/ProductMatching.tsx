@@ -81,8 +81,9 @@ export default function ProductMatching({ productId, onClose }: ProductMatchingP
     console.log(`🔍 Fetching matches for product ID: ${productId}`);
     
     try {
-      const widenParam = widen ? '?widen=1' : '';
-      const response = await fetch(`/api/products/${productId}/matches${widenParam}`, {
+      // If we already have the target product title, include it as q on widen to force name-based search
+      const queryParam = widen && targetProduct?.title ? `?widen=1&q=${encodeURIComponent(targetProduct.title)}` : (widen ? '?widen=1' : '');
+      const response = await fetch(`/api/products/${productId}/matches${queryParam}`, {
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -107,6 +108,12 @@ export default function ProductMatching({ productId, onClose }: ProductMatchingP
             // Show success message for enhanced matches
             if (data.data.algorithm === 'buyhatke-enhanced-fallback') {
               console.log('🔄 Using enhanced fallback matches');
+            }
+            // Auto-widen if none returned
+            if (!widen && totalMatches === 0 && targetProduct?.title) {
+              console.log('🔎 No stored matches, auto-widen with query');
+              await fetchMatches(true);
+              return;
             }
           }
         } else {
