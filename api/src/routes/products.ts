@@ -1291,7 +1291,13 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
     }
 
     // Get the source product
-    const sourceProduct = await db.getProductById(productId);
+    let sourceProduct: any;
+    try {
+      sourceProduct = await db.getProductById(productId);
+    } catch (e) {
+      console.warn('getProductById failed:', e);
+      sourceProduct = undefined;
+    }
     if (!sourceProduct) {
       return res.status(404).json({
         success: false,
@@ -1300,8 +1306,14 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
     }
 
     // Verify user owns the product or is admin
-    const user = await db.getUserById(userId) as any;
-    const isAdmin = user?.role === 'admin';
+    let isAdmin = false;
+    try {
+      const user = await db.getUserById(userId) as any;
+      isAdmin = user?.role === 'admin';
+    } catch (e) {
+      console.warn('getUserById failed (continuing as non-admin):', e);
+      isAdmin = false;
+    }
     if (sourceProduct.userId !== userId && !isAdmin) {
       return res.status(403).json({
         success: false,
@@ -1312,20 +1324,30 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
     console.log(`🔍 Getting stored matches for product: ${sourceProduct.title} (ID: ${productId})`);
 
     // Get stored matches from database (fast lookup)
-    const { productMatchScraper } = require('../services/productMatchScraper');
-    const storedMatches = await productMatchScraper.getStoredMatches(productId);
+    let storedMatches: any[] = [];
+    try {
+      const { productMatchScraper } = require('../services/productMatchScraper');
+      storedMatches = await productMatchScraper.getStoredMatches(productId);
+    } catch (e) {
+      console.warn('getStoredMatches failed:', e);
+      storedMatches = [];
+    }
 
     console.log(`📊 Found ${storedMatches.length} stored matches`);
 
     // If no stored matches, trigger background re-scraping
     if (storedMatches.length === 0) {
-      console.log(`🔄 No stored matches found, triggering background re-scraping...`);
-      productMatchScraper.scrapeAndStoreMatches(sourceProduct).catch((error: any) => {
-        console.error('❌ Background re-scraping failed:', error);
-      });
+      try {
+        console.log(`🔄 No stored matches found, triggering background re-scraping...`);
+        const { productMatchScraper } = require('../services/productMatchScraper');
+        productMatchScraper.scrapeAndStoreMatches(sourceProduct).catch((error: any) => {
+          console.error('❌ Background pre-scraping failed:', error);
+        });
+      } catch {}
     }
 
     let matches = storedMatches;
+    let usedExternal = false;
 
     // Always try to augment with external shopping results until we have up to 21 totals
     if (widen || matches.length < 21) {
@@ -1362,6 +1384,7 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
             }
           }
           matches = Object.values(byUrl).slice(0, 21);
+          usedExternal = true;
           console.log(`🌐 Widen search completed with ${externalMatches.length} external and ${matches.length} merged matches`);
         } else {
           console.log('🌐 Widen search returned no external candidates');
@@ -1380,14 +1403,18 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
     }
 
     // Update the source product's total matches count
-    await db.updateProduct(productId, { 
-      totalMatches: matches.length
-    });
+    try {
+      await db.updateProduct(productId, { 
+        totalMatches: matches.length
+      });
+    } catch (e) {
+      console.warn('updateProduct(totalMatches) failed (non-fatal):', e);
+    }
 
     return res.json({
       success: true,
       data: {
-        algorithm: 'stored-database-matches',
+        algorithm: usedExternal ? 'serpapi-widened' : 'stored-database-matches',
         targetProduct: {
           id: sourceProduct.id,
           title: sourceProduct.title,
@@ -1522,8 +1549,20 @@ function urlToPlatform(url: string): Product['platform'] | 'unknown' {
 
 // External widen search using SerpAPI (Google Shopping). Returns lightweight candidate products
 async function widenSearchAcrossPlatforms(sourceProduct: any): Promise<any[]> {
+  // Prefer SERPER (serper.dev) if configured, else fall back to SERPAPI
+  const serperKey = process.env.SERPER_API_KEY;
   const serpKey = process.env.SERPAPI_KEY || process.env.SERP_API_KEY;
-  if (!serpKey || typeof fetch !== 'function') return [];
+  const usingSerper = !!serperKey;
+  const usingSerpApi = !usingSerper && !!serpKey;
+  if (!usingSerper && !usingSerpApi) {
+    console.warn('No shopping search API key present (SERPER_API_KEY or SERPAPI_KEY).');
+    return [];
+  }
+  if (typeof fetch !== 'function') {
+    console.warn('Global fetch not available; widened search disabled');
+    return [];
+  }
+  console.log('🔎 Widen search: provider =', usingSerper ? 'SERPER' : 'SERPAPI');
 
   const platforms = [
     { name: 'amazon', domain: 'amazon.com' },
@@ -1538,63 +1577,101 @@ async function widenSearchAcrossPlatforms(sourceProduct: any): Promise<any[]> {
 
   // Global query to catch additional variants not captured by site filters
   try {
-    const q = encodeURIComponent(`${sourceProduct.title}`);
-    const url = `https://serpapi.com/search.json?engine=google&q=${q}&tbm=shop&hl=en&gl=us&num=20&api_key=${serpKey}`;
-    const resp = await fetch(url);
-    if (resp.ok) {
-      const data: any = await resp.json();
-      const items: any[] = data?.shopping_results || [];
-      for (const it of items) {
-        const link: string = it?.product_link || it?.link || '';
-        const title: string = it?.title || '';
-        const price = typeof it?.extracted_price === 'number' ? it.extracted_price : parseFloat(String(it?.price || '').replace(/[^0-9.]/g, ''));
-        const platform = urlToPlatform(link);
-        if (!link || !title || !price || platform === 'unknown') continue;
-        candidates.push({
-          id: `${platform}_${it.position || ''}_${Date.now()}`,
-          title,
-          price,
-          currency: 'USD',
-          platform,
-          url: link,
-          imageUrl: it?.thumbnail || '',
-        });
+    const qRaw = `${sourceProduct.title}`;
+    if (usingSerper) {
+      console.log('🔎 SERPER global query:', qRaw);
+      const resp = await fetch('https://google.serper.dev/shopping', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-KEY': serperKey as string,
+        },
+        body: JSON.stringify({ q: qRaw, num: 20, gl: 'us', hl: 'en' }),
+      });
+      if (resp.ok) {
+        const data: any = await resp.json();
+        const items: any[] = data?.shopping || [];
+        console.log('🔎 SERPER global results:', items.length);
+        for (const it of items) {
+          const link: string = it?.link || '';
+          const title: string = it?.title || '';
+          const price = typeof it?.price === 'number' ? it.price : parseFloat(String(it?.price || '').replace(/[^0-9.]/g, ''));
+          const platform = urlToPlatform(link);
+          if (!link || !title || !price || platform === 'unknown') continue;
+          candidates.push({ id: `${platform}_${Date.now()}`, title, price, currency: 'USD', platform, url: link, imageUrl: it?.image || '' });
+        }
+      }
+    } else if (usingSerpApi) {
+      const q = encodeURIComponent(qRaw);
+      const url = `https://serpapi.com/search.json?engine=google&q=${q}&tbm=shop&hl=en&gl=us&num=20&api_key=${serpKey}`;
+      console.log('🔎 SERPAPI global query:', qRaw);
+      const resp = await fetch(url);
+      if (resp.ok) {
+        const data: any = await resp.json();
+        const items: any[] = data?.shopping_results || [];
+        console.log('🔎 SERPAPI global results:', items.length);
+        for (const it of items) {
+          const link: string = it?.product_link || it?.link || '';
+          const title: string = it?.title || '';
+          const price = typeof it?.extracted_price === 'number' ? it.extracted_price : parseFloat(String(it?.price || '').replace(/[^0-9.]/g, ''));
+          const platform = urlToPlatform(link);
+          if (!link || !title || !price || platform === 'unknown') continue;
+          candidates.push({ id: `${platform}_${it.position || ''}_${Date.now()}`, title, price, currency: 'USD', platform, url: link, imageUrl: it?.thumbnail || '' });
+        }
       }
     }
   } catch (e) {
-    console.warn('SerpAPI global search failed:', e);
+    console.warn('Global shopping search failed:', e);
   }
 
   for (const p of platforms) {
     try {
-      const q = encodeURIComponent(`site:${p.domain} ${sourceProduct.title}`);
-      const url = `https://serpapi.com/search.json?engine=google&q=${q}&tbm=shop&hl=en&gl=us&num=10&api_key=${serpKey}`;
-      const resp = await fetch(url);
-      if (!resp.ok) continue;
-      const data: any = await resp.json();
-      const items: any[] = data?.shopping_results || [];
-      let count = 0;
-      for (const it of items) {
-        if (count >= 3) break;
-        const link: string = it?.product_link || it?.link || '';
-        const title: string = it?.title || '';
-        const price = typeof it?.extracted_price === 'number' ? it.extracted_price : parseFloat(String(it?.price || '').replace(/[^0-9.]/g, ''));
-        if (!link || !title || !price) continue;
-        candidates.push({
-          id: `${p.name}_${it.position || ''}_${Date.now()}`,
-          title,
-          price,
-          currency: 'USD',
-          platform: p.name,
-          url: link,
-          imageUrl: it?.thumbnail || '',
+      const qRaw = `site:${p.domain} ${sourceProduct.title}`;
+      if (usingSerper) {
+        console.log(`🔎 SERPER platform query: ${p.name} →`, qRaw);
+        const resp = await fetch('https://google.serper.dev/shopping', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-API-KEY': serperKey as string },
+          body: JSON.stringify({ q: qRaw, num: 10, gl: 'us', hl: 'en' }),
         });
-        count++;
+        if (!resp.ok) continue;
+        const data: any = await resp.json();
+        const items: any[] = data?.shopping || [];
+        console.log(`🔎 SERPER platform results: ${p.name} →`, items.length);
+        let count = 0;
+        for (const it of items) {
+          if (count >= 3) break;
+          const link: string = it?.link || '';
+          const title: string = it?.title || '';
+          const price = typeof it?.price === 'number' ? it.price : parseFloat(String(it?.price || '').replace(/[^0-9.]/g, ''));
+          if (!link || !title || !price) continue;
+          candidates.push({ id: `${p.name}_${Date.now()}`, title, price, currency: 'USD', platform: p.name, url: link, imageUrl: it?.image || '' });
+          count++;
+        }
+      } else if (usingSerpApi) {
+        const q = encodeURIComponent(qRaw);
+        const url = `https://serpapi.com/search.json?engine=google&q=${q}&tbm=shop&hl=en&gl=us&num=10&api_key=${serpKey}`;
+        console.log(`🔎 SERPAPI platform query: ${p.name} →`, qRaw);
+        const resp = await fetch(url);
+        if (!resp.ok) continue;
+        const data: any = await resp.json();
+        const items: any[] = data?.shopping_results || [];
+        console.log(`🔎 SERPAPI platform results: ${p.name} →`, items.length);
+        let count = 0;
+        for (const it of items) {
+          if (count >= 3) break;
+          const link: string = it?.product_link || it?.link || '';
+          const title: string = it?.title || '';
+          const price = typeof it?.extracted_price === 'number' ? it.extracted_price : parseFloat(String(it?.price || '').replace(/[^0-9.]/g, ''));
+          if (!link || !title || !price) continue;
+          candidates.push({ id: `${p.name}_${it.position || ''}_${Date.now()}`, title, price, currency: 'USD', platform: p.name, url: link, imageUrl: it?.thumbnail || '' });
+          count++;
+        }
       }
       // brief delay to be polite
       await new Promise(r => setTimeout(r, 250));
     } catch (e) {
-      console.warn('SerpAPI per-platform search failed:', p.name, e);
+      console.warn('Shopping per-platform search failed:', p.name, e);
     }
   }
   return candidates;
