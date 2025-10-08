@@ -58,11 +58,18 @@ export class ProductMatchScraper {
             `real_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` : 
             match.product.id;
             
+          const numericConfidence = typeof (match as any).confidence === 'string'
+            ? ((match as any).confidence === 'high' ? 0.9 : (match as any).confidence === 'medium' ? 0.7 : (match as any).confidence === 'low' ? 0.5 : 0.6)
+            : (match as any).confidence ?? (match as any).score ?? 0.6;
+          const numericSimilarity = typeof (match as any).similarity === 'string'
+            ? ((match as any).similarity === 'high' ? 0.9 : (match as any).similarity === 'medium' ? 0.7 : (match as any).similarity === 'low' ? 0.5 : 0.6)
+            : (match as any).similarity ?? numericConfidence;
+
           await this.db.addProductMatch({
             sourceProductId: sourceProduct.id,
             matchedProductId: matchedProductId,
-            confidence: match.confidence || match.score || 0.5,
-            similarity: (match as any).similarity || 0.5,
+            confidence: Number(numericConfidence) || 0.6,
+            similarity: Number(numericSimilarity) || 0.6,
             matchReason: match.matchReason || 'Real product match from platform search',
             priceDifference: match.priceDifference || 0,
             priceDifferencePercent: match.priceDifferencePercent || 0,

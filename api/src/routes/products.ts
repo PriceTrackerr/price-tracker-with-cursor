@@ -1825,3 +1825,63 @@ router.get('/debug/all', async (req: Request, res: Response) => {
 });
 
 export default router;
+
+// Debug: show which external search provider is active and return sample counts
+router.get('/debug/search-provider', async (req: Request, res: Response) => {
+  try {
+    const serper = !!process.env.SERPER_API_KEY;
+    const serpapi = !!(process.env.SERPAPI_KEY || process.env.SERP_API_KEY);
+    const provider = serper ? 'SERPER' : (serpapi ? 'SERPAPI' : 'NONE');
+    const q = String((req.query as any)?.q || 'airpods');
+
+    let counts: any = { global: 0, amazon: 0, ebay: 0, walmart: 0 };
+    // Reuse internal helpers without logging
+    const tmp = await (async () => {
+      const source = { title: q } as any;
+      const candidates: any[] = [];
+      const platforms = [
+        { name: 'amazon', domain: 'amazon.com' },
+        { name: 'ebay', domain: 'ebay.com' },
+        { name: 'walmart', domain: 'walmart.com' },
+      ];
+      // Global
+      try {
+        if (serper) {
+          const r = await fetch('https://google.serper.dev/shopping', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-API-KEY': process.env.SERPER_API_KEY as string },
+            body: JSON.stringify({ q, num: 10, gl: 'us', hl: 'en' }),
+          });
+          if (r.ok) {
+            const data: any = await r.json();
+            counts.global = (data?.shopping || []).length;
+          }
+        }
+      } catch {}
+      // Platforms
+      for (const p of platforms) {
+        try {
+          if (serper) {
+            const r = await fetch('https://google.serper.dev/shopping', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'X-API-KEY': process.env.SERPER_API_KEY as string },
+              body: JSON.stringify({ q: `site:${p.domain} ${q}`, num: 10, gl: 'us', hl: 'en' }),
+            });
+            if (r.ok) {
+              const data: any = await r.json();
+              counts[p.name] = (data?.shopping || []).length;
+            }
+          }
+        } catch {}
+      }
+      return candidates;
+    })();
+
+    return res.json({ success: true, provider, counts, env: {
+      has_SERPER_API_KEY: serper,
+      has_SERPAPI_KEY: serpapi
+    }});
+  } catch (e) {
+    return res.status(500).json({ success: false, error: (e as any)?.message || 'unknown' });
+  }
+});
