@@ -1357,13 +1357,19 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
     if (storedMatches.length === 0) {
       // Auto-widen when there are no stored matches
       widen = true;
-      try {
-        console.log(`🔄 No stored matches found, triggering background re-scraping...`);
-        const { productMatchScraper } = require('../services/productMatchScraper');
-        productMatchScraper.scrapeAndStoreMatches(sourceProduct).catch((error: any) => {
-          console.error('❌ Background pre-scraping failed:', error);
-        });
-      } catch {}
+      // Only trigger background pre-scrape for real tracked products with UUID ids
+      const isUuid = typeof sourceProduct.id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(sourceProduct.id);
+      if (!q && isUuid) {
+        try {
+          console.log(`🔄 No stored matches found, triggering background re-scraping...`);
+          const { productMatchScraper } = require('../services/productMatchScraper');
+          productMatchScraper.scrapeAndStoreMatches(sourceProduct).catch((error: any) => {
+            console.error('❌ Background pre-scraping failed:', error);
+          });
+        } catch {}
+      } else {
+        console.log('⏭️ Skipping background scrape for query-based or non-UUID source');
+      }
     }
 
     let matches = storedMatches;

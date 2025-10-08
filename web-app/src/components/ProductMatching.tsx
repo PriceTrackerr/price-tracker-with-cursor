@@ -67,7 +67,8 @@ export default function ProductMatching({ productId, onClose }: ProductMatchingP
   }, [onClose]);
 
   useEffect(() => {
-    fetchMatches();
+    // Kick off widened search immediately for faster, richer results
+    fetchMatches(true);
   }, [productId, token]);
 
   const fetchMatches = async (widen: boolean = false) => {
