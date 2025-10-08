@@ -1569,20 +1569,17 @@ function urlToPlatform(url: string): Product['platform'] | 'unknown' {
 
 // External widen search using SerpAPI (Google Shopping). Returns lightweight candidate products
 async function widenSearchAcrossPlatforms(sourceProduct: any): Promise<any[]> {
-  // Prefer SERPER (serper.dev) if configured, else fall back to SERPAPI
+  // Force SERPER provider for reliability
   const serperKey = process.env.SERPER_API_KEY;
-  const serpKey = process.env.SERPAPI_KEY || process.env.SERP_API_KEY;
-  const usingSerper = !!serperKey;
-  const usingSerpApi = !usingSerper && !!serpKey;
-  if (!usingSerper && !usingSerpApi) {
-    console.warn('No shopping search API key present (SERPER_API_KEY or SERPAPI_KEY).');
+  if (!serperKey) {
+    console.warn('No SERPER_API_KEY present at runtime.');
     return [];
   }
   if (typeof fetch !== 'function') {
     console.warn('Global fetch not available; widened search disabled');
     return [];
   }
-  console.log('🔎 Widen search: provider =', usingSerper ? 'SERPER' : 'SERPAPI');
+  console.log('🔎 Widen search: provider = SERPER');
 
   const platforms = [
     { name: 'amazon', domain: 'amazon.com' },
@@ -1598,49 +1595,24 @@ async function widenSearchAcrossPlatforms(sourceProduct: any): Promise<any[]> {
   // Global query to catch additional variants not captured by site filters
   try {
     const qRaw = `${sourceProduct.title}`;
-    if (usingSerper) {
-      console.log('🔎 SERPER global query:', qRaw);
-      const resp = await fetch('https://google.serper.dev/shopping', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-KEY': serperKey as string,
-        },
-        body: JSON.stringify({ q: qRaw, num: 20, gl: 'us', hl: 'en' }),
-      });
-      if (resp.ok) {
-        const data: any = await resp.json();
-        const items: any[] = data?.shopping || [];
-        console.log('🔎 SERPER global results:', items.length);
-        for (const it of items) {
-          const link: string = it?.link || '';
-          const title: string = it?.title || '';
-          const price = typeof it?.price === 'number' ? it.price : parseFloat(String(it?.price || '').replace(/[^0-9.]/g, ''));
-          const platform = urlToPlatform(link);
-          if (!link || !title || platform === 'unknown') continue;
-          // Accept items even when price is missing; set to 0 and let UI show
-          const safePrice = Number.isFinite(price) ? price : 0;
-          candidates.push({ id: `${platform}_${Date.now()}`, title, price: safePrice, currency: 'USD', platform, url: link, imageUrl: it?.image || '' });
-        }
-      }
-    } else if (usingSerpApi) {
-      const q = encodeURIComponent(qRaw);
-      const url = `https://serpapi.com/search.json?engine=google&q=${q}&tbm=shop&hl=en&gl=us&num=20&api_key=${serpKey}`;
-      console.log('🔎 SERPAPI global query:', qRaw);
-      const resp = await fetch(url);
-      if (resp.ok) {
-        const data: any = await resp.json();
-        const items: any[] = data?.shopping_results || [];
-        console.log('🔎 SERPAPI global results:', items.length);
-        for (const it of items) {
-          const link: string = it?.product_link || it?.link || '';
-          const title: string = it?.title || '';
-          const price = typeof it?.extracted_price === 'number' ? it.extracted_price : parseFloat(String(it?.price || '').replace(/[^0-9.]/g, ''));
-          const platform = urlToPlatform(link);
-          if (!link || !title || platform === 'unknown') continue;
-          const safePrice = Number.isFinite(price) ? price : 0;
-          candidates.push({ id: `${platform}_${it.position || ''}_${Date.now()}`, title, price: safePrice, currency: 'USD', platform, url: link, imageUrl: it?.thumbnail || '' });
-        }
+    console.log('🔎 SERPER global query:', qRaw);
+    const resp = await fetch('https://google.serper.dev/shopping', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-API-KEY': serperKey as string },
+      body: JSON.stringify({ q: qRaw, num: 20, gl: 'us', hl: 'en' }),
+    });
+    if (resp.ok) {
+      const data: any = await resp.json();
+      const items: any[] = data?.shopping || [];
+      console.log('🔎 SERPER global results:', items.length);
+      for (const it of items) {
+        const link: string = it?.link || '';
+        const title: string = it?.title || '';
+        const price = typeof it?.price === 'number' ? it.price : parseFloat(String(it?.price || '').replace(/[^0-9.]/g, ''));
+        const platform = urlToPlatform(link);
+        if (!link || !title || platform === 'unknown') continue;
+        const safePrice = Number.isFinite(price) ? price : 0;
+        candidates.push({ id: `${platform}_${Date.now()}`, title, price: safePrice, currency: 'USD', platform, url: link, imageUrl: it?.image || '' });
       }
     }
   } catch (e) {
@@ -1650,48 +1622,26 @@ async function widenSearchAcrossPlatforms(sourceProduct: any): Promise<any[]> {
   for (const p of platforms) {
     try {
       const qRaw = `site:${p.domain} ${sourceProduct.title}`;
-      if (usingSerper) {
-        console.log(`🔎 SERPER platform query: ${p.name} →`, qRaw);
-        const resp = await fetch('https://google.serper.dev/shopping', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-API-KEY': serperKey as string },
-          body: JSON.stringify({ q: qRaw, num: 10, gl: 'us', hl: 'en' }),
-        });
-        if (!resp.ok) continue;
-        const data: any = await resp.json();
-        const items: any[] = data?.shopping || [];
-        console.log(`🔎 SERPER platform results: ${p.name} →`, items.length);
-        let count = 0;
-        for (const it of items) {
-          if (count >= 3) break;
-          const link: string = it?.link || '';
-          const title: string = it?.title || '';
-          const price = typeof it?.price === 'number' ? it.price : parseFloat(String(it?.price || '').replace(/[^0-9.]/g, ''));
-          if (!link || !title) continue;
-          const safePrice = Number.isFinite(price) ? price : 0;
-          candidates.push({ id: `${p.name}_${Date.now()}`, title, price: safePrice, currency: 'USD', platform: p.name, url: link, imageUrl: it?.image || '' });
-          count++;
-        }
-      } else if (usingSerpApi) {
-        const q = encodeURIComponent(qRaw);
-        const url = `https://serpapi.com/search.json?engine=google&q=${q}&tbm=shop&hl=en&gl=us&num=10&api_key=${serpKey}`;
-        console.log(`🔎 SERPAPI platform query: ${p.name} →`, qRaw);
-        const resp = await fetch(url);
-        if (!resp.ok) continue;
-        const data: any = await resp.json();
-        const items: any[] = data?.shopping_results || [];
-        console.log(`🔎 SERPAPI platform results: ${p.name} →`, items.length);
-        let count = 0;
-        for (const it of items) {
-          if (count >= 3) break;
-          const link: string = it?.product_link || it?.link || '';
-          const title: string = it?.title || '';
-          const price = typeof it?.extracted_price === 'number' ? it.extracted_price : parseFloat(String(it?.price || '').replace(/[^0-9.]/g, ''));
-          if (!link || !title) continue;
-          const safePrice = Number.isFinite(price) ? price : 0;
-          candidates.push({ id: `${p.name}_${it.position || ''}_${Date.now()}`, title, price: safePrice, currency: 'USD', platform: p.name, url: link, imageUrl: it?.thumbnail || '' });
-          count++;
-        }
+      console.log(`🔎 SERPER platform query: ${p.name} →`, qRaw);
+      const resp = await fetch('https://google.serper.dev/shopping', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-API-KEY': serperKey as string },
+        body: JSON.stringify({ q: qRaw, num: 10, gl: 'us', hl: 'en' }),
+      });
+      if (!resp.ok) continue;
+      const data: any = await resp.json();
+      const items: any[] = data?.shopping || [];
+      console.log(`🔎 SERPER platform results: ${p.name} →`, items.length);
+      let count = 0;
+      for (const it of items) {
+        if (count >= 3) break;
+        const link: string = it?.link || '';
+        const title: string = it?.title || '';
+        const price = typeof it?.price === 'number' ? it.price : parseFloat(String(it?.price || '').replace(/[^0-9.]/g, ''));
+        if (!link || !title) continue;
+        const safePrice = Number.isFinite(price) ? price : 0;
+        candidates.push({ id: `${p.name}_${Date.now()}`, title, price: safePrice, currency: 'USD', platform: p.name, url: link, imageUrl: it?.image || '' });
+        count++;
       }
       // brief delay to be polite
       await new Promise(r => setTimeout(r, 250));

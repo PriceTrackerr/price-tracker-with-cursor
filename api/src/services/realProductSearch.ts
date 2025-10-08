@@ -1,268 +1,109 @@
-import axios from 'axios';
+// api/src/services/realProductSearch.ts
+import axios from "axios";
 
-/**
- * Real product search service that searches actual platforms for products
- * This replaces fake product matching with real product discovery
- */
-export class RealProductSearch {
-  private serpApiKey: string | undefined;
+const SERPER_API_KEY = process.env.SERPER_API_KEY;
 
-  constructor() {
-    this.serpApiKey = process.env.SERPAPI_KEY || process.env.SERP_API_KEY;
-  }
-  
-  /**
-   * Search for real products across multiple platforms
-   */
-  async searchProducts(searchTerm: string, limit: number = 21): Promise<any[]> {
-    console.log(`🔍 Searching for real products: "${searchTerm}"`);
-    
-    const results: any[] = [];
-    const platforms = [
-      { name: 'amazon', searchUrl: 'https://www.amazon.com/s?k=' },
-      { name: 'ebay', searchUrl: 'https://www.ebay.com/sch/i.html?_nkw=' },
-      { name: 'walmart', searchUrl: 'https://www.walmart.com/search?q=' },
-      { name: 'bestbuy', searchUrl: 'https://www.bestbuy.com/site/searchpage.jsp?st=' },
-      { name: 'target', searchUrl: 'https://www.target.com/s?searchTerm=' },
-      { name: 'aliexpress', searchUrl: 'https://www.aliexpress.com/wholesale?SearchText=' },
-      { name: 'shein', searchUrl: 'https://www.shein.com/search?keyword=' }
-    ];
-
-    // Search each platform (3 products per platform = 21 total)
-    for (const platform of platforms) {
-      try {
-        console.log(`🔍 Searching ${platform.name} for: ${searchTerm}`);
-        const platformResults = await this.searchPlatform(platform, searchTerm, 3);
-        results.push(...platformResults);
-        
-        // Add delay to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      } catch (error) {
-        console.error(`❌ Error searching ${platform.name}:`, error);
-      }
-    }
-
-    console.log(`✅ Found ${results.length} real products across all platforms`);
-    return results.slice(0, limit);
-  }
-
-  /**
-   * Search a specific platform for products
-   */
-  private async searchPlatform(platform: any, searchTerm: string, limit: number): Promise<any[]> {
-    try {
-      // Prefer SerpAPI Google Shopping if API key is configured
-      if (this.serpApiKey) {
-        const serp = await this.searchWithSerpApi(platform.name, searchTerm, limit);
-        if (serp.length > 0) return serp;
-      }
-      // Fallback to realistic generator (non-fake-looking, but not live)
-      return this.generateRealisticProducts(platform.name, searchTerm, limit);
-    } catch (error) {
-      console.error(`❌ Error searching ${platform.name}:`, error);
-      return [];
-    }
-  }
-
-  /**
-   * Use SerpAPI Google Shopping to fetch real products. Requires SERPAPI_KEY
-   */
-  private async searchWithSerpApi(platform: string, searchTerm: string, limit: number): Promise<any[]> {
-    try {
-      const siteDomains: Record<string, string> = {
-        amazon: 'amazon.com',
-        ebay: 'ebay.com',
-        walmart: 'walmart.com',
-        bestbuy: 'bestbuy.com',
-        target: 'target.com',
-        aliexpress: 'aliexpress.com',
-        shein: 'shein.com',
-      };
-      const domain = siteDomains[platform];
-      if (!domain) return [];
-
-      const q = `site:${domain} ${searchTerm}`;
-      const url = `https://serpapi.com/search.json?engine=google&q=${encodeURIComponent(q)}&tbm=shop&num=${Math.min(
-        Math.max(limit, 1),
-        10
-      )}&api_key=${this.serpApiKey}`;
-
-      const resp = await axios.get(url, { timeout: 10000 });
-      const items: any[] = resp.data?.shopping_results || [];
-      const results: any[] = [];
-      for (const item of items.slice(0, limit)) {
-        // SerpAPI fields: title, price, extracted_price, source, product_link, thumbnail
-        if (!item?.product_link) continue;
-        results.push({
-          id: `${platform}_${item.position || ''}_${Date.now()}`,
-          title: item.title,
-          price: typeof item.extracted_price === 'number' ? item.extracted_price : this.parsePrice(item.price),
-          currency: 'USD',
-          platform,
-          url: item.product_link,
-          imageUrl: item.thumbnail || this.generateProductImage(searchTerm),
-          stockStatus: 'unknown',
-          description: item.source || platform,
-          rating: item.rating || undefined,
-          reviewCount: item.reviews || undefined,
-        });
-      }
-      return results;
-    } catch (err) {
-      console.warn(`⚠️ SerpAPI failed for ${platform}:`, (err as any)?.message || err);
-      return [];
-    }
-  }
-
-  private parsePrice(priceStr?: string): number | undefined {
-    if (!priceStr) return undefined;
-    const m = String(priceStr).replace(/[,\s]/g, '').match(/([0-9]+(?:\.[0-9]{1,2})?)/);
-    return m ? Number(m[1]) : undefined;
-  }
-
-  /**
-   * Generate realistic product data based on search term
-   * This simulates real product search results
-   */
-  private generateRealisticProducts(platform: string, searchTerm: string, limit: number): any[] {
-    const products: any[] = [];
-    const basePrice = this.getBasePriceForTerm(searchTerm);
-    
-    for (let i = 0; i < limit; i++) {
-      const priceVariation = (Math.random() - 0.5) * 0.3; // ±15% variation
-      const price = Math.round(basePrice * (1 + priceVariation) * 100) / 100;
-      
-      const product = {
-        id: `${platform}_${Date.now()}_${i}`,
-        title: this.generateProductTitle(searchTerm, platform, i),
-        price: price,
-        currency: 'USD',
-        platform: platform,
-        url: this.generateProductUrl(platform, searchTerm, i),
-        imageUrl: this.generateProductImage(searchTerm),
-        stockStatus: 'in_stock',
-        description: `High-quality ${searchTerm.toLowerCase()} available on ${platform}`,
-        rating: Math.round((4 + Math.random()) * 10) / 10,
-        reviewCount: Math.floor(Math.random() * 1000) + 50
-      };
-      
-      products.push(product);
-    }
-    
-    return products;
-  }
-
-  /**
-   * Get base price for search term
-   */
-  private getBasePriceForTerm(searchTerm: string): number {
-    const term = searchTerm.toLowerCase();
-    
-    if (term.includes('airpod') || term.includes('airpods')) return 150;
-    if (term.includes('iphone')) return 800;
-    if (term.includes('macbook')) return 1200;
-    if (term.includes('galaxy') || term.includes('samsung')) return 700;
-    if (term.includes('laptop')) return 600;
-    if (term.includes('headphone')) return 100;
-    if (term.includes('speaker')) return 80;
-    if (term.includes('watch')) return 300;
-    
-    return 200; // Default price
-  }
-
-  /**
-   * Generate realistic product title
-   */
-  private generateProductTitle(searchTerm: string, platform: string, index: number): string {
-    const variations = [
-      `${searchTerm} - Premium Quality`,
-      `${searchTerm} Pro - Latest Model`,
-      `${searchTerm} Max - Enhanced Version`,
-      `${searchTerm} Plus - Advanced Features`,
-      `${searchTerm} Ultra - Top Performance`,
-      `${searchTerm} Elite - Professional Grade`,
-      `${searchTerm} Deluxe - Luxury Edition`
-    ];
-    
-    const colors = ['Black', 'White', 'Silver', 'Gold', 'Blue', 'Red', 'Green'];
-    const storage = ['64GB', '128GB', '256GB', '512GB', '1TB'];
-    const conditions = ['New', 'Refurbished', 'Open Box', 'Like New'];
-    
-    let title = variations[index % variations.length];
-    
-    // Add random attributes
-    if (Math.random() > 0.5) {
-      title += ` - ${colors[Math.floor(Math.random() * colors.length)]}`;
-    }
-    if (Math.random() > 0.7) {
-      title += ` ${storage[Math.floor(Math.random() * storage.length)]}`;
-    }
-    if (Math.random() > 0.8) {
-      title += ` (${conditions[Math.floor(Math.random() * conditions.length)]})`;
-    }
-    
-    return title;
-  }
-
-  /**
-   * Generate realistic product URL
-   */
-  private generateProductUrl(platform: string, searchTerm: string, index: number): string {
-    const baseUrls: Record<string, string> = {
-      amazon: 'https://www.amazon.com/dp/',
-      ebay: 'https://www.ebay.com/itm/',
-      walmart: 'https://www.walmart.com/ip/',
-      bestbuy: 'https://www.bestbuy.com/site/',
-      target: 'https://www.target.com/p/',
-      aliexpress: 'https://www.aliexpress.com/item/',
-      shein: 'https://www.shein.com/product/'
-    };
-    
-    const productId = this.generateProductId(platform, searchTerm, index);
-    return `${baseUrls[platform]}${productId}`;
-  }
-
-  /**
-   * Generate product ID
-   */
-  private generateProductId(platform: string, searchTerm: string, index: number): string {
-    const prefixes: Record<string, string> = {
-      amazon: 'B0',
-      ebay: '123456789',
-      walmart: '12345678',
-      bestbuy: '1234567',
-      target: '123456789',
-      aliexpress: '1234567890',
-      shein: '123456789'
-    };
-    
-    const suffix = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
-    return `${prefixes[platform]}${suffix}`;
-  }
-
-  /**
-   * Generate product image URL
-   */
-  private generateProductImage(searchTerm: string): string {
-    // Use Unsplash for realistic product images
-    const imageIds: Record<string, string> = {
-      'airpod': 'photo-1606220945770-b5b6c2c55bf1',
-      'airpods': 'photo-1606220945770-b5b6c2c55bf1',
-      'iphone': 'photo-1592750475338-74b7b21085ab',
-      'macbook': 'photo-1517336714731-489689fd1ca8',
-      'galaxy': 'photo-1511707171634-5f897ff02aa9',
-      'samsung': 'photo-1511707171634-5f897ff02aa9',
-      'laptop': 'photo-1496181133206-80ce9b88a853',
-      'headphone': 'photo-1505740420928-5e560c06d30e',
-      'speaker': 'photo-1608043152269-423dbba4e7e1',
-      'watch': 'photo-1523275335684-37898b6baf30'
-    };
-    
-    const term = searchTerm.toLowerCase();
-    const imageId = imageIds[term] || 'photo-1517336714731-489689fd1ca8';
-    
-    return `https://images.unsplash.com/${imageId}?w=400&h=300&fit=crop&auto=format`;
-  }
+if (!SERPER_API_KEY) {
+  console.error("❌ Missing SERPER_API_KEY in environment variables");
 }
 
-export const realProductSearch = new RealProductSearch();
+/**
+ * realProductSearch — fetches live product listings from Serper (Google Shopping)
+ * Used by ProductMatchScraper to find cross-platform matches
+ */
+export const realProductSearch = {
+  /**
+   * Search for real products using Serper Google Shopping API
+   * @param query product name or keywords
+   * @param limit number of results to return (default 10)
+   */
+  async searchProducts(query: string, limit: number = 10) {
+    try {
+      console.log(`🔎 Searching Serper Shopping for: "${query}"`);
+
+      // Primary: Shopping endpoint (cleanest product data)
+      const response = await axios.post(
+        "https://google.serper.dev/shopping",
+        { q: query },
+        {
+          headers: {
+            "X-API-KEY": SERPER_API_KEY,
+            "Content-Type": "application/json",
+          },
+          timeout: 30000,
+        }
+      );
+
+      let results = response.data?.shopping ?? [];
+
+      // Fallback to generic web search if Shopping returns nothing
+      if (!results.length) {
+        console.warn("⚠️ No shopping results, falling back to organic search...");
+        const fallback = await axios.post(
+          "https://google.serper.dev/search",
+          { q: query },
+          {
+            headers: {
+              "X-API-KEY": SERPER_API_KEY,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        results = fallback.data?.organic ?? [];
+      }
+
+      if (!results.length) {
+        console.log("⚠️ No Serper results found for:", query);
+        return [];
+      }
+
+      const parsed = results.slice(0, limit).map((r: any, i: number) => ({
+        id: `serper_${Date.now()}_${i}`,
+        title: r.title || r.name || query,
+        price: extractPrice(r.price || r.extracted_price || ""),
+        currency: detectCurrency(r.price || ""),
+        url: r.link || "",
+        imageUrl: r.image || r.thumbnail || "",
+        platform: detectPlatform(r.link || "").toLowerCase(),
+      }));
+
+      console.log(`✅ Found ${parsed.length} Serper products for "${query}"`);
+      return parsed;
+    } catch (err: any) {
+      const msg = err.response?.data || err.message;
+      console.error("❌ Serper API failed:", msg);
+      return [];
+    }
+  },
+};
+
+// ---------- Helpers ----------
+function extractPrice(raw: string): number {
+  if (!raw) return 0;
+  const cleaned = raw.replace(/[^\d.,]/g, "").replace(",", ".");
+  const val = parseFloat(cleaned);
+  return isNaN(val) ? 0 : val;
+}
+
+function detectCurrency(price: string): string {
+  if (!price) return "USD";
+  if (price.includes("$")) return "USD";
+  if (price.includes("€")) return "EUR";
+  if (price.includes("£")) return "GBP";
+  if (price.includes("₹")) return "INR";
+  if (price.includes("¥")) return "JPY";
+  return "USD";
+}
+
+function detectPlatform(url: string): string {
+  if (!url) return "Unknown";
+  const u = url.toLowerCase();
+  if (u.includes("amazon")) return "Amazon";
+  if (u.includes("ebay")) return "eBay";
+  if (u.includes("aliexpress")) return "AliExpress";
+  if (u.includes("temu")) return "Temu";
+  if (u.includes("walmart")) return "Walmart";
+  if (u.includes("bestbuy")) return "BestBuy";
+  if (u.includes("target")) return "Target";
+  return "Other";
+}
