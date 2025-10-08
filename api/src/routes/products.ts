@@ -1617,8 +1617,10 @@ async function widenSearchAcrossPlatforms(sourceProduct: any): Promise<any[]> {
           const title: string = it?.title || '';
           const price = typeof it?.price === 'number' ? it.price : parseFloat(String(it?.price || '').replace(/[^0-9.]/g, ''));
           const platform = urlToPlatform(link);
-          if (!link || !title || !price || platform === 'unknown') continue;
-          candidates.push({ id: `${platform}_${Date.now()}`, title, price, currency: 'USD', platform, url: link, imageUrl: it?.image || '' });
+          if (!link || !title || platform === 'unknown') continue;
+          // Accept items even when price is missing; set to 0 and let UI show
+          const safePrice = Number.isFinite(price) ? price : 0;
+          candidates.push({ id: `${platform}_${Date.now()}`, title, price: safePrice, currency: 'USD', platform, url: link, imageUrl: it?.image || '' });
         }
       }
     } else if (usingSerpApi) {
@@ -1635,8 +1637,9 @@ async function widenSearchAcrossPlatforms(sourceProduct: any): Promise<any[]> {
           const title: string = it?.title || '';
           const price = typeof it?.extracted_price === 'number' ? it.extracted_price : parseFloat(String(it?.price || '').replace(/[^0-9.]/g, ''));
           const platform = urlToPlatform(link);
-          if (!link || !title || !price || platform === 'unknown') continue;
-          candidates.push({ id: `${platform}_${it.position || ''}_${Date.now()}`, title, price, currency: 'USD', platform, url: link, imageUrl: it?.thumbnail || '' });
+          if (!link || !title || platform === 'unknown') continue;
+          const safePrice = Number.isFinite(price) ? price : 0;
+          candidates.push({ id: `${platform}_${it.position || ''}_${Date.now()}`, title, price: safePrice, currency: 'USD', platform, url: link, imageUrl: it?.thumbnail || '' });
         }
       }
     }
@@ -1664,8 +1667,9 @@ async function widenSearchAcrossPlatforms(sourceProduct: any): Promise<any[]> {
           const link: string = it?.link || '';
           const title: string = it?.title || '';
           const price = typeof it?.price === 'number' ? it.price : parseFloat(String(it?.price || '').replace(/[^0-9.]/g, ''));
-          if (!link || !title || !price) continue;
-          candidates.push({ id: `${p.name}_${Date.now()}`, title, price, currency: 'USD', platform: p.name, url: link, imageUrl: it?.image || '' });
+          if (!link || !title) continue;
+          const safePrice = Number.isFinite(price) ? price : 0;
+          candidates.push({ id: `${p.name}_${Date.now()}`, title, price: safePrice, currency: 'USD', platform: p.name, url: link, imageUrl: it?.image || '' });
           count++;
         }
       } else if (usingSerpApi) {
@@ -1683,8 +1687,9 @@ async function widenSearchAcrossPlatforms(sourceProduct: any): Promise<any[]> {
           const link: string = it?.product_link || it?.link || '';
           const title: string = it?.title || '';
           const price = typeof it?.extracted_price === 'number' ? it.extracted_price : parseFloat(String(it?.price || '').replace(/[^0-9.]/g, ''));
-          if (!link || !title || !price) continue;
-          candidates.push({ id: `${p.name}_${it.position || ''}_${Date.now()}`, title, price, currency: 'USD', platform: p.name, url: link, imageUrl: it?.thumbnail || '' });
+          if (!link || !title) continue;
+          const safePrice = Number.isFinite(price) ? price : 0;
+          candidates.push({ id: `${p.name}_${it.position || ''}_${Date.now()}`, title, price: safePrice, currency: 'USD', platform: p.name, url: link, imageUrl: it?.thumbnail || '' });
           count++;
         }
       }

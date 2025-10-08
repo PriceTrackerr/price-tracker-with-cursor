@@ -75,9 +75,7 @@ export class ProductMatchScraper {
       }
       
       console.log(`✅ Stored ${storedCount} real product matches for ${sourceProduct.title}`);
-      
-      // Update product's totalMatches count
-      await this.db.updateProduct(sourceProduct.id, { totalMatches: storedCount });
+      // Skip updating totalMatches to avoid schema/version issues
       
     } catch (error) {
       console.error('❌ Error scraping and storing real product matches:', error);
