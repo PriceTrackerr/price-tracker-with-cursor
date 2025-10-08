@@ -1429,13 +1429,7 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
     }
 
     // Update the source product's total matches count
-    try {
-      await db.updateProduct(productId, { 
-        totalMatches: matches.length
-      });
-    } catch (e) {
-      console.warn('updateProduct(totalMatches) failed (non-fatal):', e);
-    }
+    // Skip updating totalMatches to avoid schema/version issues in Supabase
 
     return res.json({
       success: true,
