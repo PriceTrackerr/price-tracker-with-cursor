@@ -191,16 +191,8 @@ export class ProductMatchScraper {
       for (const m of matches) {
         let matchedProduct;
         if (m.matchedProductId.startsWith('real_')) {
-          matchedProduct = {
-            id: m.matchedProductId,
-            title: `Real Product (${m.matchedProductId})`,
-            price: 0,
-            currency: 'USD',
-            platform: 'unknown',
-            imageUrl: '',
-            url: `https://example.com/product/${m.matchedProductId}`,
-            stockStatus: 'unknown',
-          };
+          // Skip placeholder real_* entries; show only real links from external search
+          continue;
         } else {
           matchedProduct = await this.db.getProductById(m.matchedProductId);
         }

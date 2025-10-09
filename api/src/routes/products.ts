@@ -1418,7 +1418,13 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
               byUrl[urlKey] = m;
             }
           }
-          matches = Object.values(byUrl).slice(0, 21);
+          // Drop placeholder/example links and ensure real URLs
+          let merged = Object.values(byUrl).filter((m: any) => {
+            const u = (m.product?.url || m.url || '').toString();
+            return u && !u.includes('example.com/product/real_');
+          });
+          if (merged.length === 0) merged = externalMatches;
+          matches = merged.slice(0, 21);
           usedExternal = true;
           console.log(`🌐 Widen search completed with ${externalMatches.length} external and ${matches.length} merged matches`);
         } else {
