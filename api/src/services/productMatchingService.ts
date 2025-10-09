@@ -59,14 +59,14 @@ export interface MatchingConfig {
 
 // Default configuration
 export const DEFAULT_CONFIG: MatchingConfig = {
-  minScore: 0.6, // loosened for recall during testing
+  minScore: 0.5, // further loosened for maximum recall
   maxResults: 5,
-  priceTolerancePercent: 20,
+  priceTolerancePercent: 30, // increased price tolerance
   weights: {
-    titleFuzzy: 0.4,
-    brandMatch: 0.3,
-    modelVariant: 0.2,
-    priceCloseness: 0.1,
+    titleFuzzy: 0.35,
+    brandMatch: 0.35, // increased brand weight
+    modelVariant: 0.15,
+    priceCloseness: 0.05, // reduced price weight
     attributeSimilarity: 0.15,
     tfidfSimilarity: 0.1
   }
@@ -345,15 +345,29 @@ function extractProductInfo(normalizedTitle: string): ProductInfo {
     }
   }
 
-  // Category detection (rough classification)
-  if (normalizedTitle.includes('phone') || normalizedTitle.includes('iphone')) {
+  // Enhanced category detection (more comprehensive)
+  const title = normalizedTitle.toLowerCase();
+  
+  if (title.includes('phone') || title.includes('iphone') || title.includes('samsung') || title.includes('galaxy') || title.includes('pixel')) {
     info.category = 'phone';
-  } else if (normalizedTitle.includes('laptop') || normalizedTitle.includes('macbook')) {
+  } else if (title.includes('laptop') || title.includes('macbook') || title.includes('notebook') || title.includes('computer')) {
     info.category = 'laptop';
-  } else if (normalizedTitle.includes('tv') || normalizedTitle.includes('television')) {
+  } else if (title.includes('tv') || title.includes('television') || title.includes('monitor') || title.includes('display')) {
     info.category = 'tv';
-  } else if (normalizedTitle.includes('headphone') || normalizedTitle.includes('earphone') || normalizedTitle.includes('airpods')) {
+  } else if (title.includes('headphone') || title.includes('earphone') || title.includes('airpods') || title.includes('speaker') || title.includes('audio')) {
     info.category = 'audio';
+  } else if (title.includes('watch') || title.includes('smartwatch') || title.includes('fitness')) {
+    info.category = 'watch';
+  } else if (title.includes('tablet') || title.includes('ipad')) {
+    info.category = 'tablet';
+  } else if (title.includes('camera') || title.includes('lens') || title.includes('photo')) {
+    info.category = 'camera';
+  } else if (title.includes('game') || title.includes('gaming') || title.includes('console')) {
+    info.category = 'gaming';
+  } else if (title.includes('clothing') || title.includes('shirt') || title.includes('dress') || title.includes('jacket')) {
+    info.category = 'clothing';
+  } else if (title.includes('shoe') || title.includes('sneaker') || title.includes('boot')) {
+    info.category = 'shoes';
   }
 
   return info;
@@ -394,10 +408,21 @@ function calculateFuzzyScore(title1: string, title2: string): number {
   return stringSimilarity.compareTwoStrings(title1, title2);
 }
 
-// Step 2: Exact brand matching
+// Step 2: Fuzzy brand matching for better recall
 function calculateBrandScore(info1: ProductInfo, info2: ProductInfo): number {
   if (!info1.brand || !info2.brand) return 0;
-  return info1.brand === info2.brand ? 1 : 0;
+  
+  // Exact match gets full score
+  if (info1.brand === info2.brand) return 1;
+  
+  // Fuzzy match for similar brands (e.g., "Samsung" vs "Samsung Electronics")
+  const brandSimilarity = stringSimilarity.compareTwoStrings(
+    info1.brand.toLowerCase(), 
+    info2.brand.toLowerCase()
+  );
+  
+  // Return similarity score if above threshold, otherwise 0
+  return brandSimilarity >= 0.7 ? brandSimilarity : 0;
 }
 
 // Step 3: Model/variant matching using regex for numbers and identifiers
@@ -519,10 +544,16 @@ export function matchProducts(
     const candidateNormalized = normalizeTitle(candidate.title);
     const candidateInfo = extractProductInfo(candidateNormalized);
     
-    // Quick category filter to avoid obviously wrong matches (like iPhone vs Ice Maker)
-    if (sourceInfo.category && candidateInfo.category && 
-        sourceInfo.category !== candidateInfo.category) {
-      continue; // Skip completely different categories
+    // Fuzzy category matching - allow similar categories to pass through
+    if (sourceInfo.category && candidateInfo.category) {
+      const categorySimilarity = stringSimilarity.compareTwoStrings(
+        sourceInfo.category.toLowerCase(), 
+        candidateInfo.category.toLowerCase()
+      );
+      // Only skip if categories are completely different (similarity < 0.3)
+      if (categorySimilarity < 0.3) {
+        continue;
+      }
     }
     
     // Step 1: Fuzzy string matching

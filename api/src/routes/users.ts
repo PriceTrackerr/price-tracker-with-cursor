@@ -205,16 +205,29 @@ router.get('/me', async (req: Request, res: Response) => {
             id: user.id,
             email: user.email,
             username: user.user_metadata?.username || user.email?.split('@')[0] || 'user',
-            role: 'user',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
+            role: 'user'
+            // Remove created_at and updated_at as they should be auto-generated
           })
           .select()
           .single();
         
         if (createError) {
           console.error('Failed to create user record:', createError);
-          return res.status(500).json({ success: false, message: 'Failed to create user record' });
+          console.error('User data:', { id: user.id, email: user.email });
+          
+          // Fallback: return user data from auth even if DB insert fails
+          console.log('Falling back to auth user data');
+          return res.json({
+            success: true,
+            user: {
+              id: user.id,
+              email: user.email,
+              username: user.user_metadata?.username || user.email?.split('@')[0] || 'user',
+              role: 'user',
+              created_at: user.created_at,
+              updated_at: user.updated_at
+            }
+          });
         }
         
         return res.json({
@@ -447,7 +460,34 @@ router.post('/mark-price-drop-seen', async (req: Request, res: Response) => {
       .select('seen_price_drop_ids')
       .eq('id', user.id)
       .single();
-    if (userError) return res.status(500).json({ success: false, message: 'Failed to fetch user' });
+    
+    if (userError) {
+      if (userError.code === 'PGRST116') {
+        // User not found in users table, create basic record first
+        console.log('User not found in users table for mark-price-drop-seen, creating basic record');
+        const { data: newUser, error: createError } = await supabasePublic
+          .from(TABLES.USERS)
+          .insert({
+            id: user.id,
+            email: user.email,
+            username: user.user_metadata?.username || user.email?.split('@')[0] || 'user',
+            role: 'user',
+            seen_price_drop_ids: [productId]
+          })
+          .select()
+          .single();
+        
+        if (createError) {
+          console.error('Failed to create user record for mark-price-drop-seen:', createError);
+          return res.status(500).json({ success: false, message: 'Failed to create user record' });
+        }
+        
+        return res.json({ success: true, message: 'Price drop marked as seen' });
+      } else {
+        return res.status(500).json({ success: false, message: 'Failed to fetch user' });
+      }
+    }
+    
     if (!userData) return res.status(404).json({ success: false, message: 'User not found' });
 
     const seenPriceDropIds = userData.seen_price_drop_ids || [];
@@ -486,13 +526,23 @@ router.get('/seen-price-drops', async (req: Request, res: Response) => {
       .select('seen_price_drop_ids')
       .eq('id', user.id)
       .single();
-    if (userError || !userData) {
-      handleSupabaseError(userError, 'fetch user');
+    
+    if (userError) {
+      if (userError.code === 'PGRST116') {
+        // User not found in users table, return empty array
+        console.log('User not found in users table for seen-price-drops, returning empty array');
+        return res.json({
+          success: true,
+          data: [],
+        });
+      } else {
+        handleSupabaseError(userError, 'fetch user');
+      }
     }
 
     return res.json({
       success: true,
-      data: userData.seen_price_drop_ids || [],
+      data: userData?.seen_price_drop_ids || [],
     });
   } catch (error) {
     console.error('Error fetching seen price drops:', error);
