@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from './AuthContext';
 import { 
   Link, 
@@ -66,12 +66,7 @@ export default function ProductMatching({ productId, onClose }: ProductMatchingP
     };
   }, [onClose]);
 
-  useEffect(() => {
-    // Kick off widened search immediately for faster, richer results
-    fetchMatches(true);
-  }, [productId, token]);
-
-  const fetchMatches = async (widen: boolean = false) => {
+  const fetchMatches = useCallback(async (widen: boolean = false) => {
     if (!token) {
       setError('Authentication required. Please log in again.');
       return;
@@ -136,9 +131,14 @@ export default function ProductMatching({ productId, onClose }: ProductMatchingP
     } finally {
       setLoading(false);
     }
-  };
+  }, [token, productId, targetProduct?.title]);
 
-  const getConfidenceIcon = (confidence: string) => {
+  useEffect(() => {
+    // Kick off widened search immediately for faster, richer results
+    fetchMatches(true);
+  }, [fetchMatches]);
+
+  const getConfidenceIcon = useCallback((confidence: string) => {
     switch (confidence) {
       case 'high':
         return <Award className="w-4 h-4 text-green-500" />;
@@ -149,9 +149,9 @@ export default function ProductMatching({ productId, onClose }: ProductMatchingP
       default:
         return <Clock className="w-4 h-4 text-gray-400" />;
     }
-  };
+  }, []);
 
-  const getConfidenceColor = (confidence: string) => {
+  const getConfidenceColor = useCallback((confidence: string) => {
     switch (confidence) {
       case 'high':
         return 'text-green-600 bg-green-50 border-green-200';
@@ -162,9 +162,9 @@ export default function ProductMatching({ productId, onClose }: ProductMatchingP
       default:
         return 'text-gray-600 bg-gray-50 border-gray-200';
     }
-  };
+  }, []);
 
-  const getConfidenceText = (confidence: string, similarity: number) => {
+  const getConfidenceText = useCallback((confidence: string, similarity: number) => {
     const percentage = Math.round(similarity * 100);
     switch (confidence) {
       case 'high':
@@ -176,9 +176,9 @@ export default function ProductMatching({ productId, onClose }: ProductMatchingP
       default:
         return `${percentage}% Match`;
     }
-  };
+  }, []);
 
-  const getPlatformIcon = (platform: string) => {
+  const getPlatformIcon = useCallback((platform: string) => {
     switch (platform.toLowerCase()) {
       case 'amazon':
         return '🛒';
@@ -197,7 +197,7 @@ export default function ProductMatching({ productId, onClose }: ProductMatchingP
       default:
         return '🛒';
     }
-  };
+  }, []);
 
   const getStockStatusIcon = (status?: string) => {
     switch (status) {
@@ -210,12 +210,25 @@ export default function ProductMatching({ productId, onClose }: ProductMatchingP
     }
   };
 
-  const getSavingsIcon = (priceDifference: number, targetPrice: number) => {
+  const getSavingsIcon = useCallback((priceDifference: number, targetPrice: number) => {
     const savings = priceDifference / targetPrice * 100;
     if (savings > 50) return <Zap className="w-4 h-4 text-green-500" />;
     if (savings > 20) return <TrendingDown className="w-4 h-4 text-green-400" />;
     return <TrendingUp className="w-4 h-4 text-red-400" />;
-  };
+  }, []);
+
+  // Memoize sorted matches to prevent unnecessary re-renders
+  const sortedMatches = useMemo(() => {
+    return [...matches].sort((a, b) => {
+      // Sort by confidence first, then by similarity
+      const confidenceOrder = { high: 3, medium: 2, low: 1 };
+      const aConf = confidenceOrder[a.confidence as keyof typeof confidenceOrder] || 0;
+      const bConf = confidenceOrder[b.confidence as keyof typeof confidenceOrder] || 0;
+      
+      if (aConf !== bConf) return bConf - aConf;
+      return b.similarity - a.similarity;
+    });
+  }, [matches]);
 
   if (loading || error) {
     return (
@@ -370,7 +383,7 @@ export default function ProductMatching({ productId, onClose }: ProductMatchingP
             </div>
 
             <div className="grid gap-4">
-              {matches.map((match, index) => (
+              {sortedMatches.map((match, index) => (
                 <div key={match.product.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200 hover:border-blue-300">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -460,7 +473,7 @@ export default function ProductMatching({ productId, onClose }: ProductMatchingP
 
             <div className="mt-4 p-3 bg-gray-50 rounded-lg text-center">
               <p className="text-xs text-gray-500">
-                Powered by enhanced product matching algorithm • {matches.length} results across {new Set(matches.map(m => m.product.platform)).size} platforms
+                Powered by enhanced product matching algorithm • {sortedMatches.length} results across {new Set(sortedMatches.map(m => m.product.platform)).size} platforms
               </p>
             </div>
           </div>

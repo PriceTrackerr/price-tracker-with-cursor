@@ -45,7 +45,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'TEST_CONNECTION') {
     console.log('🔍 Content script responding to test connection');
     sendResponse({ success: true, message: 'Content script is ready' });
-    return true;
+    return false; // Synchronous response
   }
   
   if (message.action === 'getProductInfo') {
@@ -59,8 +59,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
     
     window.addEventListener('message', handleResponse);
-    setTimeout(() => sendResponse({ success: false, error: 'Timeout' }), 5000);
-    return true;
+    setTimeout(() => {
+      window.removeEventListener('message', handleResponse);
+      sendResponse({ success: false, error: 'Timeout' });
+    }, 5000);
+    return true; // Keep connection alive for async response
   }
   
   if (message.action === 'trackProduct') {
@@ -115,6 +118,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     window.addEventListener('message', handleTrackResponse);
     setTimeout(() => {
       console.log('🔍 Content script trackProduct timeout');
+      window.removeEventListener('message', handleTrackResponse);
       // Don't show notification here - let popup handle it
       sendResponse({ 
         success: false, 
@@ -122,7 +126,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         message: 'Request timed out'
       });
     }, 10000);
-    return true;
+    return true; // Keep connection alive for async response
   }
   
   // Default response for unknown messages
@@ -131,7 +135,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     error: 'Unknown message type',
     message: 'Unknown message type'
   });
-  return true;
+  return false; // Synchronous response
 });
 
 // Track product to backend - ONLY track, no popup

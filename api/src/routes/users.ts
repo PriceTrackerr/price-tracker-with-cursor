@@ -195,8 +195,46 @@ router.get('/me', async (req: Request, res: Response) => {
       .eq('id', user.id)
       .single();
 
-    if (userError || !userData) {
-      handleSupabaseError(userError, 'fetch user');
+    if (userError) {
+      if (userError.code === 'PGRST116') {
+        // User not found in users table, create a basic record
+        console.log('User not found in users table, creating basic record for:', user.id);
+        const { data: newUser, error: createError } = await supabasePublic
+          .from(TABLES.USERS)
+          .insert({
+            id: user.id,
+            email: user.email,
+            username: user.user_metadata?.username || user.email?.split('@')[0] || 'user',
+            role: 'user',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+        
+        if (createError) {
+          console.error('Failed to create user record:', createError);
+          return res.status(500).json({ success: false, message: 'Failed to create user record' });
+        }
+        
+        return res.json({
+          success: true,
+          user: {
+            id: newUser.id,
+            email: newUser.email,
+            username: newUser.username,
+            role: newUser.role,
+            created_at: newUser.created_at,
+            updated_at: newUser.updated_at
+          }
+        });
+      } else {
+        handleSupabaseError(userError, 'fetch user');
+      }
+    }
+
+    if (!userData) {
+      return res.status(404).json({ success: false, message: 'User not found' });
     }
 
     if (userData.role === 'banned') {
