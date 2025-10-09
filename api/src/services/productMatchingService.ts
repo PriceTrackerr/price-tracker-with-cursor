@@ -2,6 +2,7 @@
 // Uses only scraped DB products with extremely accurate matching
 
 import * as stringSimilarity from 'string-similarity';
+let natural: any; try { natural = require('natural'); } catch { natural = undefined; }
 
 export type Currency = string;
 
@@ -51,6 +52,8 @@ export interface MatchingConfig {
     brandMatch: number;       // Exact brand match weight (30%)
     modelVariant: number;     // Model/variant match weight (20%)
     priceCloseness: number;   // Price closeness weight (10%)
+    attributeSimilarity?: number; // New attribute similarity weight
+    tfidfSimilarity?: number;     // New TF-IDF cosine weight
   };
 }
 
@@ -63,7 +66,9 @@ export const DEFAULT_CONFIG: MatchingConfig = {
     titleFuzzy: 0.4,
     brandMatch: 0.3,
     modelVariant: 0.2,
-    priceCloseness: 0.1
+    priceCloseness: 0.1,
+    attributeSimilarity: 0.15,
+    tfidfSimilarity: 0.1
   }
 };
 
@@ -434,6 +439,29 @@ function calculateSemanticScore(title1: string, title2: string): number {
   return 0; // Not implemented yet, easy to add later
 }
 
+function calculateTfidfSimilarity(title1: string, title2: string): number {
+  if (!natural) return 0;
+  try {
+    const TfIdf = natural.TfIdf; const tfidf = new TfIdf();
+    tfidf.addDocument(title1); tfidf.addDocument(title2);
+    const terms1: Record<string, number> = {}; const terms2: Record<string, number> = {};
+    tfidf.listTerms(0).forEach((t: any) => { terms1[t.term] = t.tfidf; });
+    tfidf.listTerms(1).forEach((t: any) => { terms2[t.term] = t.tfidf; });
+    const keys = new Set([...Object.keys(terms1), ...Object.keys(terms2)]);
+    let dot = 0, n1 = 0, n2 = 0;
+    keys.forEach(k => { const a = terms1[k] || 0, b = terms2[k] || 0; dot += a*b; n1 += a*a; n2 += b*b; });
+    if (n1 === 0 || n2 === 0) return 0; return Math.max(0, Math.min(1, dot / (Math.sqrt(n1)*Math.sqrt(n2))));
+  } catch { return 0; }
+}
+
+function calculateAttributeSimilarity(info1: any, info2: any): number {
+  let score = 0, total = 0;
+  if (info1.color || info2.color) { total++; if (info1.color && info2.color && info1.color === info2.color) score++; }
+  if (info1.storage || info2.storage) { total++; if (info1.storage && info2.storage && info1.storage === info2.storage) score++; }
+  if (info1.size || info2.size) { total++; if (info1.size && info2.size && info1.size === info2.size) score++; }
+  return total === 0 ? 0 : score / total;
+}
+
 // Enhanced similarity scoring with configurable weights
 function calculateOverallScore(
   fuzzyScore: number,
@@ -441,6 +469,8 @@ function calculateOverallScore(
   modelScore: number,
   priceScore: number,
   semanticScore: number,
+  attributeScore: number,
+  tfidfScore: number,
   config: MatchingConfig
 ): number {
   const { weights } = config;
@@ -450,7 +480,9 @@ function calculateOverallScore(
     fuzzyScore * weights.titleFuzzy +
     brandScore * weights.brandMatch +
     modelScore * weights.modelVariant +
-    priceScore * weights.priceCloseness
+    priceScore * weights.priceCloseness +
+    (weights.attributeSimilarity ?? 0.15) * attributeScore +
+    (weights.tfidfSimilarity ?? 0.1) * tfidfScore
   );
 
   // Temporary brand boost for better recall
@@ -507,10 +539,12 @@ export function matchProducts(
     
     // Step 5: Semantic similarity (placeholder)
     const semanticScore = calculateSemanticScore(sourceNormalized, candidateNormalized);
+    const attributeScore = calculateAttributeSimilarity(sourceInfo, candidateInfo);
+    const tfidfScore = calculateTfidfSimilarity(sourceNormalized, candidateNormalized);
     
     // Calculate overall similarity score
     const overallScore = calculateOverallScore(
-      fuzzyScore, brandScore, modelScore, priceScore, semanticScore, config
+      fuzzyScore, brandScore, modelScore, priceScore, semanticScore, attributeScore, tfidfScore, config
     );
     
     // Apply threshold filter
