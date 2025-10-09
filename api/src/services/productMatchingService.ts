@@ -56,7 +56,7 @@ export interface MatchingConfig {
 
 // Default configuration
 export const DEFAULT_CONFIG: MatchingConfig = {
-  minScore: 0.7,
+  minScore: 0.6, // loosened for recall during testing
   maxResults: 5,
   priceTolerancePercent: 20,
   weights: {
@@ -452,6 +452,9 @@ function calculateOverallScore(
     modelScore * weights.modelVariant +
     priceScore * weights.priceCloseness
   );
+
+  // Temporary brand boost for better recall
+  if (brandScore > 0) totalScore += 0.2;
   
   // Add semantic score when available (future enhancement)
   if (semanticScore > 0) {
@@ -471,6 +474,7 @@ export function matchProducts(
 ): MatchResult[] {
   // Avoid matching with itself
   const filteredCandidates = candidates.filter(c => c.id !== source.id);
+  console.log('Candidates after filter:', filteredCandidates.length);
   
   // Step 1: Preprocess source product
   const sourceNormalized = normalizeTitle(source.title);

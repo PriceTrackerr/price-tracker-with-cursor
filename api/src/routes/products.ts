@@ -1404,6 +1404,15 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
           for (const m of [...matches, ...externalMatches]) {
             const urlKey = ((m as any).url || (m as any).product?.url || '').split('#')[0];
             if (!urlKey) continue;
+            // Skip self URL (do not match the source product itself)
+            try {
+              const srcUrl = String(sourceProduct.url || '');
+              if (srcUrl) {
+                const srcCanonical = canonicalizeUrl(srcUrl, (sourceProduct.platform || 'unknown') as any);
+                const curCanonical = canonicalizeUrl(urlKey, (m as any).product?.platform || (m as any).platform || 'unknown');
+                if (srcCanonical && curCanonical && srcCanonical === curCanonical) continue;
+              }
+            } catch {}
             const confidence = (m as any).confidence ?? (m as any).similarity ?? 0;
             if (!byUrl[urlKey] || confidence > ((byUrl[urlKey] as any).confidence ?? (byUrl[urlKey] as any).similarity ?? 0)) {
               byUrl[urlKey] = m;

@@ -21,10 +21,13 @@ export const realProductSearch = {
     try {
       console.log(`🔎 Searching Serper Shopping for: "${query}"`);
 
+      // Heuristic: shorten query to core tokens (brand + 2-3 keywords)
+      const core = extractCoreQuery(query);
+
       // Primary: Shopping endpoint (cleanest product data)
       const response = await axios.post(
         "https://google.serper.dev/shopping",
-        { q: query },
+        { q: core, gl: 'us', hl: 'en' },
         {
           headers: {
             "X-API-KEY": SERPER_API_KEY,
@@ -41,7 +44,7 @@ export const realProductSearch = {
         console.warn("⚠️ No shopping results, falling back to organic search...");
         const fallback = await axios.post(
           "https://google.serper.dev/search",
-          { q: query },
+          { q: core, gl: 'us', hl: 'en' },
           {
             headers: {
               "X-API-KEY": SERPER_API_KEY,
@@ -78,6 +81,15 @@ export const realProductSearch = {
 };
 
 // ---------- Helpers ----------
+function extractCoreQuery(q: string): string {
+  const s = (q || '').toLowerCase();
+  const tokens = s.replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(Boolean);
+  const brandList = ['apple','samsung','sony','xiaomi','oneplus','huawei','google','lenovo','dell','hp','asus','acer','msi','bose','jbl','beats'];
+  const brand = tokens.find(t => brandList.includes(t));
+  const keywords = tokens.filter(t => t.length > 2 && !['with','and','for','the','new','pro','max','gen','generation','edition'].includes(t));
+  const core = [brand, ...keywords].filter(Boolean).slice(0, 4).join(' ');
+  return core || q;
+}
 function extractPrice(raw: string): number {
   if (!raw) return 0;
   const cleaned = raw.replace(/[^\d.,]/g, "").replace(",", ".");
