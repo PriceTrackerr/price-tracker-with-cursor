@@ -33,6 +33,18 @@ interface UserWithRole {
   role?: 'admin' | 'user';
 }
 
+// Helpers
+function safeNum(v: any): number {
+  const n = Number(v);
+  return isFinite(n) ? n : 0;
+}
+function percentDiff(base: number, compare: number): number {
+  const a = safeNum(base);
+  const b = safeNum(compare);
+  if (a <= 0) return 0;
+  return Math.abs((b - a) / a) * 100;
+}
+
 // Validation middleware
 const validateProduct = [
   body('url').isURL().withMessage('Valid URL is required'),
@@ -1376,11 +1388,13 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
     let usedExternal = false;
 
     // Use cached external matches if present; only call Serper when explicitly widened or cache is empty
+    let hadCachedExternal = false;
     if (!widen) {
       try {
         const { productMatchScraper } = require('../services/productMatchScraper');
         const cached = await productMatchScraper.getStoredExternalMatches(userId, productId);
         if (cached.length) {
+          hadCachedExternal = true;
           const cachedAsMatches = cached.map((r: any) => ({
             product: {
               id: r.url,
@@ -1403,8 +1417,8 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
       } catch {}
     }
 
-    // Always try to augment with external shopping results until we have up to 21 totals
-    if (widen || matches.length < 21) {
+    // Only hit Serper if user explicitly widens OR there are no cached external matches and no stored matches
+    if (widen || (!hadCachedExternal && storedMatches.length === 0)) {
       try {
         // Use scraper to fetch and persist external matches, deduped by URL
         const { productMatchScraper } = require('../services/productMatchScraper');
@@ -1511,8 +1525,8 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
           confidence: Number(match.confidence ?? match.similarity ?? 0),
           similarity: Number(match.similarity ?? match.confidence ?? 0),
           matchReason: (match.matchReason ?? 'Similarity-based match') as string,
-          priceDifference: Number(match.priceDifference ?? Math.abs(Number(sourceProduct.price) - Number(match.product?.price ?? match.price ?? 0))),
-          priceDifferencePercent: Number(match.priceDifferencePercent ?? (Math.abs(Number(sourceProduct.price) - Number(match.product?.price ?? match.price ?? 0)) / Math.max(1, Number(sourceProduct.price)) * 100)),
+          priceDifference: Number(match.priceDifference ?? Math.abs(safeNum(sourceProduct.price) - safeNum(match.product?.price ?? match.price ?? 0))),
+          priceDifferencePercent: Number(match.priceDifferencePercent ?? (percentDiff(safeNum(sourceProduct.price), safeNum(match.product?.price ?? match.price ?? 0)))),
           savings: match.savings as string | undefined
         })),
         totalMatches: matches.length,
@@ -1608,13 +1622,13 @@ router.get('/:productId/match-count', authMiddleware, async (req: AuthRequest, r
     const { productId } = req.params;
     const userId = req.user!.uid;
     const { supabase, TABLES } = require('../config/supabase');
-    const { data, error } = await supabase
+    const { count, error } = await supabase
       .from(TABLES.PRODUCT_MATCHES)
-      .select('id', { count: 'exact', head: true })
+      .select('*', { count: 'exact', head: true })
       .eq('user_id', userId)
       .eq('product_id', productId);
-    if (error) return res.json({ success: true, data: 0 });
-    return res.json({ success: true, data: data?.length || 0 });
+    if (error || typeof count !== 'number') return res.json({ success: true, data: 0 });
+    return res.json({ success: true, data: count });
   } catch (e) {
     return res.json({ success: true, data: 0 });
   }
