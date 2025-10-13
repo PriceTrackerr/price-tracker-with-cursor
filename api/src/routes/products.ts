@@ -1417,8 +1417,8 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
       } catch {}
     }
 
-    // Only hit Serper if user explicitly widens OR there are no cached external matches and no stored matches
-    if (widen || (!hadCachedExternal && storedMatches.length === 0)) {
+    // Only hit Serper if user explicitly widens OR there are no cached external matches at all
+    if (widen || (!hadCachedExternal && matches.length === 0)) {
       try {
         // Use scraper to fetch and persist external matches, deduped by URL
         const { productMatchScraper } = require('../services/productMatchScraper');

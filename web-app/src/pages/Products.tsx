@@ -933,6 +933,45 @@ export default function Products() {
     }
   }, [token]);
 
+  // Fetch match counts for all products
+  const fetchMatchCounts = useCallback(async () => {
+    if (!token || products.length === 0) return;
+
+    try {
+      const promises = products.map(async (product) => {
+        try {
+          const response = await fetch(`/api/products/${product.id}/match-count`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const data = await response.json();
+          return { productId: product.id, count: data.success ? data.data : 0 };
+        } catch (error) {
+          console.warn(`Failed to fetch match count for product ${product.id}:`, error);
+          return { productId: product.id, count: 0 };
+        }
+      });
+
+      const results = await Promise.all(promises);
+      
+      // Update products with match counts
+      setProducts(prevProducts => 
+        prevProducts.map(product => {
+          const result = results.find(r => r.productId === product.id);
+          return result ? { ...product, totalMatches: result.count } : product;
+        })
+      );
+    } catch (error) {
+      console.error('Error fetching match counts:', error);
+    }
+  }, [token, products.length]);
+
+  // Fetch match counts after products are loaded
+  useEffect(() => {
+    if (products.length > 0) {
+      fetchMatchCounts();
+    }
+  }, [fetchMatchCounts]);
+
   // Fetch products when filters change (but not on initial load)
   useEffect(() => {
     if (token && !loading) {
