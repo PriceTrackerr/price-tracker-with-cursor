@@ -190,6 +190,28 @@ export class ProductMatchScraper {
         }
       }
 
+      // 2b) Best-effort enrichment: fetch prices for a few zero-priced items (throttled)
+      const zeroPriced = normalized.filter((n: any) => Number(n.price || 0) === 0).slice(0, 5);
+      for (const z of zeroPriced) {
+        try {
+          const { price, currency } = await this.fetchPriceFromProductPage(z.url);
+          if (price && isFinite(price) && price > 0) {
+            // Update DB row for this URL
+            const { error: updErr } = await supabase
+              .from(TABLES.PRODUCT_MATCHES)
+              .update({ price, currency: currency || 'USD' })
+              .eq('user_id', userId)
+              .eq('product_id', sourceProduct.id)
+              .eq('url', z.url);
+            if (updErr) console.warn('⚠️ Failed updating price for URL:', z.url, updErr);
+          }
+        } catch (err) {
+          console.warn('⚠️ Enrichment fetch failed for', z.url, (err as any)?.message || err);
+        }
+        // Small delay to avoid hammering
+        await new Promise(r => setTimeout(r, 150));
+      }
+
       // 3) Return the union of existing + new for the requested URLs (ordered by platform then title)
       const { data: rows, error: fetchErr } = await supabase
         .from(TABLES.PRODUCT_MATCHES)
@@ -261,6 +283,52 @@ export class ProductMatchScraper {
     }
 
     return { price: 0, currency: 'USD' };
+  }
+
+  // Light HTML fetcher for price extraction; throttled usage only
+  private async fetchPriceFromProductPage(url: string): Promise<{ price: number; currency: string }> {
+    try {
+      const resp = await axios.get(url, { timeout: 12000, headers: { 'User-Agent': 'Mozilla/5.0' } });
+      const html = String(resp.data || '');
+      // Very light heuristics per platform
+      const u = url.toLowerCase();
+      let price = 0; let currency = 'USD';
+      const pick = (...regs: RegExp[]) => {
+        for (const re of regs) {
+          const m = html.match(re);
+          if (m && m[1]) return m[1];
+        }
+        return '';
+      };
+
+      if (u.includes('amazon.')) {
+        const txt = pick(/\"priceblock_ourprice\"[^>]*>\s*\$?([0-9.,]+)/i, /\"priceToPay\"[\s\S]*?\$([0-9.,]+)/i, /\$([0-9.,]+)\s*<\/?span/i);
+        price = this.extractPrice(txt); currency = 'USD';
+      } else if (u.includes('ebay.')) {
+        const txt = pick(/itemprop=\"price\"[^>]*content=\"([0-9.]+)\"/i, /\$([0-9.,]+)\s*<\/?span/i);
+        price = this.extractPrice(txt); currency = 'USD';
+      } else if (u.includes('walmart.')) {
+        const txt = pick(/\$([0-9.,]+)\s*<\/?span/i, /content=\"USD\"[^>]*content=\"([0-9.]+)\"/i);
+        price = this.extractPrice(txt); currency = 'USD';
+      } else if (u.includes('bestbuy.')) {
+        const txt = pick(/\$([0-9.,]+)\s*<\/?/i, /data-currency=\"USD\"[^>]*data-price=\"([0-9.]+)\"/i);
+        price = this.extractPrice(txt); currency = 'USD';
+      } else if (u.includes('target.')) {
+        const txt = pick(/\$([0-9.,]+)\s*<\/?/i);
+        price = this.extractPrice(txt); currency = 'USD';
+      } else if (u.includes('aliexpress.')) {
+        const txt = pick(/itemprop=\"price\"[^>]*content=\"([0-9.]+)\"/i, /US\$\s*([0-9.,]+)/i, /\$([0-9.,]+)/i);
+        price = this.extractPrice(txt); currency = 'USD';
+      } else if (u.includes('shein.')) {
+        const txt = pick(/US\$\s*([0-9.,]+)/i, /\$([0-9.,]+)/i);
+        price = this.extractPrice(txt); currency = 'USD';
+      }
+
+      if (!price || !isFinite(price)) return { price: 0, currency: 'USD' };
+      return { price, currency };
+    } catch (err) {
+      return { price: 0, currency: 'USD' };
+    }
   }
 
   /**

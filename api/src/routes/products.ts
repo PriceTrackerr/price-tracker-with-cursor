@@ -1568,6 +1568,24 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
   }
 });
 
+// Lightweight: get current external match count for a product (for pre-display on cards)
+router.get('/:productId/match-count', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const { productId } = req.params;
+    const userId = req.user!.uid;
+    const { supabase, TABLES } = require('../config/supabase');
+    const { data, error } = await supabase
+      .from(TABLES.PRODUCT_MATCHES)
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('product_id', productId);
+    if (error) return res.json({ success: true, data: 0 });
+    return res.json({ success: true, data: data?.length || 0 });
+  } catch (e) {
+    return res.json({ success: true, data: 0 });
+  }
+});
+
 // Helper: map URL host to platform key
 function urlToPlatform(url: string): Product['platform'] | 'unknown' {
   try {
