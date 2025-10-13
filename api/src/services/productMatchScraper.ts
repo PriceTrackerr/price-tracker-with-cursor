@@ -126,14 +126,17 @@ export class ProductMatchScraper {
           );
           const organic = Array.isArray(resp.data?.organic) ? resp.data.organic : [];
           // Take up to 3 per platform
-          return organic.slice(0, 3).map((r: any) => ({
-            title: r.title || sourceProduct.title,
-            url: (r.link || '').split('#')[0],
-            price: this.extractPrice(r.price || r.extracted_price || ''),
-            currency: this.detectCurrency(r.price || ''),
-            platform: p.name,
-            imageUrl: r.image || r.thumbnail || '',
-          })).filter((it: any) => !!it.url);
+          return organic.slice(0, 3).map((r: any) => {
+            const { price, currency } = this.parsePriceCurrency(r);
+            return {
+              title: r.title || sourceProduct.title,
+              url: (r.link || '').split('#')[0],
+              price,
+              currency,
+              platform: p.name,
+              imageUrl: r.image || r.thumbnail || '',
+            };
+          }).filter((it: any) => !!it.url);
         } catch (err) {
           console.warn(`🌐 Serper search failed for ${p.name}:`, (err as any)?.message || err);
           return [] as any[];
@@ -233,6 +236,31 @@ export class ProductMatchScraper {
     if (price.includes('€')) return 'EUR';
     if (price.includes('£')) return 'GBP';
     return 'USD';
+  }
+
+  private parsePriceCurrency(r: any): { price: number; currency: string } {
+    // Prefer explicit numeric fields
+    if (typeof r.extracted_price === 'number') {
+      return { price: r.extracted_price, currency: 'USD' };
+    }
+    if (typeof r.price === 'number') {
+      return { price: r.price, currency: 'USD' };
+    }
+
+    // Try string sources in priority order
+    const candidates: string[] = [];
+    if (typeof r.price === 'string') candidates.push(r.price);
+    if (typeof r.priceText === 'string') candidates.push(r.priceText);
+    if (typeof r.snippet === 'string') candidates.push(r.snippet);
+    if (typeof r.title === 'string') candidates.push(r.title);
+
+    for (const text of candidates) {
+      const currency = this.detectCurrency(text);
+      const amt = this.extractPrice(text);
+      if (amt > 0) return { price: amt, currency };
+    }
+
+    return { price: 0, currency: 'USD' };
   }
 
   /**
