@@ -2,6 +2,7 @@ import { getDb } from '../config/database';
 import { matchProducts } from './productMatchingService';
 import { supabase, TABLES } from '../config/supabase';
 import { realProductSearch } from './realProductSearch';
+import axios from 'axios';
 
 export class ProductMatchScraper {
   private db: any;
@@ -97,10 +98,51 @@ export class ProductMatchScraper {
         console.warn('⚠️ findAndStoreExternalMatches called without a valid title');
         return [];
       }
+      
+      // 1) Per-platform Serper searches in parallel (organic search, direct links)
+      const SERPER_API_KEY = process.env.SERPER_API_KEY;
+      if (!SERPER_API_KEY) {
+        console.warn('⚠️ SERPER_API_KEY missing; external matching disabled');
+        return [];
+      }
 
-      // 1) Fetch from Serper via realProductSearch
-      const results = await realProductSearch.searchProducts(query, limit);
-      if (!Array.isArray(results) || results.length === 0) return [];
+      const platforms = [
+        { name: 'amazon', domain: 'amazon.com' },
+        { name: 'aliexpress', domain: 'aliexpress.com' },
+        { name: 'ebay', domain: 'ebay.com' },
+        { name: 'walmart', domain: 'walmart.com' },
+        { name: 'shein', domain: 'shein.com' },
+        { name: 'target', domain: 'target.com' },
+        { name: 'bestbuy', domain: 'bestbuy.com' },
+      ];
+
+      const requests = platforms.map(async (p) => {
+        try {
+          const q = `${query} site:${p.domain}`;
+          const resp = await axios.post(
+            'https://google.serper.dev/search',
+            { q, gl: 'us', hl: 'en' },
+            { headers: { 'X-API-KEY': SERPER_API_KEY, 'Content-Type': 'application/json' }, timeout: 30000 }
+          );
+          const organic = Array.isArray(resp.data?.organic) ? resp.data.organic : [];
+          // Take up to 3 per platform
+          return organic.slice(0, 3).map((r: any) => ({
+            title: r.title || sourceProduct.title,
+            url: (r.link || '').split('#')[0],
+            price: this.extractPrice(r.price || r.extracted_price || ''),
+            currency: this.detectCurrency(r.price || ''),
+            platform: p.name,
+            imageUrl: r.image || r.thumbnail || '',
+          })).filter((it: any) => !!it.url);
+        } catch (err) {
+          console.warn(`🌐 Serper search failed for ${p.name}:`, (err as any)?.message || err);
+          return [] as any[];
+        }
+      });
+
+      const perPlatformResults = await Promise.all(requests);
+      const results = perPlatformResults.flat();
+      if (!results.length) return [];
 
       // Normalize platforms to lowercase and clean URLs
       const normalized = results.map((r: any) => ({
@@ -175,6 +217,22 @@ export class ProductMatchScraper {
       console.error('❌ findAndStoreExternalMatches error:', err);
       return [];
     }
+  }
+
+  private extractPrice(raw: any): number {
+    if (!raw) return 0;
+    if (typeof raw === 'number') return raw;
+    const cleaned = String(raw).replace(/[^\\d.,]/g, '').replace(',', '.');
+    const num = parseFloat(cleaned);
+    return isNaN(num) ? 0 : num;
+  }
+
+  private detectCurrency(price: string): string {
+    if (!price) return 'USD';
+    if (price.includes('$')) return 'USD';
+    if (price.includes('€')) return 'EUR';
+    if (price.includes('£')) return 'GBP';
+    return 'USD';
   }
 
   /**
