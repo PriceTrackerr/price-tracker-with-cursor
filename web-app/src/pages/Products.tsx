@@ -933,25 +933,60 @@ export default function Products() {
     }
   }, [token]);
 
-  // Fetch match counts for all products
+  // Fetch match counts for all products with rate limiting and caching
   const fetchMatchCounts = useCallback(async () => {
     if (!token || products.length === 0) return;
 
     try {
-      const promises = products.map(async (product) => {
-        try {
-          const response = await fetch(`/api/products/${product.id}/match-count`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          const data = await response.json();
-          return { productId: product.id, count: data.success ? data.data : 0 };
-        } catch (error) {
-          console.warn(`Failed to fetch match count for product ${product.id}:`, error);
-          return { productId: product.id, count: 0 };
-        }
-      });
+      // Only fetch counts for products that don't already have them
+      const productsNeedingCounts = products.filter(p => typeof p.totalMatches !== 'number');
+      
+      if (productsNeedingCounts.length === 0) {
+        console.log('All products already have match counts, skipping fetch');
+        return;
+      }
 
-      const results = await Promise.all(promises);
+      console.log(`Fetching match counts for ${productsNeedingCounts.length} products`);
+      
+      // Process products in batches of 3 to avoid rate limits
+      const batchSize = 3;
+      const results: { productId: string; count: number }[] = [];
+      
+      for (let i = 0; i < productsNeedingCounts.length; i += batchSize) {
+        const batch = productsNeedingCounts.slice(i, i + batchSize);
+        
+        const batchPromises = batch.map(async (product) => {
+          try {
+            const response = await fetch(`/api/products/${product.id}/match-count`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (response.status === 429) {
+              console.warn(`Rate limited for product ${product.id}, skipping`);
+              return { productId: product.id, count: 0 };
+            }
+            
+            if (!response.ok) {
+              console.warn(`Failed to fetch match count for product ${product.id}: ${response.status}`);
+              return { productId: product.id, count: 0 };
+            }
+            
+            const data = await response.json();
+            return { productId: product.id, count: data.success ? data.data : 0 };
+          } catch (error) {
+            console.warn(`Failed to fetch match count for product ${product.id}:`, error);
+            return { productId: product.id, count: 0 };
+          }
+        });
+
+        const batchResults = await Promise.all(batchPromises);
+        results.push(...batchResults);
+        
+        // Add delay between batches to avoid rate limits
+        if (i + batchSize < productsNeedingCounts.length) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      }
       
       // Update products with match counts
       setProducts(prevProducts => 
@@ -965,10 +1000,14 @@ export default function Products() {
     }
   }, [token, products]);
 
-  // Fetch match counts after products are loaded
+  // Fetch match counts after products are loaded (with debounce)
   useEffect(() => {
     if (products.length > 0) {
-      fetchMatchCounts();
+      const timeoutId = setTimeout(() => {
+        fetchMatchCounts();
+      }, 1000); // Wait 1 second after products load
+      
+      return () => clearTimeout(timeoutId);
     }
   }, [products.length, fetchMatchCounts]);
 

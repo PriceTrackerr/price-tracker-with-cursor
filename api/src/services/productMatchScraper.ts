@@ -507,40 +507,36 @@ export class ProductMatchScraper {
   }
 
   /**
-   * Get stored matches from DB using new schema
+   * Get stored matches from DB
    */
   async getStoredMatches(sourceProductId: string): Promise<any[]> {
     try {
-      const { supabase, TABLES } = require('../config/supabase');
-      const { data: matches, error } = await supabase
-        .from(TABLES.PRODUCT_MATCHES)
-        .select('*')
-        .eq('product_id', sourceProductId)
-        .order('created_at', { ascending: false });
+      const matches = await this.db.getProductMatches(sourceProductId);
+      const enriched = [];
 
-      if (error) {
-        console.error('❌ Error fetching stored matches:', error);
-        return [];
+      for (const m of matches) {
+        let matchedProduct;
+        if (m.matchedProductId.startsWith('real_')) {
+          // Skip placeholder real_* entries; show only real links from external search
+          continue;
+        } else {
+          matchedProduct = await this.db.getProductById(m.matchedProductId);
+        }
+
+        if (matchedProduct) {
+          enriched.push({
+            product: matchedProduct,
+            confidence: m.confidence,
+            similarity: m.similarity,
+            matchReason: m.matchReason,
+            priceDifference: m.priceDifference,
+            priceDifferencePercent: m.priceDifferencePercent,
+            savings: m.savings,
+          });
+        }
       }
 
-      return (matches || []).map((m: any) => ({
-        product: {
-          id: m.url, // Use URL as unique identifier
-          title: m.title,
-          price: m.price || 0,
-          currency: m.currency || 'USD',
-          platform: m.platform,
-          imageUrl: m.image_url || '',
-          url: m.url,
-          stockStatus: 'unknown'
-        },
-        confidence: 0.6,
-        similarity: 0.6,
-        matchReason: `Cached match from ${m.platform}`,
-        priceDifference: 0,
-        priceDifferencePercent: 0,
-        savings: 'N/A',
-      }));
+      return enriched;
     } catch (error) {
       console.error('❌ Error getting stored matches:', error);
       return [];
