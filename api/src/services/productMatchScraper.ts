@@ -244,6 +244,77 @@ export class ProductMatchScraper {
     }
   }
 
+  /**
+   * Return cached external matches from product_matches (no Serper calls)
+   */
+  async getStoredExternalMatches(userId: string, productId: string): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from(TABLES.PRODUCT_MATCHES)
+        .select('user_id,product_id,title,price,currency,url,image_url,platform,created_at')
+        .eq('user_id', userId)
+        .eq('product_id', productId)
+        .order('created_at', { ascending: false });
+      if (error) {
+        console.warn('⚠️ getStoredExternalMatches query failed:', error);
+        return [];
+      }
+      return (data || []).map((r: any) => ({
+        userId: r.user_id,
+        productId: r.product_id,
+        title: r.title,
+        price: Number(r.price || 0),
+        currency: r.currency || 'USD',
+        url: r.url,
+        imageUrl: r.image_url || '',
+        platform: (r.platform || 'other').toLowerCase(),
+        createdAt: r.created_at,
+      }));
+    } catch (err) {
+      console.warn('⚠️ getStoredExternalMatches error:', err);
+      return [];
+    }
+  }
+
+  /**
+   * Enrich zero-priced cached matches by fetching product pages (no Serper usage)
+   */
+  async enrichStoredZeroPriceMatches(userId: string, productId: string, cap: number = 10): Promise<number> {
+    try {
+      const { data, error } = await supabase
+        .from(TABLES.PRODUCT_MATCHES)
+        .select('url')
+        .eq('user_id', userId)
+        .eq('product_id', productId)
+        .eq('price', 0)
+        .limit(cap);
+      if (error) {
+        console.warn('⚠️ enrich query failed:', error);
+        return 0;
+      }
+      const rows = data || [];
+      let updated = 0;
+      for (const r of rows) {
+        try {
+          const { price, currency } = await this.fetchPriceFromProductPage(r.url);
+          if (price && isFinite(price) && price > 0) {
+            const { error: updErr } = await supabase
+              .from(TABLES.PRODUCT_MATCHES)
+              .update({ price, currency: currency || 'USD' })
+              .eq('user_id', userId)
+              .eq('product_id', productId)
+              .eq('url', r.url);
+            if (!updErr) updated++;
+          }
+        } catch {}
+        await new Promise(r => setTimeout(r, 120));
+      }
+      return updated;
+    } catch (err) {
+      console.warn('⚠️ enrichStoredZeroPriceMatches error:', err);
+      return 0;
+    }
+  }
   private extractPrice(raw: any): number {
     if (!raw) return 0;
     if (typeof raw === 'number') return raw;

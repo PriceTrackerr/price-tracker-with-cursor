@@ -1341,7 +1341,7 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
 
     console.log(`🔍 Getting stored matches for product: ${sourceProduct.title} (ID: ${productId})`);
 
-    // Get stored matches from database (fast lookup)
+    // Get stored matches from database (fast lookup) – includes internal matches
     let storedMatches: any[] = [];
     try {
       const { productMatchScraper } = require('../services/productMatchScraper');
@@ -1374,6 +1374,34 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
 
     let matches = storedMatches;
     let usedExternal = false;
+
+    // Use cached external matches if present; only call Serper when explicitly widened or cache is empty
+    if (!widen) {
+      try {
+        const { productMatchScraper } = require('../services/productMatchScraper');
+        const cached = await productMatchScraper.getStoredExternalMatches(userId, productId);
+        if (cached.length) {
+          const cachedAsMatches = cached.map((r: any) => ({
+            product: {
+              id: r.url,
+              title: r.title,
+              price: r.price || 0,
+              currency: r.currency || 'USD',
+              platform: r.platform,
+              imageUrl: r.imageUrl || '',
+              url: r.url,
+              stockStatus: 'unknown'
+            },
+            confidence: 0.6,
+            similarity: 0.6,
+            matchReason: `Cached external result on ${r.platform}`,
+            priceDifference: Math.abs(Number(sourceProduct.price) - Number(r.price || 0)),
+            priceDifferencePercent: Math.abs((Number(sourceProduct.price) - Number(r.price || 0)) / Math.max(1, Number(sourceProduct.price))) * 100,
+          }));
+          matches = [...matches, ...cachedAsMatches].slice(0, 21);
+        }
+      } catch {}
+    }
 
     // Always try to augment with external shopping results until we have up to 21 totals
     if (widen || matches.length < 21) {
@@ -1428,6 +1456,12 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
         console.warn('🌐 Widen search failed:', extErr instanceof Error ? extErr.message : extErr);
       }
     }
+
+    // Opportunistic enrichment for cached/just-fetched zero-priced matches without Serper usage
+    try {
+      const { productMatchScraper } = require('../services/productMatchScraper');
+      productMatchScraper.enrichStoredZeroPriceMatches(userId, productId, 8).catch(() => {});
+    } catch {}
     
     if (matches.length === 0) {
       console.warn(`⚠️ No matches found for "${sourceProduct.title}". This could indicate:`);
