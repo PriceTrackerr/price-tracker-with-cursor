@@ -1440,6 +1440,16 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
     // Update the source product's total matches count
     // Skip updating totalMatches to avoid schema/version issues in Supabase
 
+    // Fallback display price for source when stored price is 0
+    let sourceDisplayPrice = Number(sourceProduct.price) || 0;
+    if (!sourceDisplayPrice && Array.isArray(matches) && matches.length) {
+      const nonZero = matches
+        .map((m: any) => Number((m.product?.price ?? m.price) || 0))
+        .filter((p: number) => p > 0)
+        .sort((a: number, b: number) => a - b)[0];
+      if (nonZero && isFinite(nonZero)) sourceDisplayPrice = nonZero;
+    }
+
     return res.json({
       success: true,
       data: {
@@ -1447,7 +1457,7 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
         targetProduct: {
           id: sourceProduct.id,
           title: sourceProduct.title,
-          price: sourceProduct.price,
+          price: sourceDisplayPrice || 0,
           currency: sourceProduct.currency || 'USD',
           platform: sourceProduct.platform,
           imageUrl: sourceProduct.imageUrl || '',
