@@ -1378,57 +1378,51 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
     // Always try to augment with external shopping results until we have up to 21 totals
     if (widen || matches.length < 21) {
       try {
-        const externalCandidates = await widenSearchAcrossPlatforms(sourceProduct);
-        if (externalCandidates.length > 0) {
-          // Map external candidates to match objects and cap 3 per platform
+        // Use scraper to fetch and persist external matches, deduped by URL
+        const { productMatchScraper } = require('../services/productMatchScraper');
+        const externalRows = await productMatchScraper.findAndStoreExternalMatches(userId, sourceProduct, 21);
+        if (externalRows.length > 0) {
+          // Transform rows into the UI match shape
           const perPlatformCounts: Record<string, number> = {};
-          const externalMatches = externalCandidates
-            .filter(c => {
-              const n = perPlatformCounts[c.platform] || 0;
+          const externalMatches = externalRows
+            .filter((r: any) => {
+              const p = (r.platform || 'other').toLowerCase();
+              const n = perPlatformCounts[p] || 0;
               if (n >= 3) return false;
-              perPlatformCounts[c.platform] = n + 1;
+              perPlatformCounts[p] = n + 1;
               return true;
             })
-            .map(c => ({
-              product: c,
+            .map((r: any) => ({
+              product: {
+                id: r.url, // external unique key by URL
+                title: r.title,
+                price: r.price || 0,
+                currency: r.currency || 'USD',
+                platform: r.platform,
+                imageUrl: r.imageUrl || '',
+                url: r.url,
+                stockStatus: 'unknown'
+              },
               confidence: 0.6,
               similarity: 0.6,
-              matchReason: `External shopping result on ${c.platform}`,
-              priceDifference: Math.abs(Number(sourceProduct.price) - Number(c.price || 0)),
-              priceDifferencePercent: Math.abs((Number(sourceProduct.price) - Number(c.price || 0)) / Math.max(1, Number(sourceProduct.price))) * 100,
+              matchReason: `External shopping result on ${r.platform}`,
+              priceDifference: Math.abs(Number(sourceProduct.price) - Number(r.price || 0)),
+              priceDifferencePercent: Math.abs((Number(sourceProduct.price) - Number(r.price || 0)) / Math.max(1, Number(sourceProduct.price))) * 100,
               savings: undefined as string | undefined,
             }));
 
-          // Merge and deduplicate by URL (prefer higher confidence)
+          // Merge and dedupe with any stored matches (by URL)
           const byUrl: Record<string, any> = {};
           for (const m of [...matches, ...externalMatches]) {
             const urlKey = ((m as any).url || (m as any).product?.url || '').split('#')[0];
             if (!urlKey) continue;
-            // Skip self URL (do not match the source product itself)
-            try {
-              const srcUrl = String(sourceProduct.url || '');
-              if (srcUrl) {
-                const srcCanonical = canonicalizeUrl(srcUrl, (sourceProduct.platform || 'unknown') as any);
-                const curCanonical = canonicalizeUrl(urlKey, (m as any).product?.platform || (m as any).platform || 'unknown');
-                if (srcCanonical && curCanonical && srcCanonical === curCanonical) continue;
-              }
-            } catch {}
-            const confidence = (m as any).confidence ?? (m as any).similarity ?? 0;
-            if (!byUrl[urlKey] || confidence > ((byUrl[urlKey] as any).confidence ?? (byUrl[urlKey] as any).similarity ?? 0)) {
-              byUrl[urlKey] = m;
-            }
+            byUrl[urlKey] = m;
           }
-          // Drop placeholder/example links and ensure real URLs
-          let merged = Object.values(byUrl).filter((m: any) => {
-            const u = (m.product?.url || m.url || '').toString();
-            return u && !u.includes('example.com/product/real_');
-          });
-          if (merged.length === 0) merged = externalMatches;
-          matches = merged.slice(0, 21);
+          matches = Object.values(byUrl).slice(0, 21);
           usedExternal = true;
-          console.log(`🌐 Widen search completed with ${externalMatches.length} external and ${matches.length} merged matches`);
+          console.log(`🌐 External search stored ${externalRows.length} and merged to ${matches.length} matches`);
         } else {
-          console.log('🌐 Widen search returned no external candidates');
+          console.log('🌐 External search returned no candidates');
         }
       } catch (extErr) {
         console.warn('🌐 Widen search failed:', extErr instanceof Error ? extErr.message : extErr);

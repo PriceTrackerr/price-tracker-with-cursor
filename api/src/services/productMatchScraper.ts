@@ -1,5 +1,7 @@
 import { getDb } from '../config/database';
 import { matchProducts } from './productMatchingService';
+import { supabase, TABLES } from '../config/supabase';
+import { realProductSearch } from './realProductSearch';
 
 export class ProductMatchScraper {
   private db: any;
@@ -80,6 +82,98 @@ export class ProductMatchScraper {
       console.log(`✅ Stored ${storedCount} product matches for ${sourceProduct.title}`);
     } catch (error) {
       console.error('❌ Error scraping and storing real product matches:', error);
+    }
+  }
+
+  /**
+   * Fetch real matches using realProductSearch and persist into product_matches.
+   * - Deduplicate by URL per user+product
+   * - Return normalized list of found matches
+   */
+  async findAndStoreExternalMatches(userId: string, sourceProduct: any, limit: number = 21): Promise<any[]> {
+    try {
+      const query = sourceProduct?.title || '';
+      if (!query) {
+        console.warn('⚠️ findAndStoreExternalMatches called without a valid title');
+        return [];
+      }
+
+      // 1) Fetch from Serper via realProductSearch
+      const results = await realProductSearch.searchProducts(query, limit);
+      if (!Array.isArray(results) || results.length === 0) return [];
+
+      // Normalize platforms to lowercase and clean URLs
+      const normalized = results.map((r: any) => ({
+        ...r,
+        platform: (r.platform || 'other').toString().toLowerCase(),
+        url: (r.url || '').split('#')[0]
+      })).filter((r: any) => r.url);
+
+      if (!normalized.length) return [];
+
+      // 2) Deduplicate by URL against existing rows for this user+product
+      const urls = normalized.map((n: any) => n.url);
+      const { data: existingRows, error: existErr } = await supabase
+        .from(TABLES.PRODUCT_MATCHES)
+        .select('id,url')
+        .eq('user_id', userId)
+        .eq('product_id', sourceProduct.id)
+        .in('url', urls);
+      if (existErr) {
+        console.warn('⚠️ Could not fetch existing product_matches for dedupe:', existErr);
+      }
+      const existingUrlSet = new Set((existingRows || []).map((row: any) => row.url));
+
+      const toInsert = normalized.filter((n: any) => !existingUrlSet.has(n.url)).map((n: any) => ({
+        user_id: userId,
+        product_id: sourceProduct.id,
+        title: n.title || sourceProduct.title,
+        price: Number(n.price || 0),
+        currency: n.currency || 'USD',
+        url: n.url,
+        image_url: n.imageUrl || null,
+        platform: n.platform,
+        created_at: new Date().toISOString(),
+      }));
+
+      if (toInsert.length) {
+        const { error: insertErr } = await supabase
+          .from(TABLES.PRODUCT_MATCHES)
+          .insert(toInsert);
+        if (insertErr) {
+          console.error('❌ Failed inserting product_matches:', insertErr);
+        }
+      }
+
+      // 3) Return the union of existing + new for the requested URLs (ordered by platform then title)
+      const { data: rows, error: fetchErr } = await supabase
+        .from(TABLES.PRODUCT_MATCHES)
+        .select('user_id,product_id,title,price,currency,url,image_url,platform,created_at')
+        .eq('user_id', userId)
+        .eq('product_id', sourceProduct.id)
+        .in('url', urls);
+      if (fetchErr) {
+        console.error('❌ Failed fetching back product_matches:', fetchErr);
+        // Fallback to returning normalized results when fetch fails
+        return normalized;
+      }
+
+      const list = (rows || []).map((r: any) => ({
+        userId: r.user_id,
+        productId: r.product_id,
+        title: r.title,
+        price: r.price,
+        currency: r.currency,
+        url: r.url,
+        imageUrl: r.image_url,
+        platform: r.platform,
+        createdAt: r.created_at,
+      }));
+
+      return list;
+    } catch (err) {
+      console.error('❌ findAndStoreExternalMatches error:', err);
+      return [];
     }
   }
 
