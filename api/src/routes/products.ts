@@ -226,7 +226,7 @@ router.post('/track', authMiddleware, validateProduct, async (req: AuthRequest, 
       return res.status(200).json({ success: true, data: null, message: 'Already tracking in progress' });
     }
     trackLocks.set(lockKey, now + 15000);
-
+    
     console.log(`[DEBUG] No existing product found, proceeding to add new product`);
 
     // Add the new product
@@ -280,8 +280,8 @@ router.post('/track', authMiddleware, validateProduct, async (req: AuthRequest, 
     }
   } catch (cleanupErr) {
     console.warn('Duplicate cleanup failed:', cleanupErr);
-  }
-
+    }
+    
     return res.status(201).json({ 
       success: true,
       data: { 
@@ -1323,11 +1323,11 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
         console.warn('getProductById failed:', e);
         sourceProduct = undefined;
       }
-      if (!sourceProduct) {
-        return res.status(404).json({
-          success: false,
-          error: 'Product not found'
-        });
+    if (!sourceProduct) {
+      return res.status(404).json({
+        success: false,
+        error: 'Product not found'
+      });
       }
     }
 
@@ -1335,7 +1335,7 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
     let isAdmin = false;
     if (!q) { // skip ownership checks for name-based query
       try {
-        const user = await db.getUserById(userId) as any;
+    const user = await db.getUserById(userId) as any;
         isAdmin = user?.role === 'admin';
       } catch (e) {
         console.warn('getUserById failed (continuing as non-admin):', e);
@@ -1343,11 +1343,11 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
       }
     }
     if (!q) {
-      if (sourceProduct.userId !== userId && !isAdmin) {
-        return res.status(403).json({
-          success: false,
-          error: 'Not authorized'
-        });
+    if (sourceProduct.userId !== userId && !isAdmin) {
+      return res.status(403).json({
+        success: false,
+        error: 'Not authorized'
+      });
       }
     }
 
@@ -1417,8 +1417,8 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
       } catch {}
     }
 
-    // Only hit Serper if user explicitly widens OR there are no cached external matches at all
-    if (widen || (!hadCachedExternal && matches.length === 0)) {
+    // Only hit Serper if user explicitly widens (widen=true) OR there are absolutely no matches at all
+    if (widen || (matches.length === 0 && !hadCachedExternal)) {
       try {
         // Use scraper to fetch and persist external matches, deduped by URL
         const { productMatchScraper } = require('../services/productMatchScraper');
@@ -1458,8 +1458,8 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
           for (const m of [...matches, ...externalMatches]) {
             const urlKey = ((m as any).url || (m as any).product?.url || '').split('#')[0];
             if (!urlKey) continue;
-            byUrl[urlKey] = m;
-          }
+              byUrl[urlKey] = m;
+            }
           matches = Object.values(byUrl).slice(0, 21);
           usedExternal = true;
           console.log(`🌐 External search stored ${externalRows.length} and merged to ${matches.length} matches`);
@@ -1488,9 +1488,9 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
     // Update the source product's total matches count
     // Skip updating totalMatches to avoid schema/version issues in Supabase
 
-    // Fallback display price for source when stored price is 0
+    // Use the actual source product price, only fallback to match prices if source price is 0
     let sourceDisplayPrice = Number(sourceProduct.price) || 0;
-    if (!sourceDisplayPrice && Array.isArray(matches) && matches.length) {
+    if (sourceDisplayPrice === 0 && Array.isArray(matches) && matches.length) {
       const nonZero = matches
         .map((m: any) => Number((m.product?.price ?? m.price) || 0))
         .filter((p: number) => p > 0)
@@ -1690,11 +1690,11 @@ async function widenSearchAcrossPlatforms(sourceProduct: any): Promise<any[]> {
       const data: any = await resp.json();
       const items: any[] = data?.shopping || [];
       console.log('🔎 SERPER global results:', items.length);
-      for (const it of items) {
-        const link: string = it?.link || '';
-        const title: string = it?.title || '';
+  for (const it of items) {
+    const link: string = it?.link || '';
+    const title: string = it?.title || '';
         const price = typeof it?.price === 'number' ? it.price : parseFloat(String(it?.price || '').replace(/[^0-9.]/g, ''));
-        const platform = urlToPlatform(link);
+    const platform = urlToPlatform(link);
         if (!link || !title || platform === 'unknown') continue;
         const safePrice = Number.isFinite(price) ? price : 0;
         candidates.push({ id: `${platform}_${Date.now()}`, title, price: safePrice, currency: 'USD', platform, url: link, imageUrl: it?.image || '' });

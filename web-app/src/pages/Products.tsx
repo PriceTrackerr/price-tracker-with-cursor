@@ -963,14 +963,14 @@ export default function Products() {
     } catch (error) {
       console.error('Error fetching match counts:', error);
     }
-  }, [token, products.length]);
+  }, [token, products]);
 
   // Fetch match counts after products are loaded
   useEffect(() => {
     if (products.length > 0) {
       fetchMatchCounts();
     }
-  }, [fetchMatchCounts]);
+  }, [products.length, fetchMatchCounts]);
 
   // Fetch products when filters change (but not on initial load)
   useEffect(() => {
