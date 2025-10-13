@@ -62,17 +62,24 @@ export class ProductMatchScraper {
             ? (match as any).similarity
             : confidence;
 
-          // 🧩 Save to Supabase "product_matches" table
-          await this.db.addProductMatch({
-            sourceProductId: sourceProduct.id,
-            matchedProductId,
-            confidence,
-            similarity,
-            matchReason: match.matchReason || 'Serper match',
-            priceDifference: match.priceDifference || 0,
-            priceDifferencePercent: match.priceDifferencePercent || 0,
-            savings: match.savings || 'N/A',
-          });
+          // 🧩 Save to Supabase "product_matches" table using new schema
+          const { supabase, TABLES } = require('../config/supabase');
+          const { error: insertError } = await supabase
+            .from(TABLES.PRODUCT_MATCHES)
+            .insert({
+              user_id: sourceProduct.userId || 'unknown',
+              product_id: sourceProduct.id,
+              title: matchedProduct.title,
+              price: matchedProduct.price || 0,
+              currency: matchedProduct.currency || 'USD',
+              url: matchedProduct.url || '',
+              image_url: matchedProduct.imageUrl || null,
+              platform: matchedProduct.platform || 'unknown'
+            });
+          
+          if (insertError) {
+            console.error('❌ Failed to insert product match:', insertError);
+          }
 
           storedCount++;
         } catch (error) {
@@ -500,36 +507,40 @@ export class ProductMatchScraper {
   }
 
   /**
-   * Get stored matches from DB
+   * Get stored matches from DB using new schema
    */
   async getStoredMatches(sourceProductId: string): Promise<any[]> {
     try {
-      const matches = await this.db.getProductMatches(sourceProductId);
-      const enriched = [];
+      const { supabase, TABLES } = require('../config/supabase');
+      const { data: matches, error } = await supabase
+        .from(TABLES.PRODUCT_MATCHES)
+        .select('*')
+        .eq('product_id', sourceProductId)
+        .order('created_at', { ascending: false });
 
-      for (const m of matches) {
-        let matchedProduct;
-        if (m.matchedProductId.startsWith('real_')) {
-          // Skip placeholder real_* entries; show only real links from external search
-          continue;
-        } else {
-          matchedProduct = await this.db.getProductById(m.matchedProductId);
-        }
-
-        if (matchedProduct) {
-          enriched.push({
-            product: matchedProduct,
-            confidence: m.confidence,
-            similarity: m.similarity,
-            matchReason: m.matchReason,
-            priceDifference: m.priceDifference,
-            priceDifferencePercent: m.priceDifferencePercent,
-            savings: m.savings,
-          });
-        }
+      if (error) {
+        console.error('❌ Error fetching stored matches:', error);
+        return [];
       }
 
-      return enriched;
+      return (matches || []).map((m: any) => ({
+        product: {
+          id: m.url, // Use URL as unique identifier
+          title: m.title,
+          price: m.price || 0,
+          currency: m.currency || 'USD',
+          platform: m.platform,
+          imageUrl: m.image_url || '',
+          url: m.url,
+          stockStatus: 'unknown'
+        },
+        confidence: 0.6,
+        similarity: 0.6,
+        matchReason: `Cached match from ${m.platform}`,
+        priceDifference: 0,
+        priceDifferencePercent: 0,
+        savings: 'N/A',
+      }));
     } catch (error) {
       console.error('❌ Error getting stored matches:', error);
       return [];
