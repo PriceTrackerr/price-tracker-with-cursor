@@ -1634,6 +1634,74 @@ router.get('/:productId/match-count', authMiddleware, async (req: AuthRequest, r
   }
 });
 
+// Simple in-memory cache for match counts to reduce DB pressure
+// Key: `${userId}:${productId}` -> { count, expiresAt }
+const matchCountCache: Map<string, { count: number; expiresAt: number }> = new Map();
+
+// Bulk: get match counts for many products at once
+router.post('/match-counts', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user!.uid;
+    const productIds = (req.body?.productIds as string[]) || [];
+
+    if (!Array.isArray(productIds) || productIds.length === 0) {
+      return res.json({ success: true, data: {} });
+    }
+
+    // Hard cap to prevent abuse
+    const ids = productIds.slice(0, 200);
+
+    const now = Date.now();
+    const result: Record<string, number> = {};
+    const toQuery: string[] = [];
+
+    for (const id of ids) {
+      const key = `${userId}:${id}`;
+      const cached = matchCountCache.get(key);
+      if (cached && cached.expiresAt > now) {
+        result[id] = cached.count;
+      } else {
+        toQuery.push(id);
+      }
+    }
+
+    if (toQuery.length > 0) {
+      const { supabase, TABLES } = require('../config/supabase');
+      // Fetch product_id rows for the requested set and aggregate in-memory
+      const { data, error } = await supabase
+        .from(TABLES.PRODUCT_MATCHES)
+        .select('product_id')
+        .eq('user_id', userId)
+        .in('product_id', toQuery);
+
+      if (error) {
+        // On error, default queried ids to 0 rather than failing the whole response
+        for (const id of toQuery) {
+          result[id] = 0;
+        }
+      } else {
+        const counts: Record<string, number> = {};
+        for (const row of data as Array<{ product_id: string }>) {
+          const pid = row.product_id;
+          counts[pid] = (counts[pid] || 0) + 1;
+        }
+
+        for (const id of toQuery) {
+          const c = counts[id] || 0;
+          result[id] = c;
+          // Cache for 10 minutes
+          matchCountCache.set(`${userId}:${id}`, { count: c, expiresAt: now + 10 * 60 * 1000 });
+        }
+      }
+    }
+
+    return res.json({ success: true, data: result });
+  } catch (e) {
+    // Fail softly with empty map
+    return res.json({ success: true, data: {} });
+  }
+});
+
 // Helper: map URL host to platform key
 function urlToPlatform(url: string): Product['platform'] | 'unknown' {
   try {

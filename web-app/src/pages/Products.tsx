@@ -933,68 +933,52 @@ export default function Products() {
     }
   }, [token]);
 
-  // Fetch match counts for all products with rate limiting and caching
+  // Fetch match counts for all products with single bulk request and caching
   const fetchMatchCounts = useCallback(async () => {
     if (!token || products.length === 0) return;
 
     try {
       // Only fetch counts for products that don't already have them
       const productsNeedingCounts = products.filter(p => typeof p.totalMatches !== 'number');
-      
-      if (productsNeedingCounts.length === 0) {
-        console.log('All products already have match counts, skipping fetch');
+      if (productsNeedingCounts.length === 0) return;
+
+      const body = { productIds: productsNeedingCounts.map(p => p.id) };
+      const response = await fetch('/api/products/match-counts', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      });
+
+      // Gracefully handle rate limits or non-JSON responses
+      if (response.status === 429) {
+        console.warn('Rate limited getting match counts');
+        return;
+      }
+      if (!response.ok) {
+        console.warn(`Failed to fetch bulk match counts: ${response.status}`);
         return;
       }
 
-      console.log(`Fetching match counts for ${productsNeedingCounts.length} products`);
-      
-      // Process products in batches of 3 to avoid rate limits
-      const batchSize = 3;
-      const results: { productId: string; count: number }[] = [];
-      
-      for (let i = 0; i < productsNeedingCounts.length; i += batchSize) {
-        const batch = productsNeedingCounts.slice(i, i + batchSize);
-        
-        const batchPromises = batch.map(async (product) => {
-          try {
-            const response = await fetch(`/api/products/${product.id}/match-count`, {
-              headers: { 'Authorization': `Bearer ${token}` }
-            });
-            
-            if (response.status === 429) {
-              console.warn(`Rate limited for product ${product.id}, skipping`);
-              return { productId: product.id, count: 0 };
-            }
-            
-            if (!response.ok) {
-              console.warn(`Failed to fetch match count for product ${product.id}: ${response.status}`);
-              return { productId: product.id, count: 0 };
-            }
-            
-            const data = await response.json();
-            return { productId: product.id, count: data.success ? data.data : 0 };
-          } catch (error) {
-            console.warn(`Failed to fetch match count for product ${product.id}:`, error);
-            return { productId: product.id, count: 0 };
-          }
-        });
-
-        const batchResults = await Promise.all(batchPromises);
-        results.push(...batchResults);
-        
-        // Add delay between batches to avoid rate limits
-        if (i + batchSize < productsNeedingCounts.length) {
-          await new Promise(resolve => setTimeout(resolve, 500));
-        }
+      let data: any = null;
+      try {
+        data = await response.json();
+      } catch (e) {
+        console.warn('Bulk match counts returned non-JSON');
+        return;
       }
-      
-      // Update products with match counts
-      setProducts(prevProducts => 
+
+      const counts: Record<string, number> = data?.data || {};
+
+      setProducts(prevProducts => (
         prevProducts.map(product => {
-          const result = results.find(r => r.productId === product.id);
-          return result ? { ...product, totalMatches: result.count } : product;
+          if (typeof product.totalMatches === 'number') return product;
+          const count = counts[product.id];
+          return typeof count === 'number' ? { ...product, totalMatches: count } : product;
         })
-      );
+      ));
     } catch (error) {
       console.error('Error fetching match counts:', error);
     }
