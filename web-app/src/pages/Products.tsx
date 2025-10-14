@@ -986,13 +986,15 @@ export default function Products() {
 
   // Fetch match counts after products are loaded (with debounce)
   useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
     if (products.length > 0) {
-      const timeoutId = setTimeout(() => {
+      timeoutId = setTimeout(() => {
         fetchMatchCounts();
       }, 1000); // Wait 1 second after products load
-      
-      return () => clearTimeout(timeoutId);
     }
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, [products.length, fetchMatchCounts]);
 
   // Fetch products when filters change (but not on initial load)
