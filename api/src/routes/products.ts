@@ -1448,8 +1448,8 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
               confidence: 0.6,
               similarity: 0.6,
               matchReason: `External shopping result on ${r.platform}`,
-              priceDifference: Math.abs(Number(sourceProduct.price) - Number(r.price || 0)),
-              priceDifferencePercent: Math.abs((Number(sourceProduct.price) - Number(r.price || 0)) / Math.max(1, Number(sourceProduct.price))) * 100,
+              priceDifference: Math.abs(safeNum(sourceProduct.price) - safeNum(r.price || 0)),
+              priceDifferencePercent: percentDiff(safeNum(sourceProduct.price), safeNum(r.price || 0)),
               savings: undefined as string | undefined,
             }));
 
