@@ -254,11 +254,7 @@ router.post('/track', authMiddleware, validateProduct, async (req: AuthRequest, 
     const newProduct = await db.getProductById(id);
     
     if (newProduct) {
-      console.log(`🚀 Triggering pre-scrape for new product: ${newProduct.title}`);
-      // Run pre-scraping in background (don't wait for it)
-      productMatchScraper.scrapeAndStoreMatches(newProduct).catch((error: any) => {
-        console.error('❌ Background pre-scraping failed:', error);
-      });
+      // Legacy pre-scrape disabled; external matches are fetched on-demand and cached in product_matches
     }
     
     // Release lock
@@ -1373,11 +1369,7 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
       const isUuid = typeof sourceProduct.id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(sourceProduct.id);
       if (!q && isUuid) {
         try {
-          console.log(`🔄 No stored matches found, triggering background re-scraping...`);
-          const { productMatchScraper } = require('../services/productMatchScraper');
-          productMatchScraper.scrapeAndStoreMatches(sourceProduct).catch((error: any) => {
-            console.error('❌ Background pre-scraping failed:', error);
-          });
+          // Legacy re-scrape disabled; we rely on Serper-driven external cache only
         } catch {}
       } else {
         console.log('⏭️ Skipping background scrape for query-based or non-UUID source');

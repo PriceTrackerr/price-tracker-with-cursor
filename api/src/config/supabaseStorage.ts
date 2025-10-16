@@ -636,11 +636,12 @@ class SupabaseStorage {
 
   async getProductMatches(sourceProductId: string): Promise<ProductMatch[]> {
     try {
+      // Legacy API no longer used in new flow; keep a no-op safe fallback
       const { data, error } = await supabase
         .from(TABLES.PRODUCT_MATCHES)
         .select('*')
-        .eq('source_product_id', sourceProductId)
-        .order('confidence', { ascending: false });
+        .eq('product_id', sourceProductId)
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       
@@ -667,7 +668,7 @@ class SupabaseStorage {
       const { error } = await supabase
         .from(TABLES.PRODUCT_MATCHES)
         .delete()
-        .eq('source_product_id', sourceProductId);
+        .eq('product_id', sourceProductId);
 
       if (error) throw error;
       return true;
