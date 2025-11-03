@@ -131,11 +131,11 @@ export default function ProductMatching({ productId, onClose }: ProductMatchingP
     } finally {
       setLoading(false);
     }
-  }, [token, productId, targetProduct?.title]);
+  }, [token, productId]);
 
   useEffect(() => {
-    // Kick off widened search immediately for faster, richer results
-    fetchMatches(true);
+    // First try cached DB results; auto-widen inside if none are found
+    fetchMatches(false);
   }, [fetchMatches]);
 
   const getConfidenceIcon = useCallback((confidence: string) => {
