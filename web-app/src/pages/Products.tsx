@@ -938,8 +938,8 @@ export default function Products() {
     if (!token || products.length === 0) return;
 
     try {
-      // Only fetch counts for products that don't already have them
-      const productsNeedingCounts = products.filter(p => typeof p.totalMatches !== 'number');
+      // Fetch counts for products that don't have a positive cached count yet
+      const productsNeedingCounts = products.filter(p => !(typeof p.totalMatches === 'number' && p.totalMatches > 0));
       if (productsNeedingCounts.length === 0) return;
 
       const body = { productIds: productsNeedingCounts.map(p => p.id) };
