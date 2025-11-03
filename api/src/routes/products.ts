@@ -1360,22 +1360,10 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
       storedMatches = [];
     }
 
-    console.log(`📊 Found ${storedMatches.length} stored matches`);
-
-    // If no stored matches, trigger background re-scraping
-    if (storedMatches.length === 0) {
-      // Auto-widen when there are no stored matches
-      widen = true;
-      // Only trigger background pre-scrape for real tracked products with UUID ids
-      const isUuid = typeof sourceProduct.id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(sourceProduct.id);
-      if (!q && isUuid) {
-        try {
-          // Legacy re-scrape disabled; we rely on Serper-driven external cache only
-        } catch {}
-      } else {
-        console.log('⏭️ Skipping background scrape for query-based or non-UUID source');
-      }
-    }
+    console.log(`📊 Found ${storedMatches.length} legacy internal matches (unused)`);
+    // Do NOT auto-widen based on legacy internal matches.
+    // External cached matches will be checked below; Serper will only be used if
+    // the user explicitly widens or there is no cached external data at all.
 
     let matches = storedMatches;
     let usedExternal = false;
@@ -1410,8 +1398,21 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
       } catch {}
     }
 
-    // Only hit Serper if user explicitly widens (widen=true) OR there are absolutely no matches at all
-    if (widen || (matches.length === 0 && !hadCachedExternal)) {
+    // Extra guard: if DB already has any external rows for this user+product, don't use Serper unless widen=true
+    if (!widen && !hadCachedExternal) {
+      try {
+        const { supabase, TABLES } = require('../config/supabase');
+        const { count } = await supabase
+          .from(TABLES.PRODUCT_MATCHES)
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', userId)
+          .eq('product_id', productId);
+        if (typeof count === 'number' && count > 0) hadCachedExternal = true;
+      } catch {}
+    }
+
+    // Only hit Serper when explicitly widened, or when there is no cached external data at all
+    if (widen || !hadCachedExternal) {
       try {
         // Use scraper to fetch and persist external matches, deduped by URL
         const { productMatchScraper } = require('../services/productMatchScraper');
@@ -1456,6 +1457,19 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
           matches = Object.values(byUrl).slice(0, 21);
           usedExternal = true;
           console.log(`🌐 External search stored ${externalRows.length} and merged to ${matches.length} matches`);
+
+          // Update in-memory count cache so product cards keep their badge after reload
+          try {
+            const { supabase, TABLES } = require('../config/supabase');
+            const { count: newCount } = await supabase
+              .from(TABLES.PRODUCT_MATCHES)
+              .select('*', { count: 'exact', head: true })
+              .eq('user_id', userId)
+              .eq('product_id', productId);
+            if (typeof newCount === 'number') {
+              matchCountCache.set(`${userId}:${productId}`, { count: newCount, expiresAt: Date.now() + 10 * 60 * 1000 });
+            }
+          } catch {}
         } else {
           console.log('🌐 External search returned no candidates');
         }
