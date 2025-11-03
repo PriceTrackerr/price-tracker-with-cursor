@@ -77,7 +77,7 @@ export default function ProductMatching({ productId, onClose }: ProductMatchingP
     console.log(`🔍 Fetching matches for product ID: ${productId}`);
     
     try {
-      // If we already have the target product title, include it as q on widen to force name-based search
+      // Include q when we have it, otherwise widen alone still triggers server-side search
       const queryParam = widen && targetProduct?.title ? `?widen=1&q=${encodeURIComponent(targetProduct.title)}` : (widen ? '?widen=1' : '');
       const response = await fetch(`/api/products/${productId}/matches${queryParam}`, {
         headers: { 
@@ -106,8 +106,8 @@ export default function ProductMatching({ productId, onClose }: ProductMatchingP
               console.log('🔄 Using enhanced fallback matches');
             }
             // Auto-widen if none returned
-            if (!widen && totalMatches === 0 && targetProduct?.title) {
-              console.log('🔎 No stored matches, auto-widen with query');
+            if (!widen && totalMatches === 0) {
+              console.log('🔎 No cached matches, auto-widen to fetch real results');
               await fetchMatches(true);
               return;
             }
@@ -134,8 +134,8 @@ export default function ProductMatching({ productId, onClose }: ProductMatchingP
   }, [token, productId]);
 
   useEffect(() => {
-    // First try cached DB results; auto-widen inside if none are found
-    fetchMatches(false);
+    // Requirement: first click should use Serper; widened on mount
+    fetchMatches(true);
   }, [fetchMatches]);
 
   const getConfidenceIcon = useCallback((confidence: string) => {
