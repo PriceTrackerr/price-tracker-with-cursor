@@ -165,11 +165,18 @@ export class ProductMatchScraper {
 
       // 2) Deduplicate by URL against existing rows for this user+product
       const urls = normalized.map((n: any) => n.url);
+      const productIdForCache = (typeof sourceProduct.id === 'string' && sourceProduct.id.startsWith('query-'))
+        ? (sourceProduct.cacheProductId || sourceProduct.productId || sourceProduct.realId)
+        : sourceProduct.id;
+      if (!productIdForCache) {
+        console.warn('⚠️ No valid productId for caching external matches');
+        return normalized;
+      }
       const { data: existingRows, error: existErr } = await supabase
         .from(TABLES.PRODUCT_MATCHES)
         .select('id,url')
         .eq('user_id', userId)
-        .eq('product_id', sourceProduct.id)
+        .eq('product_id', productIdForCache)
         .in('url', urls);
       if (existErr) {
         console.warn('⚠️ Could not fetch existing product_matches for dedupe:', existErr);
@@ -178,7 +185,7 @@ export class ProductMatchScraper {
 
       const toInsert = normalized.filter((n: any) => !existingUrlSet.has(n.url)).map((n: any) => ({
         user_id: userId,
-        product_id: sourceProduct.id,
+        product_id: productIdForCache,
         title: n.title || sourceProduct.title,
         price: Number(n.price || 0),
         currency: n.currency || 'USD',
@@ -208,7 +215,7 @@ export class ProductMatchScraper {
               .from(TABLES.PRODUCT_MATCHES)
               .update({ price, currency: currency || 'USD' })
               .eq('user_id', userId)
-              .eq('product_id', sourceProduct.id)
+              .eq('product_id', productIdForCache)
               .eq('url', z.url);
             if (updErr) console.warn('⚠️ Failed updating price for URL:', z.url, updErr);
           }
@@ -224,7 +231,7 @@ export class ProductMatchScraper {
         .from(TABLES.PRODUCT_MATCHES)
         .select('user_id,product_id,title,price,currency,url,image_url,platform,created_at')
         .eq('user_id', userId)
-        .eq('product_id', sourceProduct.id)
+        .eq('product_id', productIdForCache)
         .in('url', urls);
       if (fetchErr) {
         console.error('❌ Failed fetching back product_matches:', fetchErr);
@@ -511,32 +518,8 @@ export class ProductMatchScraper {
    */
   async getStoredMatches(sourceProductId: string): Promise<any[]> {
     try {
-      const matches = await this.db.getProductMatches(sourceProductId);
-      const enriched = [];
-
-      for (const m of matches) {
-        let matchedProduct;
-        if (m.matchedProductId.startsWith('real_')) {
-          // Skip placeholder real_* entries; show only real links from external search
-          continue;
-        } else {
-          matchedProduct = await this.db.getProductById(m.matchedProductId);
-        }
-
-        if (matchedProduct) {
-          enriched.push({
-            product: matchedProduct,
-            confidence: m.confidence,
-            similarity: m.similarity,
-            matchReason: m.matchReason,
-            priceDifference: m.priceDifference,
-            priceDifferencePercent: m.priceDifferencePercent,
-            savings: m.savings,
-          });
-        }
-      }
-
-      return enriched;
+      // Legacy internal match retrieval disabled; rely on external cached matches only
+      return [];
     } catch (error) {
       console.error('❌ Error getting stored matches:', error);
       return [];

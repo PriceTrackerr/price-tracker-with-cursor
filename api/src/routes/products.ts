@@ -1305,6 +1305,7 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
     if (q) {
       sourceProduct = {
         id: `query-${Date.now()}`,
+        cacheProductId: productId,
         title: q,
         price: 0,
         currency: 'USD',
