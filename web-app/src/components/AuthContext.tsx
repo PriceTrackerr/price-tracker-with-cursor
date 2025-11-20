@@ -29,6 +29,7 @@ interface AuthContextType {
   signup: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   getAuthHeaders: () => { Authorization: string } | {};
+  bootstrapSession: (accessToken: string, refreshToken?: string | null) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -40,6 +41,7 @@ const AuthContext = createContext<AuthContextType>({
   signup: async () => false,
   logout: () => {},
   getAuthHeaders: () => ({}),
+  bootstrapSession: async () => {},
 });
 
 // Reconnecting Indicator Component
@@ -225,6 +227,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user, token]);
 
+  const syncTokenToExtension = useCallback(async (tokenToSync: string) => {
+    try {
+      if (typeof chrome !== 'undefined' && chrome.storage) {
+        await chrome.storage.local.set({ authToken: tokenToSync });
+        console.log('Token synced to extension');
+      }
+      if (typeof chrome !== 'undefined' && chrome.runtime) {
+        try {
+          await chrome.runtime.sendMessage({
+            type: 'SYNC_TOKEN',
+            token: tokenToSync
+          });
+          console.log('Token sync message sent to extension');
+        } catch {
+          console.log('Extension not listening for token sync');
+        }
+      }
+    } catch (error) {
+      console.log('Could not sync token to extension:', error);
+    }
+  }, []);
+
+  const bootstrapSession = useCallback(async (accessToken: string, refreshTokenValue?: string | null) => {
+    setToken(accessToken);
+    localStorage.setItem('token', accessToken);
+    sessionStorage.setItem('token', accessToken);
+    if (refreshTokenValue) {
+      localStorage.setItem('refreshToken', refreshTokenValue);
+      if (typeof chrome !== 'undefined' && chrome.runtime) {
+        try {
+          await chrome.runtime.sendMessage({
+            type: 'SYNC_REFRESH_TOKEN',
+            refreshToken: refreshTokenValue
+          });
+        } catch {
+          console.log('Extension not listening for refresh token sync');
+        }
+      }
+    }
+    await syncTokenToExtension(accessToken);
+    const userData = await fetchUser(accessToken);
+    if (userData) {
+      localStorage.setItem('user', JSON.stringify(userData));
+    }
+    setLoading(false);
+  }, [fetchUser, syncTokenToExtension]);
+
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
@@ -235,33 +284,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       const data = await res.json();
       if (data.success) {
-        setToken(data.data.token);
-        localStorage.setItem('token', data.data.token);
-        sessionStorage.setItem('token', data.data.token); // Backup storage
-        if (data.data.refreshToken) {
-          localStorage.setItem('refreshToken', data.data.refreshToken);
-        }
-        
-        // Sync token to extension if available
-        await syncTokenToExtension(data.data.token);
-        // Also sync refresh token if available
-        if (data.data.refreshToken) {
-          try {
-            if (typeof chrome !== 'undefined' && chrome.runtime) {
-              await chrome.runtime.sendMessage({
-                type: 'SYNC_REFRESH_TOKEN',
-                refreshToken: data.data.refreshToken
-              });
-            }
-          } catch {}
-        }
-        
-        const userData = await fetchUser(data.data.token);
-        if (userData) {
-          // Save user data to localStorage for persistence
-          localStorage.setItem('user', JSON.stringify(userData));
-        }
-        setLoading(false);
+        await bootstrapSession(data.data.token, data.data.refreshToken);
         return true;
       }
       setLoading(false);
@@ -283,32 +306,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       const data = await res.json();
       if (data.success) {
-        setToken(data.data.token);
-        localStorage.setItem('token', data.data.token);
-        sessionStorage.setItem('token', data.data.token); // Backup storage
-        if (data.data.refreshToken) {
-          localStorage.setItem('refreshToken', data.data.refreshToken);
-        }
-        
-        // Sync token to extension if available
-        await syncTokenToExtension(data.data.token);
-        if (data.data.refreshToken) {
-          try {
-            if (typeof chrome !== 'undefined' && chrome.runtime) {
-              await chrome.runtime.sendMessage({
-                type: 'SYNC_REFRESH_TOKEN',
-                refreshToken: data.data.refreshToken
-              });
-            }
-          } catch {}
-        }
-        
-        const userData = await fetchUser(data.data.token);
-        if (userData) {
-          // Save user data to localStorage for persistence
-          localStorage.setItem('user', JSON.stringify(userData));
-        }
-        setLoading(false);
+        await bootstrapSession(data.data.token, data.data.refreshToken);
         return true;
       }
       setLoading(false);
@@ -317,33 +315,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('Signup error:', error);
       setLoading(false);
       return false;
-    }
-  };
-
-  // Function to sync token to extension
-  const syncTokenToExtension = async (token: string) => {
-    try {
-      // Try to sync with extension if available
-      if (typeof chrome !== 'undefined' && chrome.storage) {
-        await chrome.storage.local.set({ authToken: token });
-        console.log('Token synced to extension');
-      }
-      
-      // Also try to send a message to the extension if it's listening
-      if (typeof chrome !== 'undefined' && chrome.runtime) {
-        try {
-          await chrome.runtime.sendMessage({
-            type: 'SYNC_TOKEN',
-            token: token
-          });
-          console.log('Token sync message sent to extension');
-        } catch (error) {
-          // Extension might not be listening, which is fine
-          console.log('Extension not listening for token sync');
-        }
-      }
-    } catch (error) {
-      console.log('Could not sync token to extension:', error);
     }
   };
 
@@ -413,7 +384,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [token, user, loading, reconnecting]);
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, reconnecting, login, signup, logout, getAuthHeaders }}>
+    <AuthContext.Provider value={{ user, token, loading, reconnecting, login, signup, logout, getAuthHeaders, bootstrapSession }}>
       {children}
     </AuthContext.Provider>
   );

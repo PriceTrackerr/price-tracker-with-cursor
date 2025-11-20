@@ -5,6 +5,13 @@ import EmailService from '../services/emailService';
 const emailService = new EmailService();
 const router = express.Router();
 
+const frontendBaseUrl =
+  process.env.APP_BASE_URL ||
+  process.env.NEXT_PUBLIC_APP_URL ||
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined) ||
+  (process.env.SUPABASE_REDIRECT_TO as string | undefined) ||
+  'http://localhost:5173';
+
 interface UserData {
   email: string;
   password: string;
@@ -142,6 +149,35 @@ router.post('/login', async (req: Request, res: Response) => {
     console.error('Login error:', error);
     const errorMessage = error instanceof Error ? error.message : String(error);
     return res.status(500).json({ success: false, message: 'Internal server error', error: errorMessage });
+  }
+});
+
+// Forgot password - send reset email via Supabase
+router.post('/forgot-password', async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body as { email?: string };
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email is required' });
+    }
+    if (!supabasePublic) {
+      throw new Error('Supabase public client is not configured');
+    }
+    const redirectUrl = `${frontendBaseUrl.replace(/\/$/, '')}/reset-password`;
+    const { error } = await supabasePublic.auth.resetPasswordForEmail(email, {
+      redirectTo: redirectUrl,
+    });
+    if (error) {
+      // Avoid leaking whether email exists; log internally
+      console.error('Forgot password error:', error.message);
+    }
+    return res.json({
+      success: true,
+      message: 'If an account exists for that email, a reset link has been sent.',
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    console.error('Forgot password failure:', message);
+    return res.status(500).json({ success: false, message: 'Unable to process request at this time.' });
   }
 });
 
