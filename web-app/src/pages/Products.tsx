@@ -30,6 +30,7 @@ import {
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
+import { getSupabaseClient } from '../lib/supabaseClient';
 
 interface Product {
   id: string;
@@ -343,13 +344,61 @@ function ProductPriceHistory({ productId }: { productId: string }) {
 }
 
 // Product Card Component matching Figma design
+const MATCH_STOP_WORDS = new Set([
+  'new',
+  'brand-new',
+  'sealed',
+  'refurbished',
+  'renewed',
+  'usb-c',
+  'usbc',
+  'lightning',
+  'with',
+  'case',
+  'official',
+  'genuine',
+  'free',
+  'shipping',
+  'limited',
+  'edition',
+  'colors',
+  'colour',
+  'color',
+  'bundle',
+  'pack',
+  'promo',
+  'deal',
+  'offer',
+  '2024',
+  '2025',
+  'storage',
+  'sizes',
+  'size',
+  'set'
+]);
+
+function generateProductKey(title: string): string {
+  if (!title) return '';
+  let normalized = title.toLowerCase();
+  normalized = normalized.replace(/[^a-z0-9\s-]/g, ' ');
+  normalized = normalized.replace(/\b(\d+)(gb|tb|g|m|mb)\b/g, ' ');
+  normalized = normalized.replace(/\b(64|128|256|512)\s?(gb)\b/g, ' ');
+  normalized = normalized.replace(/\b\d{4}\b/g, (year) => (year === '2024' || year === '2025' ? ' ' : year));
+  const tokens = normalized
+    .split(/\s+/)
+    .filter(Boolean)
+    .filter(token => !MATCH_STOP_WORDS.has(token));
+  return tokens.join(' ').trim();
+}
+
 const ProductCard: React.FC<{
   product: Product; 
   onDelete: (id: string) => void;
   onViewHistory: (product: Product) => void;
   onViewMatches: (product: Product) => void;
   highlighted: boolean;
-}> = ({ product, onDelete, onViewHistory, onViewMatches, highlighted }) => {
+  globalMatchCount?: number;
+}> = ({ product, onDelete, onViewHistory, onViewMatches, highlighted, globalMatchCount }) => {
   const [showAllHistory, setShowAllHistory] = useState(false);
   const navigate = useNavigate();
   
@@ -477,18 +526,6 @@ const ProductCard: React.FC<{
           </div>
         </div>
 
-        {/* Matches Badge */}
-        {product.totalMatches && product.totalMatches > 0 && (
-          <div className="absolute bottom-3 left-3">
-            <div className="flex items-center gap-1 px-2 py-1 bg-blue-500/90 backdrop-blur-sm rounded-full shadow-sm">
-              <Users className="w-3 h-3 text-white" />
-              <span className="text-xs font-medium text-white flex items-center gap-1">
-                {`${product.totalMatches} match${product.totalMatches !== 1 ? 'es' : ''}`}
-              </span>
-            </div>
-          </div>
-        )}
-
         {/* Discount Badge */}
         {product.discountInfo && (
           <div className="absolute bottom-3 right-3">
@@ -516,10 +553,25 @@ const ProductCard: React.FC<{
 
       {/* Content */}
       <div className="p-3 md:p-4">
-        {/* Title */}
-        <h3 className="text-sm md:text-base font-semibold text-gray-900 line-clamp-2 leading-tight mb-2">
-              {product.title}
-            </h3>
+        {/* Title and global matches pill */}
+        <div className="flex flex-col gap-1 mb-2">
+          <h3 className="text-sm md:text-base font-semibold text-gray-900 line-clamp-2 leading-tight">
+            {product.title}
+          </h3>
+          {(globalMatchCount ?? 0) > 0 && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewMatches(product);
+              }}
+              className="inline-flex items-center w-fit gap-1 px-2.5 py-1 rounded-full bg-blue-600 text-white text-xs font-semibold shadow-sm hover:bg-blue-500 transition-colors"
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>{`${globalMatchCount} match${globalMatchCount !== 1 ? 'es' : ''}`}</span>
+            </button>
+          )}
+        </div>
 
         {/* Price Section */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
@@ -687,6 +739,7 @@ export default function Products() {
   const [selectedProductForMatches, setSelectedProductForMatches] = useState<Product | null>(null);
   const [matchLoading, setMatchLoading] = useState(false);
   const [highlightedProductId, setHighlightedProductId] = useState<string | null>(null);
+  const [globalMatchCounts, setGlobalMatchCounts] = useState<Record<string, number>>({});
 
   const handleViewMatches = async (product: Product) => {
     setMatchLoading(true);
@@ -996,6 +1049,66 @@ export default function Products() {
       if (timeoutId) clearTimeout(timeoutId);
     };
   }, [products.length, fetchMatchCounts]);
+
+  const fetchGlobalMatchCounts = useCallback(async () => {
+    if (!products.length) {
+      setGlobalMatchCounts({});
+      return;
+    }
+
+    let supabaseClient;
+    try {
+      supabaseClient = getSupabaseClient();
+    } catch (err) {
+      console.warn('Supabase client unavailable for global match counts:', err);
+      return;
+    }
+
+    const keyEntries = products
+      .map((product) => ({ id: product.id, key: generateProductKey(product.title) }))
+      .filter((entry) => entry.key);
+
+    if (!keyEntries.length) return;
+
+    const keyToIds = keyEntries.reduce<Record<string, string[]>>((acc, entry) => {
+      if (!acc[entry.key]) acc[entry.key] = [];
+      acc[entry.key].push(entry.id);
+      return acc;
+    }, {});
+
+    const uniqueKeys = Object.keys(keyToIds);
+    if (!uniqueKeys.length) return;
+
+    try {
+      const { data, error } = await supabaseClient
+        .from('global_product_matches')
+        .select('product_key, match_count')
+        .in('product_key', uniqueKeys);
+
+      if (error) {
+        console.error('Error fetching global match counts:', error);
+        return;
+      }
+
+      const counts: Record<string, number> = {};
+      data?.forEach((row) => {
+        const linkedIds = keyToIds[row.product_key];
+        if (linkedIds?.length) {
+          linkedIds.forEach((productId) => {
+            counts[productId] = row.match_count ?? 0;
+          });
+        }
+      });
+
+      setGlobalMatchCounts((prev) => ({ ...prev, ...counts }));
+    } catch (error) {
+      console.error('Error loading global match counts:', error);
+    }
+  }, [products]);
+
+  useEffect(() => {
+    fetchGlobalMatchCounts();
+  }, [fetchGlobalMatchCounts]);
 
   // Fetch products when filters change (but not on initial load)
   useEffect(() => {
@@ -1326,7 +1439,7 @@ export default function Products() {
               onViewHistory={setSelectedProductForHistory}
               onViewMatches={handleViewMatches}
               highlighted={product.id === highlightedProductId}
-
+              globalMatchCount={globalMatchCounts[product.id]}
             />
           ))}
         </div>
