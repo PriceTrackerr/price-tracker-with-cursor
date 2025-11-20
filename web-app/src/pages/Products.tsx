@@ -1074,7 +1074,10 @@ export default function Products() {
   }, [products]);
 
   useEffect(() => {
-    fetchGlobalMatchCounts();
+    const timeoutId = setTimeout(() => {
+      fetchGlobalMatchCounts();
+    }, 200);
+    return () => clearTimeout(timeoutId);
   }, [fetchGlobalMatchCounts]);
 
   // Fetch products when filters change (but not on initial load)
