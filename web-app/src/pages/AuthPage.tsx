@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../components/AuthContext';
 import { 
   TrendingDown, 
@@ -344,13 +344,13 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
                         />
                         <label htmlFor="terms" className="text-sm text-gray-600 leading-relaxed">
                           I agree to the{" "}
-                          <a href="#" className="text-blue-600 hover:text-blue-700 underline">
-                            Terms of Service
-                          </a>{" "}
+                          <Link to="/terms-and-conditions" className="text-blue-600 hover:text-blue-700 underline">
+                            Terms &amp; Conditions
+                          </Link>{" "}
                           and{" "}
-                          <a href="#" className="text-blue-600 hover:text-blue-700 underline">
+                          <Link to="/privacy-policy" className="text-blue-600 hover:text-blue-700 underline">
                             Privacy Policy
-                          </a>
+                          </Link>
                         </label>
                       </div>
                     )}
@@ -401,7 +401,14 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
             {/* Footer */}
             <div className="mt-8 text-center">
               <p className="text-sm text-gray-500">
-                By continuing, you agree to our Terms of Service and Privacy Policy
+                By continuing, you agree to our{" "}
+                <Link to="/terms-and-conditions" className="text-blue-600 hover:text-blue-700 underline">
+                  Terms &amp; Conditions
+                </Link>{" "}
+                and{" "}
+                <Link to="/privacy-policy" className="text-blue-600 hover:text-blue-700 underline">
+                  Privacy Policy
+                </Link>
               </p>
             </div>
           </div>

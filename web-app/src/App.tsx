@@ -11,6 +11,8 @@ import Alerts from './pages/Alerts'
 import Settings from './pages/Settings'
 import ProductDetails from './pages/ProductDetails'
 import Subscription from './pages/Subscription'
+import PrivacyPolicy from './pages/PrivacyPolicy'
+import TermsAndConditions from './pages/TermsAndConditions'
 
 import { AuthProvider, useAuth } from './components/AuthContext'
 import { ReconnectingIndicator } from './components/AuthContext'
@@ -64,6 +66,8 @@ function AppContent() {
                 <Subscription />
               </Layout>
             } />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
 
           </Routes>
           <Toaster 
