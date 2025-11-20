@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
 import { getDb } from '../config/database';
-import { supabase } from '../config/supabase';
+import { supabase, TABLES } from '../config/supabase';
 import { realProductSearch } from '../services/realProductSearch';
 
 // Type definitions for product matching
@@ -93,7 +93,7 @@ router.get('/global-product-matches', async (req: Request, res: Response) => {
     }
 
     const { data: trackedProduct, error: trackedError } = await supabase
-      .from('tracked_products')
+      .from(TABLES.PRODUCTS || 'products')
       .select('title')
       .eq('id', trackedId)
       .maybeSingle();
@@ -149,13 +149,18 @@ router.get('/global-product-matches', async (req: Request, res: Response) => {
 
     const matchCount = matches.length;
 
-    await supabase
+    const { error: upsertError } = await supabase
       .from('global_product_matches')
-      .insert({
+      .upsert({
         product_key: productKey,
         matches,
         match_count: matchCount
-      });
+      }, { onConflict: 'product_key' });
+
+    if (upsertError) {
+      console.error('❌ global_product_matches upsert failed:', upsertError);
+      return res.status(500).json({ success: false, message: 'Unable to cache matches' });
+    }
 
     return res.json({
       success: true,
