@@ -69,7 +69,7 @@ function AppContent() {
             } />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/reset-password/*" element={<ResetPassword />} />
 
           </Routes>
           <Toaster 
