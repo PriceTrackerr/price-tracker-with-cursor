@@ -27,21 +27,28 @@ export default function ResetPassword() {
         const refreshToken = hashParams.get('refresh_token') || queryParams.get('refresh_token');
         const type = hashParams.get('type') || queryParams.get('type');
 
+        console.log('[ResetPassword] hash params:', hashParams.toString());
+        console.log('[ResetPassword] query params:', queryParams.toString());
+        console.log('[ResetPassword] detected tokens:', { accessToken, refreshToken, type });
+
         if (accessToken && refreshToken && (!type || type === 'recovery')) {
           const { data, error } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken,
           });
           if (error) {
+            console.error('[ResetPassword] setSession error:', error);
             setErrorMessage(error.message);
             setStatus('error');
             return;
           }
           const sessionAccess = data.session?.access_token || accessToken;
           const sessionRefresh = data.session?.refresh_token || refreshToken;
+          console.log('[ResetPassword] session established:', { sessionAccess, sessionRefresh });
           setSessionTokens({ access: sessionAccess, refresh: sessionRefresh });
           setStatus('ready');
         } else {
+          console.warn('[ResetPassword] missing tokens in URL');
           setErrorMessage('Reset link is invalid or has expired.');
           setStatus('error');
         }
