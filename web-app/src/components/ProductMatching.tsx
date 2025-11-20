@@ -39,15 +39,17 @@ interface ProductMatch {
 
 interface ProductMatchingProps {
   productId: string;
+  sourceProduct?: Product | null;
   onClose: () => void;
+  onMatchCountUpdate?: (productId: string, count: number) => void;
 }
 
-export default function ProductMatching({ productId, onClose }: ProductMatchingProps) {
+export default function ProductMatching({ productId, sourceProduct, onClose, onMatchCountUpdate }: ProductMatchingProps) {
   const [matches, setMatches] = useState<ProductMatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [targetProduct, setTargetProduct] = useState<Product | null>(null);
-  const [bestMatch, setBestMatch] = useState<any>(null);
+  const [targetProduct, setTargetProduct] = useState<Product | null>(sourceProduct || null);
+  const [bestMatch, setBestMatch] = useState<{ product: Product; confidence: number; priceDifference: number } | null>(null);
   const [algorithm, setAlgorithm] = useState<string>('');
   const { token } = useAuth();
 
@@ -66,51 +68,83 @@ export default function ProductMatching({ productId, onClose }: ProductMatchingP
     };
   }, [onClose]);
 
-  const fetchMatches = useCallback(async (widen: boolean = false) => {
-    if (!token) {
-      setError('Authentication required. Please log in again.');
-      return;
+  useEffect(() => {
+    if (sourceProduct) {
+      setTargetProduct(sourceProduct);
     }
-    
+  }, [sourceProduct]);
+
+  const fetchMatches = useCallback(async () => {
     setLoading(true);
     setError(null);
     console.log(`🔍 Fetching matches for product ID: ${productId}`);
     
     try {
-      // Include q when we have it, otherwise widen alone still triggers server-side search
-      const queryParam = widen && targetProduct?.title ? `?widen=1&q=${encodeURIComponent(targetProduct.title)}` : (widen ? '?widen=1' : '');
-      const response = await fetch(`/api/products/${productId}/matches${queryParam}`, {
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const response = await fetch(`/api/product-matching/global-product-matches?tracked_id=${productId}`, {
+        headers
       });
       
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
           console.log('✅ Match API Response:', data);
-          setTargetProduct(data.data.targetProduct);
-          setMatches(data.data.matches || []);
-          setBestMatch(data.data.bestMatch);
-          setAlgorithm(data.data.algorithm || 'standard');
-          console.log('🎯 Loaded matches with algorithm:', data.data.algorithm);
-          
-          // Update total matches count
-          if (data.data.matches) {
-            const totalMatches = data.data.matches.length;
-            console.log(`🎯 Found ${totalMatches} matches`);
-            
-            // Show success message for enhanced matches
-            if (data.data.algorithm === 'buyhatke-enhanced-fallback') {
-              console.log('🔄 Using enhanced fallback matches');
-            }
-            // Auto-widen if none returned
-            if (!widen && totalMatches === 0) {
-              console.log('🔎 No cached matches, auto-widen to fetch real results');
-              await fetchMatches(true);
-              return;
-            }
+          const payload = data.data || {};
+          const matchCount = typeof payload.matchCount === 'number' ? payload.matchCount : (Array.isArray(payload.matches) ? payload.matches.length : 0);
+          const matchReason = payload.cached ? 'Cached global match' : 'Serper global match';
+          const algorithmLabel = payload.cached ? 'global-cache' : 'global-serper';
+
+          if (!sourceProduct && payload.sourceTitle) {
+            setTargetProduct(prev => prev || {
+              id: productId,
+              title: payload.sourceTitle,
+              price: 0,
+              platform: '',
+              url: '',
+              imageUrl: '',
+              currency: 'USD'
+            });
+          }
+
+          const normalizedMatches: ProductMatch[] = (payload.matches || []).map((match: any, index: number) => {
+            const price = Number(match.price || 0);
+            const targetPrice = sourceProduct?.price || 0;
+            const priceDifference = Math.abs(targetPrice - price);
+            const priceDifferencePercent = targetPrice ? ((targetPrice - price) / targetPrice) * 100 : 0;
+
+            return {
+              product: {
+                id: match.id || `${payload.productKey || productId}-${index}`,
+                title: match.title || 'Matched product',
+                price,
+                currency: match.currency || 'USD',
+                platform: match.platform || 'other',
+                url: match.url || '',
+                imageUrl: match.imageUrl || '',
+                stockStatus: 'unknown'
+              },
+              similarity: 0.7,
+              confidence: 'medium',
+              matchReason,
+              priceDifference,
+              priceDifferencePercent,
+              savings: targetPrice && price < targetPrice ? `$${(targetPrice - price).toFixed(2)} cheaper` : undefined
+            };
+          });
+
+          setMatches(normalizedMatches);
+          setAlgorithm(algorithmLabel);
+          setBestMatch(normalizedMatches.length ? {
+            product: normalizedMatches[0].product,
+            confidence: normalizedMatches[0].similarity,
+            priceDifference: normalizedMatches[0].priceDifference
+          } : null);
+
+          if (typeof matchCount === 'number') {
+            onMatchCountUpdate?.(productId, matchCount);
           }
         } else {
           console.error('Failed to fetch matches:', data.error);
@@ -131,11 +165,10 @@ export default function ProductMatching({ productId, onClose }: ProductMatchingP
     } finally {
       setLoading(false);
     }
-  }, [token, productId]);
+  }, [token, productId, sourceProduct, onMatchCountUpdate]);
 
   useEffect(() => {
-    // Requirement: first click should use Serper; widened on mount
-    fetchMatches(true);
+    fetchMatches();
   }, [fetchMatches]);
 
   const getConfidenceIcon = useCallback((confidence: string) => {
@@ -277,10 +310,16 @@ export default function ProductMatching({ productId, onClose }: ProductMatchingP
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <h3 className="text-lg font-semibold text-gray-900">Product Matches</h3>
-            {algorithm === 'buyhatke-enhanced' && (
+            {algorithm === 'global-serper' && (
               <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full flex items-center gap-1">
                 <Zap className="w-3 h-3" />
-                
+                Live Serper
+              </span>
+            )}
+            {algorithm === 'global-cache' && (
+              <span className="bg-green-100 text-green-700 text-xs font-medium px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                <CheckCircle className="w-3 h-3" />
+                Cached Result
               </span>
             )}
           </div>
@@ -302,7 +341,9 @@ export default function ProductMatching({ productId, onClose }: ProductMatchingP
                 <p className="text-xs text-blue-600 capitalize">{targetProduct.platform}</p>
               </div>
               <div className="text-right">
-                <p className="text-lg font-bold text-blue-900">${targetProduct.price.toFixed(2)}</p>
+                  {typeof targetProduct.price === 'number' && (
+                    <p className="text-lg font-bold text-blue-900">${targetProduct.price.toFixed(2)}</p>
+                  )}
                 {targetProduct.currency && (
                   <p className="text-xs text-blue-600">{targetProduct.currency}</p>
                 )}
@@ -349,11 +390,11 @@ export default function ProductMatching({ productId, onClose }: ProductMatchingP
             <button
               onClick={() => {
                 setError(null);
-                fetchMatches(true);
+                fetchMatches();
               }}
               className="mt-4 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
             >
-              Widen Search
+              Refresh Matches
             </button>
           </div>
         ) : (
@@ -372,12 +413,12 @@ export default function ProductMatching({ productId, onClose }: ProductMatchingP
                 <button
                   onClick={() => {
                     setError(null);
-                    fetchMatches(true);
+                    fetchMatches();
                   }}
                   className="px-3 py-1 bg-blue-600 text-white text-xs font-medium rounded-md hover:bg-blue-700 transition-colors flex items-center gap-1"
                 >
                   <Zap className="w-3 h-3" />
-                  Widen Search
+                  Refresh
                 </button>
               </div>
             </div>
@@ -422,7 +463,7 @@ export default function ProductMatching({ productId, onClose }: ProductMatchingP
                         
                         {targetProduct && (
                           <div className="flex items-center gap-1">
-                            {getSavingsIcon(match.priceDifference, targetProduct.price)}
+                            {getSavingsIcon(match.priceDifference, targetProduct.price || 1)}
                             <span className={`font-medium ${
                               match.product.price < targetProduct.price ? 'text-green-600' : 'text-red-600'
                             }`}>

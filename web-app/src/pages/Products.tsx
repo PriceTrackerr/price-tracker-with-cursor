@@ -398,7 +398,7 @@ const ProductCard: React.FC<{
   onViewMatches: (product: Product) => void;
   highlighted: boolean;
   globalMatchCount?: number;
-}> = ({ product, onDelete, onViewHistory, onViewMatches, highlighted, globalMatchCount }) => {
+}> = ({ product, onDelete, onViewHistory, onViewMatches, highlighted, globalMatchCount = 0 }) => {
   const [showAllHistory, setShowAllHistory] = useState(false);
   const navigate = useNavigate();
   
@@ -558,14 +558,14 @@ const ProductCard: React.FC<{
           <h3 className="text-sm md:text-base font-semibold text-gray-900 line-clamp-2 leading-tight">
             {product.title}
           </h3>
-          {(globalMatchCount ?? 0) > 0 && (
+          {globalMatchCount > 0 && (
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 onViewMatches(product);
               }}
-              className="inline-flex items-center w-fit gap-1 px-2.5 py-1 rounded-full bg-blue-600 text-white text-xs font-semibold shadow-sm hover:bg-blue-500 transition-colors"
+              className="inline-flex items-center w-fit gap-1 px-2.5 py-1 rounded-full bg-blue-500 text-white text-xs font-semibold shadow-sm hover:bg-blue-400 transition-colors"
             >
               <Users className="w-3.5 h-3.5" />
               <span>{`${globalMatchCount} match${globalMatchCount !== 1 ? 'es' : ''}`}</span>
@@ -737,47 +737,14 @@ export default function Products() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedProductForHistory, setSelectedProductForHistory] = useState<Product | null>(null);
   const [selectedProductForMatches, setSelectedProductForMatches] = useState<Product | null>(null);
-  const [matchLoading, setMatchLoading] = useState(false);
   const [highlightedProductId, setHighlightedProductId] = useState<string | null>(null);
   const [globalMatchCounts, setGlobalMatchCounts] = useState<Record<string, number>>({});
+  const handleMatchCountUpdate = useCallback((productId: string, count: number) => {
+    setGlobalMatchCounts(prev => ({ ...prev, [productId]: count }));
+  }, []);
 
-  const handleViewMatches = async (product: Product) => {
-    setMatchLoading(true);
-    try {
-      const response = await fetch(`/api/products/${product.id}/matches`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          // Update product's match count and set it for viewing
-          const updatedProduct = {
-            ...product,
-            totalMatches: data.data.matches.length
-          };
-          setSelectedProductForMatches(updatedProduct);
-          
-          // Update the product in the products list
-          setProducts(prevProducts => 
-            prevProducts.map(p => 
-              p.id === product.id ? updatedProduct : p
-            )
-          );
-        } else {
-          console.error('Failed to fetch matches:', data.error);
-          setSelectedProductForMatches(product);
-        }
-      } else {
-        console.error('Failed to fetch matches:', response.statusText);
-        setSelectedProductForMatches(product);
-      }
-    } catch (error) {
-      console.error('Error fetching matches:', error);
-      setSelectedProductForMatches(product);
-    } finally {
-      setMatchLoading(false);
-    }
+  const handleViewMatches = (product: Product) => {
+    setSelectedProductForMatches(product);
   };
   
   // Advanced filtering state
@@ -1581,7 +1548,9 @@ export default function Products() {
       {selectedProductForMatches && (
         <ProductMatching
           productId={selectedProductForMatches.id}
+          sourceProduct={selectedProductForMatches}
           onClose={() => setSelectedProductForMatches(null)}
+          onMatchCountUpdate={handleMatchCountUpdate}
         />
       )}
 
