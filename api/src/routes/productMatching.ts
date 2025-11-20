@@ -82,15 +82,18 @@ function generateProductKey(title: string): string {
  * GET /api/product-matching/global-product-matches?tracked_id=<uuid>
  */
 router.get('/global-product-matches', async (req: Request, res: Response) => {
-  try {
-    const trackedId = (req.query.tracked_id || req.query.trackedId) as string | undefined;
-    if (!trackedId) {
-      return res.status(400).json({ success: false, message: 'tracked_id query param is required' });
-    }
+  const trackedId = (req.query.tracked_id || req.query.trackedId) as string | undefined;
+  if (!trackedId) {
+    return res.status(400).json({ success: false, error: 'tracked_id query param is required' });
+  }
 
-    if (!supabase) {
-      return res.status(500).json({ success: false, message: 'Supabase client is not configured' });
-    }
+  if (!supabase) {
+    console.error('❌ Supabase client not configured');
+    return res.status(500).json({ success: false, error: 'Server configuration error' });
+  }
+
+  try {
+    console.log(`🔍 Global match lookup for tracked_id=${trackedId}`);
 
     const { data: trackedProduct, error: trackedError } = await supabase
       .from(TABLES.PRODUCTS || 'products')
@@ -99,47 +102,58 @@ router.get('/global-product-matches', async (req: Request, res: Response) => {
       .maybeSingle();
 
     if (trackedError) {
-      console.error('❌ tracked_products lookup failed:', trackedError);
-      return res.status(500).json({ success: false, message: 'Unable to load tracked product' });
+      console.error('❌ Products lookup failed:', trackedError);
+      return res.status(500).json({ success: false, error: 'Failed to load tracked product' });
     }
 
-    if (!trackedProduct?.title) {
-      return res.status(404).json({ success: false, message: 'Tracked product not found' });
+    if (!trackedProduct) {
+      return res.status(404).json({ success: false, error: 'Tracked product not found' });
     }
 
-    const productKey = generateProductKey(trackedProduct.title);
+    const rawTitle = trackedProduct.title || '';
+    if (!rawTitle.trim()) {
+      return res.status(400).json({ success: false, error: 'Tracked product has no title' });
+    }
+
+    const productKey = generateProductKey(rawTitle);
     if (!productKey) {
-      return res.status(400).json({ success: false, message: 'Could not derive product key from title' });
+      return res.status(400).json({ success: false, error: 'Unable to derive product key from title' });
     }
 
-    const { data: cachedMatch, error: cacheError } = await supabase
+    const { data: cached, error: cacheError } = await supabase
       .from('global_product_matches')
       .select('matches, match_count')
       .eq('product_key', productKey)
       .maybeSingle();
 
     if (cacheError && cacheError.code !== 'PGRST116') {
-      console.error('❌ global_product_matches lookup failed:', cacheError);
-      return res.status(500).json({ success: false, message: 'Unable to read cached matches' });
+      console.error('❌ Cache lookup failed:', cacheError);
+      return res.status(500).json({ success: false, error: 'Failed to read cache' });
     }
 
-    if (cachedMatch) {
+    if (cached) {
+      console.log(`✅ Global cache hit for key=${productKey}`);
       return res.json({
         success: true,
         data: {
-          sourceTitle: trackedProduct.title,
-          productKey,
-          matchCount: cachedMatch.match_count || 0,
-          matches: cachedMatch.matches || [],
+          matches: cached.matches || [],
+          count: cached.match_count || 0,
           cached: true
         }
       });
     }
 
-    const serperResults = await realProductSearch.searchProducts(trackedProduct.title, 21);
-    const matches = serperResults.map((item: any) => ({
-      id: item.id,
-      title: item.title,
+    console.log(`🌐 Cache miss for key=${productKey}, calling Serper...`);
+    const serperResults = await realProductSearch.searchProducts(rawTitle, 21);
+
+    if (!serperResults || serperResults.length === 0) {
+      console.warn(`⚠️ Serper returned no results for key=${productKey}`);
+      return res.status(500).json({ success: false, error: 'No matches found from external provider' });
+    }
+
+    const matches = serperResults.map((item: any, index: number) => ({
+      id: item.id || `global_match_${Date.now()}_${index}`,
+      title: item.title || rawTitle,
       price: item.price || 0,
       currency: item.currency || 'USD',
       platform: item.platform || 'other',
@@ -158,27 +172,23 @@ router.get('/global-product-matches', async (req: Request, res: Response) => {
       }, { onConflict: 'product_key' });
 
     if (upsertError) {
-      console.error('❌ global_product_matches upsert failed:', upsertError);
-      return res.status(500).json({ success: false, message: 'Unable to cache matches' });
+      console.error('❌ Cache upsert failed:', upsertError);
+      return res.status(500).json({ success: false, error: 'Unable to cache matches' });
     }
 
+    console.log(`✅ Stored ${matchCount} matches for key=${productKey}`);
     return res.json({
       success: true,
       data: {
-        sourceTitle: trackedProduct.title,
-        productKey,
-        matchCount,
         matches,
+        count: matchCount,
         cached: false
       }
     });
   } catch (error: any) {
     console.error('❌ Global product matches error:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to load global product matches',
-      error: error?.message || 'Unknown error'
-    });
+    const message = error?.message || 'Unexpected error';
+    return res.status(500).json({ success: false, error: message });
   }
 });
 
