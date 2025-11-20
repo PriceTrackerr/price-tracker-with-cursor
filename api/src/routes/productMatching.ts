@@ -1,6 +1,8 @@
 import express, { Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
 import { getDb } from '../config/database';
+import { supabase } from '../config/supabase';
+import { realProductSearch } from '../services/realProductSearch';
 
 // Type definitions for product matching
 interface ProductMatch {
@@ -26,6 +28,154 @@ import { matchProducts } from '../services/productMatchingService';
 import type { Product } from '../config/storage';
 
 const router = express.Router();
+
+const STOP_WORDS = new Set([
+  'new',
+  'brand-new',
+  'sealed',
+  'refurbished',
+  'renewed',
+  'usb-c',
+  'usbc',
+  'lightning',
+  'with',
+  'case',
+  'official',
+  'genuine',
+  'free',
+  'shipping',
+  'limited',
+  'edition',
+  'colors',
+  'colour',
+  'color',
+  'bundle',
+  'pack',
+  'promo',
+  'deal',
+  'offer',
+  '2024',
+  '2025',
+  'brand',
+  'storage',
+  'sizes',
+  'size',
+  'set'
+]);
+
+function generateProductKey(title: string): string {
+  if (!title) return '';
+  let normalized = title.toLowerCase();
+  normalized = normalized.replace(/[^a-z0-9\s-]/g, ' ');
+  normalized = normalized.replace(/\b(\d+)(gb|tb|g|m|mb)\b/g, ' ');
+  normalized = normalized.replace(/\b(64|128|256|512)\s?(gb)\b/g, ' ');
+  normalized = normalized.replace(/\b\d{4}\b/g, (year) => (year === '2024' || year === '2025' ? ' ' : year));
+  const tokens = normalized
+    .split(/\s+/)
+    .filter(Boolean)
+    .filter(token => !STOP_WORDS.has(token));
+  return tokens.join(' ').trim();
+}
+
+/**
+ * Global product matches cache shared across all users
+ * GET /api/product-matching/global-product-matches?tracked_id=<uuid>
+ */
+router.get('/global-product-matches', async (req: Request, res: Response) => {
+  try {
+    const trackedId = (req.query.tracked_id || req.query.trackedId) as string | undefined;
+    if (!trackedId) {
+      return res.status(400).json({ success: false, message: 'tracked_id query param is required' });
+    }
+
+    if (!supabase) {
+      return res.status(500).json({ success: false, message: 'Supabase client is not configured' });
+    }
+
+    const { data: trackedProduct, error: trackedError } = await supabase
+      .from('tracked_products')
+      .select('title')
+      .eq('id', trackedId)
+      .maybeSingle();
+
+    if (trackedError) {
+      console.error('❌ tracked_products lookup failed:', trackedError);
+      return res.status(500).json({ success: false, message: 'Unable to load tracked product' });
+    }
+
+    if (!trackedProduct?.title) {
+      return res.status(404).json({ success: false, message: 'Tracked product not found' });
+    }
+
+    const productKey = generateProductKey(trackedProduct.title);
+    if (!productKey) {
+      return res.status(400).json({ success: false, message: 'Could not derive product key from title' });
+    }
+
+    const { data: cachedMatch, error: cacheError } = await supabase
+      .from('global_product_matches')
+      .select('matches, match_count')
+      .eq('product_key', productKey)
+      .maybeSingle();
+
+    if (cacheError && cacheError.code !== 'PGRST116') {
+      console.error('❌ global_product_matches lookup failed:', cacheError);
+      return res.status(500).json({ success: false, message: 'Unable to read cached matches' });
+    }
+
+    if (cachedMatch) {
+      return res.json({
+        success: true,
+        data: {
+          sourceTitle: trackedProduct.title,
+          productKey,
+          matchCount: cachedMatch.match_count || 0,
+          matches: cachedMatch.matches || [],
+          cached: true
+        }
+      });
+    }
+
+    const serperResults = await realProductSearch.searchProducts(trackedProduct.title, 21);
+    const matches = serperResults.map((item: any) => ({
+      id: item.id,
+      title: item.title,
+      price: item.price || 0,
+      currency: item.currency || 'USD',
+      platform: item.platform || 'other',
+      imageUrl: item.imageUrl || '',
+      url: item.url || ''
+    }));
+
+    const matchCount = matches.length;
+
+    await supabase
+      .from('global_product_matches')
+      .insert({
+        product_key: productKey,
+        matches,
+        match_count: matchCount
+      });
+
+    return res.json({
+      success: true,
+      data: {
+        sourceTitle: trackedProduct.title,
+        productKey,
+        matchCount,
+        matches,
+        cached: false
+      }
+    });
+  } catch (error: any) {
+    console.error('❌ Global product matches error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to load global product matches',
+      error: error?.message || 'Unknown error'
+    });
+  }
+});
 
 /**
  * Find product matches across all platforms
