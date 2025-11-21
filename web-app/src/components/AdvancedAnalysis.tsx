@@ -583,7 +583,7 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
                         <span className="font-medium">US</span>
                       </div>
                       <div className="text-right">
-                        <div className="font-medium">${(typeof product?.price === 'number' && !isNaN(product.price) ? product.price : 0).toFixed(2)} landed</div>
+                        <div className="font-medium">${safeToFixed(product?.price)} landed</div>
                         <div className="text-sm text-gray-600">Local (Current)</div>
                       </div>
                     </div>
