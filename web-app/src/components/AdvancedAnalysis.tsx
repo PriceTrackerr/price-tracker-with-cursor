@@ -27,6 +27,15 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
     reason: string;
     loading: boolean;
   } | null>(null);
+
+  // Safety check - ensure product has required fields
+  if (!product || !product.id) {
+    return (
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mt-4">
+        <p className="text-gray-600 text-sm">Product data unavailable</p>
+      </div>
+    );
+  }
   const [features, setFeatures] = useState({
     conditionScore: product.conditionScore || 82,
     couponSavings: Math.round(product.price * 0.15),
@@ -178,14 +187,14 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
 
       try {
         const lowestPrice = priceHistory.length > 0
-          ? Math.min(...priceHistory.map(h => h.price), product.price)
-          : product.price;
+          ? Math.min(...priceHistory.map(h => h?.price || 0).filter(p => p > 0), product.price || 0)
+          : (product.price || 0);
 
         const globalCheapest = currentFeatures.globalMarkets.length > 0
-          ? Math.min(...currentFeatures.globalMarkets.map(m => m.landedCost), product.price)
-          : product.price;
+          ? Math.min(...currentFeatures.globalMarkets.map(m => m?.landedCost || product.price || 0).filter(p => p > 0), product.price || 0)
+          : (product.price || 0);
 
-        const hasCoupon = currentFeatures.couponStack.length > 0;
+        const hasCoupon = currentFeatures.couponStack && currentFeatures.couponStack.length > 0;
 
         const recommendationResponse = await fetch('/api/ai/recommendation', {
           method: 'POST',
@@ -195,13 +204,13 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
           },
           body: JSON.stringify({
             productId: product.id,
-            title: product.title,
-            currentPrice: product.price,
-            priceHistory,
-            lowestPrice,
-            globalCheapest,
-            hasCoupon,
-            redditSentiment: currentFeatures.redditSentiment
+            title: product.title || 'Product',
+            currentPrice: product.price || 0,
+            priceHistory: priceHistory || [],
+            lowestPrice: lowestPrice || 0,
+            globalCheapest: globalCheapest || 0,
+            hasCoupon: hasCoupon || false,
+            redditSentiment: currentFeatures.redditSentiment || 'neutral'
           }),
         });
 
@@ -422,15 +431,15 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
             <div className="bg-green-50 p-4 rounded-lg">
               <div className="flex justify-between items-center mb-1">
                 <span>Original Price:</span>
-                <span className="line-through text-gray-500">${product.price}</span>
+                <span className="line-through text-gray-500">${(product.price || 0).toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center font-bold text-green-600">
                 <span>Final Price:</span>
-                <span>${features.finalPrice}</span>
+                <span>${(features.finalPrice || 0).toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center text-green-600">
                 <span>Total Savings:</span>
-                <span>${features.couponSavings}</span>
+                <span>${(features.couponSavings || 0).toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -447,22 +456,26 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
 
             <div className="space-y-2">
               {features.globalMarkets.length > 0 ? (
-                features.globalMarkets.map((market, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <span>{market.flag}</span>
-                      <span className="font-medium">{market.country}</span>
+                features.globalMarkets.map((market, idx) => {
+                  const landedCost = market?.landedCost ?? product.price ?? 0;
+                  const savings = market?.savings ?? 0;
+                  return (
+                    <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <span>{market?.flag || '🌍'}</span>
+                        <span className="font-medium">{market?.country || 'Unknown'}</span>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-medium">${landedCost.toFixed(2)} landed</div>
+                        {savings !== 0 && (
+                          <div className={`text-sm ${savings > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {savings > 0 ? '-' : '+'}${Math.abs(savings).toFixed(2)}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <div className="font-medium">${market.landedCost.toFixed(2)} landed</div>
-                      {market.savings !== 0 && (
-                        <div className={`text-sm ${market.savings > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {market.savings > 0 ? '-' : '+'}${Math.abs(market.savings).toFixed(2)}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center gap-2">
@@ -470,7 +483,7 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
                     <span className="font-medium">US</span>
                   </div>
                   <div className="text-right">
-                    <div className="font-medium">${product.price.toFixed(2)} landed</div>
+                    <div className="font-medium">${(product.price || 0).toFixed(2)} landed</div>
                     <div className="text-sm text-gray-600">Local (Current)</div>
                   </div>
                 </div>
