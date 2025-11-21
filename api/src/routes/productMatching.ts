@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
 import { getDb } from '../config/database';
 import { supabase, TABLES } from '../config/supabase';
-import { realProductSearch } from '../services/realProductSearch';
+import { scrapeWithHybrid, SUPPORTED_STORES, ScrapedProduct } from '../utils/hybridScraper';
 
 // Type definitions for product matching
 interface ProductMatch {
@@ -144,22 +144,30 @@ router.get('/global-product-matches', async (req: Request, res: Response) => {
     }
 
     console.log(`🌐 Cache miss for key=${productKey}, invoking hybrid search...`);
-    const serperResults = await realProductSearch.searchProducts(rawTitle, 21);
+    const normalizedQuery = generateProductKey(rawTitle) || rawTitle;
+    const perStoreResults = await Promise.all(
+      SUPPORTED_STORES.map(store => scrapeWithHybrid(normalizedQuery, store, 3))
+    );
 
-    if (!serperResults || serperResults.length === 0) {
+    const matches = perStoreResults
+      .flatMap((items: ScrapedProduct[], storeIndex) =>
+        items.map((item, idx) => ({
+          id: item.id || `global_match_${SUPPORTED_STORES[storeIndex]}_${Date.now()}_${idx}`,
+          title: item.title || rawTitle,
+          price: item.price || 0,
+          currency: item.currency || 'USD',
+          platform: item.platform || SUPPORTED_STORES[storeIndex],
+          imageUrl: item.imageUrl || '',
+          url: item.url || ''
+        }))
+      )
+      .filter(Boolean)
+      .slice(0, 21);
+
+    if (!matches.length) {
       console.warn(`⚠️ No external matches for key=${productKey}`);
       return res.json({ success: false, matches: [], message: 'No matches found right now' });
     }
-
-    const matches = serperResults.map((item: any, index: number) => ({
-      id: item.id || `global_match_${Date.now()}_${index}`,
-      title: item.title || rawTitle,
-      price: item.price || 0,
-      currency: item.currency || 'USD',
-      platform: item.platform || 'other',
-      imageUrl: item.imageUrl || '',
-      url: item.url || ''
-    }));
 
     const matchCount = matches.length;
 
@@ -176,7 +184,8 @@ router.get('/global-product-matches', async (req: Request, res: Response) => {
       return res.status(500).json({ success: false, error: 'Unable to cache matches' });
     }
 
-    console.log(`✅ Stored ${matchCount} matches for key=${productKey} from provider ${serperResults[0]?.source || 'unknown'}`);
+    const primaryProvider = matches[0]?.platform || 'unknown';
+    console.log(`✅ Stored ${matchCount} matches for key=${productKey} from provider ${primaryProvider}`);
     return res.json({
       success: true,
       data: {
