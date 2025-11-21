@@ -143,12 +143,12 @@ router.get('/global-product-matches', async (req: Request, res: Response) => {
       });
     }
 
-    console.log(`🌐 Cache miss for key=${productKey}, calling Serper...`);
+    console.log(`🌐 Cache miss for key=${productKey}, invoking hybrid search...`);
     const serperResults = await realProductSearch.searchProducts(rawTitle, 21);
 
     if (!serperResults || serperResults.length === 0) {
-      console.warn(`⚠️ Serper returned no results for key=${productKey}`);
-      return res.status(500).json({ success: false, error: 'No matches found from external provider' });
+      console.warn(`⚠️ No external matches for key=${productKey}`);
+      return res.json({ success: false, matches: [], message: 'No matches found right now' });
     }
 
     const matches = serperResults.map((item: any, index: number) => ({
@@ -176,7 +176,7 @@ router.get('/global-product-matches', async (req: Request, res: Response) => {
       return res.status(500).json({ success: false, error: 'Unable to cache matches' });
     }
 
-    console.log(`✅ Stored ${matchCount} matches for key=${productKey}`);
+    console.log(`✅ Stored ${matchCount} matches for key=${productKey} from provider ${serperResults[0]?.source || 'unknown'}`);
     return res.json({
       success: true,
       data: {

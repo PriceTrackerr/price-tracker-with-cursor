@@ -86,6 +86,7 @@ export const realProductSearch = {
       }
 
       try {
+        console.log(`🔎 Attempting provider: ${provider.name} for "${query}"`);
         const results = await provider.handler(query, limit);
         if (results.length) {
           console.log(`✅ ${provider.name} provider succeeded for "${query}" with ${results.length} results`);
@@ -104,10 +105,7 @@ export const realProductSearch = {
 
 async function fetchWithBrightData(query: string, limit: number): Promise<ScrapedItem[]> {
   const credentials = process.env.BRIGHTDATA_KEY;
-  if (!credentials) {
-    console.warn('⚠️ BRIGHTDATA_KEY not configured, skipping Bright Data');
-    return [];
-  }
+  if (!credentials) return [];
 
   try {
     const shoppingUrl = buildGoogleShoppingUrl(query);
@@ -134,10 +132,7 @@ async function fetchWithBrightData(query: string, limit: number): Promise<Scrape
 
 async function fetchWithApify(query: string, limit: number): Promise<ScrapedItem[]> {
   const token = process.env.APIFY_TOKEN;
-  if (!token) {
-    console.warn('⚠️ APIFY_TOKEN not configured, skipping Apify');
-    return [];
-  }
+  if (!token) return [];
 
   const actors = [
     'lukaskrivka~google-shopping-scraper',
@@ -184,10 +179,7 @@ async function runApifyActor(actor: string, token: string, query: string, limit:
 
 async function fetchWithScrapeDo(query: string, limit: number): Promise<ScrapedItem[]> {
   const apiKey = process.env.SCRAPEDO_KEY;
-  if (!apiKey) {
-    console.warn('⚠️ SCRAPEDO_KEY not configured, skipping ScrapeDo');
-    return [];
-  }
+  if (!apiKey) return [];
 
   try {
     const shoppingUrl = buildGoogleShoppingUrl(query);
@@ -206,10 +198,7 @@ async function fetchWithScrapeDo(query: string, limit: number): Promise<ScrapedI
 
 async function fetchWithScrapingBee(query: string, limit: number): Promise<ScrapedItem[]> {
   const apiKey = process.env.SCRAPINGBEE_KEY;
-  if (!apiKey) {
-    console.warn('⚠️ SCRAPINGBEE_KEY not configured, skipping ScrapingBee');
-    return [];
-  }
+  if (!apiKey) return [];
 
   try {
     const shoppingUrl = buildGoogleShoppingUrl(query);
@@ -228,10 +217,7 @@ async function fetchWithScrapingBee(query: string, limit: number): Promise<Scrap
 
 async function fetchWithSerper(query: string, limit: number): Promise<ScrapedItem[]> {
   const apiKey = process.env.SERPER_API_KEY;
-  if (!apiKey) {
-    console.warn('⚠️ SERPER_API_KEY not configured, skipping Serper fallback');
-    return [];
-  }
+  if (!apiKey) return [];
 
   try {
     const core = extractCoreQuery(query);
