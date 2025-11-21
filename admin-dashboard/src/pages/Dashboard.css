@@ -1,0 +1,39 @@
+.dashboard-popout {
+  transition: transform 1.5s cubic-bezier(.4,2,.6,1), box-shadow 1.5s;
+}
+.dashboard-popout:hover {
+  transform: translateY(-4px) scale(1.07);
+  box-shadow: 0 8px 32px rgba(104,186,141,0.18), 0 2px 8px rgba(0,0,0,0.08);
+  z-index: 2;
+}
+@media (max-width: 900px) {
+  .dashboard-popout {
+    margin-bottom: 16px;
+  }
+  .ant-row {
+    flex-direction: column !important;
+    gap: 16px !important;
+  }
+  .ant-col {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+@media (max-width: 600px) {
+  .dashboard-popout {
+    padding: 8px !important;
+  }
+  h2 {
+    font-size: 20px !important;
+  }
+  .ant-card {
+    font-size: 14px !important;
+  }
+}
+
+/* Responsive search bar */
+@media (min-width: 768px) {
+  .md\\:block {
+    display: block !important;
+  }
+} 

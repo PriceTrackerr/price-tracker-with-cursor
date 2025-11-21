@@ -1,0 +1,47 @@
+import type { Product, User, Alert, Notification, PriceHistory, Payment, AffiliateTransaction, PayoutRequest, SubscriptionPlan } from './storage';
+declare class SupabaseStorage {
+    getSubscriptionPlans(): Promise<SubscriptionPlan[]>;
+    getDeletedSubscriptionPlanIds(): Promise<string[]>;
+    setSubscriptionPlans(plans: SubscriptionPlan[]): Promise<void>;
+    addSubscriptionPlan(plan: SubscriptionPlan): Promise<void>;
+    updateSubscriptionPlan(id: string, update: Partial<SubscriptionPlan>): Promise<boolean>;
+    deleteSubscriptionPlan(id: string): Promise<boolean>;
+    addProduct(productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<string>;
+    getProducts(userId?: string): Promise<Product[]>;
+    getProductById(id: string): Promise<Product | undefined>;
+    deleteProduct(id: string): Promise<boolean>;
+    updateProduct(id: string, update: Partial<Product>): Promise<boolean>;
+    addUser(userData: Omit<User, 'id' | 'createdAt' | 'lastLogin'>): Promise<string>;
+    getUserByEmail(email: string): Promise<User | undefined>;
+    getUserById(id: string): Promise<User | undefined>;
+    updateUser(id: string, update: Partial<User>): Promise<boolean>;
+    deleteUser(id: string): Promise<boolean>;
+    getUsers(): Promise<User[]>;
+    addAlert(alertData: Omit<Alert, 'id' | 'createdAt'>): Promise<string>;
+    getAlerts(userId?: string): Promise<Alert[]>;
+    getAllAlerts(): Promise<Alert[]>;
+    getAlertById(id: string): Promise<Alert | undefined>;
+    updateAlert(id: string, update: Partial<Alert>): Promise<boolean>;
+    deleteAlert(id: string): Promise<boolean>;
+    addNotification(notificationData: Omit<Notification, 'id' | 'timestamp'>): Promise<string>;
+    getNotifications(userId?: string): Promise<Notification[]>;
+    getNotificationById(id: string): Promise<Notification | undefined>;
+    updateNotification(id: string, update: Partial<Notification>): Promise<boolean>;
+    deleteNotification(id: string): Promise<boolean>;
+    clearNotifications(userId: string): Promise<void>;
+    addPriceHistory(historyData: Omit<PriceHistory, 'id' | 'timestamp'>): Promise<string>;
+    getPriceHistory(productId: string): Promise<PriceHistory[]>;
+    addPayment(paymentData: Payment): Promise<string>;
+    getUserPayments(userId: string): Promise<Payment[]>;
+    getPaymentById(id: string): Promise<Payment | undefined>;
+    updatePayment(id: string, update: Partial<Payment>): Promise<boolean>;
+    addAffiliateTransaction(transactionData: AffiliateTransaction): Promise<string>;
+    getAffiliateTransactions(affiliateUserId: string): Promise<AffiliateTransaction[]>;
+    getAffiliateReferrals(affiliateUserId: string): Promise<User[]>;
+    addPayoutRequest(payoutData: PayoutRequest): Promise<string>;
+    getPayoutRequests(affiliateUserId?: string): Promise<PayoutRequest[]>;
+    updatePayoutRequest(id: string, update: Partial<PayoutRequest>): Promise<boolean>;
+}
+declare const _default: SupabaseStorage;
+export default _default;
+//# sourceMappingURL=supabaseStorage.d.ts.map
