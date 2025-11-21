@@ -21,6 +21,12 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
   const { getAuthHeaders, token } = useAuth();
   const [activeTab, setActiveTab] = useState('condition');
   const [loading, setLoading] = useState(true);
+  const [aiRecommendation, setAiRecommendation] = useState<{
+    verdict: string;
+    confidence: number;
+    reason: string;
+    loading: boolean;
+  } | null>(null);
   const [features, setFeatures] = useState({
     conditionScore: product.conditionScore || 82,
     couponSavings: Math.round(product.price * 0.15),
@@ -31,7 +37,9 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
     couponStack: [] as Array<{ code: string; discount: string; successRate: number }>,
     globalMarkets: [] as Array<{ country: string; flag: string; price: number; landedCost: number; savings: number }>,
     bestDeal: 'US',
-    recommendation: 'buy_local'
+    recommendation: 'buy_local',
+    priceHistory: [] as Array<{ price: number; timestamp: string }>,
+    redditSentiment: 'neutral' as 'positive' | 'neutral' | 'negative'
   });
 
   useEffect(() => {
@@ -43,23 +51,45 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
 
       setLoading(true);
       try {
+        // Load price history
+        const historyResponse = await fetch(`/api/products/${product.id}/history`, {
+          headers: getAuthHeaders(),
+        });
+        let priceHistory: Array<{ price: number; timestamp: string }> = [];
+        if (historyResponse.ok) {
+          const historyData = await historyResponse.json();
+          if (historyData.success && Array.isArray(historyData.data)) {
+            priceHistory = historyData.data
+              .slice(-30)
+              .map((h: any) => ({
+                price: h.price || 0,
+                timestamp: h.timestamp || h.created_at || ''
+              }));
+          }
+        }
+
+        // Load advanced analysis
         const response = await fetch(`/api/advanced/product-card-analysis/${product.id}`, {
           headers: getAuthHeaders(),
         });
+
+        let couponStack: Array<{ code: string; discount: string; successRate: number }> = [];
+        let globalMarkets: Array<{ country: string; flag: string; price: number; landedCost: number; savings: number }> = [];
+        let redditSentiment: 'positive' | 'neutral' | 'negative' = 'neutral';
+        let conditionScore = features.conditionScore;
+        let credibilityScore = features.credibilityScore;
+        let communityRating = features.communityRating;
 
         if (response.ok) {
           const data = await response.json();
           const analysis = data.data || data;
 
           if (analysis.conditionAnalysis) {
-            setFeatures(prev => ({
-              ...prev,
-              conditionScore: analysis.conditionAnalysis.score || prev.conditionScore
-            }));
+            conditionScore = analysis.conditionAnalysis.score || conditionScore;
           }
 
           if (analysis.couponAnalysis) {
-            const coupons = Array.isArray(analysis.couponAnalysis.coupons)
+            couponStack = Array.isArray(analysis.couponAnalysis.coupons)
               ? analysis.couponAnalysis.coupons.map((c: any) => ({
                   code: c.code || '',
                   discount: c.description || `${c.discountType === 'percentage' ? c.discountValue + '%' : `$${c.discountValue}`} off`,
@@ -71,7 +101,7 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
               ...prev,
               couponSavings: estimatedSavings,
               finalPrice: Math.max(0, product.price - estimatedSavings),
-              couponStack: coupons
+              couponStack
             }));
           }
 
@@ -81,7 +111,7 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
               const m: Record<string, string> = { US: '🇺🇸', EU: '🇪🇺', UK: '🇬🇧', JP: '🇯🇵', CA: '🇨🇦', AU: '🇦🇺', DE: '🇩🇪', FR: '🇫🇷', IT: '🇮🇹', ES: '🇪🇸' };
               return m[cc] || '🌍';
             };
-            const marketsArr = ga.markets
+            globalMarkets = ga.markets
               ? Object.entries(ga.markets).map(([country, v]: any) => ({
                   country,
                   flag: flag(country),
@@ -92,7 +122,7 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
               : [];
             setFeatures(prev => ({
               ...prev,
-              globalMarkets: marketsArr,
+              globalMarkets,
               bestDeal: ga.bestDeal?.bestMarket?.countryCode || ga.bestDeal?.countryCode || 'US',
               recommendation: ga.recommendation || 'buy_local'
             }));
@@ -100,13 +130,37 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
 
           if (analysis.communityAnalysis) {
             const ca = analysis.communityAnalysis;
+            // Determine Reddit sentiment from community rating
+            redditSentiment = 
+              (ca.communityRating || 0) >= 4 ? 'positive' :
+              (ca.communityRating || 0) >= 3 ? 'neutral' : 'negative';
+            credibilityScore = Math.round(ca.trustScore ?? credibilityScore);
+            communityRating = Number(ca.communityRating ?? communityRating);
+            
             setFeatures(prev => ({
               ...prev,
-              credibilityScore: Math.round(ca.trustScore ?? prev.credibilityScore),
-              communityRating: Number(ca.communityRating ?? prev.communityRating)
+              credibilityScore,
+              communityRating,
+              redditSentiment
             }));
           }
         }
+
+        // Update all features at once
+        const updatedFeatures = {
+          ...features,
+          priceHistory,
+          couponStack,
+          globalMarkets,
+          redditSentiment,
+          conditionScore,
+          credibilityScore,
+          communityRating
+        };
+        setFeatures(updatedFeatures);
+
+        // Load AI recommendation with all collected data
+        await loadAIRecommendation(priceHistory, updatedFeatures);
       } catch (error) {
         console.error('Error loading advanced analysis:', error);
       } finally {
@@ -114,8 +168,81 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
       }
     }
 
+    async function loadAIRecommendation(
+      priceHistory: Array<{ price: number; timestamp: string }>,
+      currentFeatures: typeof features
+    ) {
+      if (!product.id || !token) return;
+
+      setAiRecommendation({ verdict: '', confidence: 0, reason: '', loading: true });
+
+      try {
+        const lowestPrice = priceHistory.length > 0
+          ? Math.min(...priceHistory.map(h => h.price), product.price)
+          : product.price;
+
+        const globalCheapest = currentFeatures.globalMarkets.length > 0
+          ? Math.min(...currentFeatures.globalMarkets.map(m => m.landedCost), product.price)
+          : product.price;
+
+        const hasCoupon = currentFeatures.couponStack.length > 0;
+
+        const recommendationResponse = await fetch('/api/ai/recommendation', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthHeaders(),
+          },
+          body: JSON.stringify({
+            productId: product.id,
+            title: product.title,
+            currentPrice: product.price,
+            priceHistory,
+            lowestPrice,
+            globalCheapest,
+            hasCoupon,
+            redditSentiment: currentFeatures.redditSentiment
+          }),
+        });
+
+        if (recommendationResponse.ok) {
+          const recData = await recommendationResponse.json();
+          if (recData.success && recData.data) {
+            setAiRecommendation({
+              verdict: recData.data.verdict || 'WAIT',
+              confidence: recData.data.confidence || 75,
+              reason: recData.data.reason || 'Analysis completed.',
+              loading: false
+            });
+          } else {
+            setAiRecommendation({
+              verdict: 'WAIT',
+              confidence: 70,
+              reason: 'AI thinking… try again',
+              loading: false
+            });
+          }
+        } else {
+          setAiRecommendation({
+            verdict: 'WAIT',
+            confidence: 70,
+            reason: 'AI thinking… try again',
+            loading: false
+          });
+        }
+      } catch (error) {
+        console.error('Error loading AI recommendation:', error);
+        setAiRecommendation({
+          verdict: 'WAIT',
+          confidence: 70,
+          reason: 'AI thinking… try again',
+          loading: false
+        });
+      }
+    }
+
     loadAnalysisData();
-  }, [product.id, token, getAuthHeaders]);
+  }, [product.id, product.title, product.price, token, getAuthHeaders]);
 
   const tabs = [
     { id: 'condition', label: '🧠 Condition', color: 'blue' },
@@ -178,6 +305,56 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
       <div className="min-h-[200px]">
         {activeTab === 'condition' && (
           <div className="space-y-4">
+            {/* AI Recommendation Card - At the TOP */}
+            {aiRecommendation && (
+              <div className={`relative overflow-hidden rounded-xl p-6 shadow-lg ${
+                aiRecommendation.verdict === 'STRONG BUY' || aiRecommendation.verdict === 'BUY'
+                  ? 'bg-gradient-to-br from-green-900 via-green-800 to-emerald-900'
+                  : aiRecommendation.verdict === 'WAIT'
+                  ? 'bg-gradient-to-br from-yellow-900 via-yellow-800 to-amber-900'
+                  : 'bg-gradient-to-br from-red-900 via-red-800 to-rose-900'
+              }`}>
+                {aiRecommendation.loading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="text-center">
+                      <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-white mb-3"></div>
+                      <p className="text-white/90 text-sm font-medium">AI thinking…</p>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-2xl">🤖</span>
+                      <span className="font-bold text-white text-lg">DeepSeek AI Recommendation</span>
+                    </div>
+                    <div className="mb-3">
+                      <span className={`text-2xl font-bold ${
+                        aiRecommendation.verdict === 'STRONG BUY' || aiRecommendation.verdict === 'BUY'
+                          ? 'text-green-300'
+                          : aiRecommendation.verdict === 'WAIT'
+                          ? 'text-yellow-300'
+                          : 'text-red-300'
+                      }`}>
+                        {aiRecommendation.confidence}% Confidence: {aiRecommendation.verdict}
+                      </span>
+                    </div>
+                    <p className="text-white/90 text-sm mb-4 leading-relaxed">
+                      {aiRecommendation.reason || 'AI thinking… try again'}
+                    </p>
+                    <a
+                      href={product.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white px-5 py-2.5 rounded-lg hover:bg-white/30 transition-all font-medium text-sm border border-white/30"
+                    >
+                      <span>🛒</span>
+                      Buy Now with AI Analysis
+                    </a>
+                  </>
+                )}
+              </div>
+            )}
+
             <div className="flex items-center justify-between">
               <h4 className="font-medium">Condition Analysis</h4>
               <span className={`px-2 py-1 rounded-full text-xs font-medium ${getRiskLevel(features.conditionScore).color}`}>
@@ -356,30 +533,6 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
         )}
       </div>
 
-      {/* Smart Recommendation */}
-      <div className="mt-6 pt-4 border-t border-gray-200">
-        <div className="bg-gradient-to-r from-blue-50 to-green-50 p-4 rounded-lg">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-xl">🎯</span>
-            <span className="font-semibold text-gray-900">Smart Recommendation</span>
-          </div>
-          <div className="mb-2">
-            <span className="text-lg font-bold text-green-600">92% Confidence: STRONG BUY</span>
-          </div>
-          <p className="text-sm text-gray-700 mb-3">
-            Excellent condition score + proven coupon stack + community validated + best global price
-          </p>
-          <a
-            href={product.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-          >
-            <span>🛒</span>
-            Buy Now with Analysis
-          </a>
-        </div>
-      </div>
     </div>
   );
 } 

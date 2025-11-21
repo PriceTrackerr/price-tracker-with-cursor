@@ -23,6 +23,7 @@ import paymentRoutes from './routes/payments';
 import advancedFeaturesRoutes from './routes/advancedFeatures';
 import featuresRoutes from './routes/features';
 import productMatchingRoutes from './routes/productMatching';
+import aiRecommendationRoutes from './routes/aiRecommendation';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler';
@@ -207,6 +208,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/advanced', advancedFeaturesRoutes);
 app.use('/api/features', featuresRoutes);
 app.use('/api/product-matching', productMatchingRoutes);
+app.use('/api/ai', aiRecommendationRoutes);
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
