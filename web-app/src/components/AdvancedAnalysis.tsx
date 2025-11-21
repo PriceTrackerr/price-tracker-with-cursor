@@ -17,6 +17,19 @@ interface AdvancedAnalysisProps {
   };
 }
 
+// Helper function to safely format numbers
+const safeToFixed = (value: any, decimals: number = 2): string => {
+  try {
+    const num = Number(value);
+    if (typeof num !== 'number' || isNaN(num) || !isFinite(num)) {
+      return '0.00';
+    }
+    return num.toFixed(decimals);
+  } catch {
+    return '0.00';
+  }
+};
+
 export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
   const { getAuthHeaders, token } = useAuth();
   const [activeTab, setActiveTab] = useState('condition');
@@ -455,15 +468,15 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
             <div className="bg-green-50 p-4 rounded-lg">
               <div className="flex justify-between items-center mb-1">
                 <span>Original Price:</span>
-                <span className="line-through text-gray-500">${safePrice.toFixed(2)}</span>
+                <span className="line-through text-gray-500">${safeToFixed(safePrice)}</span>
               </div>
               <div className="flex justify-between items-center font-bold text-green-600">
                 <span>Final Price:</span>
-                <span>${(features.finalPrice || 0).toFixed(2)}</span>
+                <span>${safeToFixed(features.finalPrice)}</span>
               </div>
               <div className="flex justify-between items-center text-green-600">
                 <span>Total Savings:</span>
-                <span>${(features.couponSavings || 0).toFixed(2)}</span>
+                <span>${safeToFixed(features.couponSavings)}</span>
               </div>
             </div>
           </div>
@@ -489,7 +502,7 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
                           <span className="font-medium">US</span>
                         </div>
                         <div className="text-right">
-                          <div className="font-medium">${(typeof product?.price === 'number' && !isNaN(product.price) ? product.price : 0).toFixed(2)} landed</div>
+                          <div className="font-medium">${safeToFixed(product?.price)} landed</div>
                           <div className="text-sm text-gray-600">Local (Current)</div>
                         </div>
                       </div>
@@ -509,7 +522,7 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
                           <span className="font-medium">US</span>
                         </div>
                         <div className="text-right">
-                          <div className="font-medium">${(typeof product?.price === 'number' && !isNaN(product.price) ? product.price : 0).toFixed(2)} landed</div>
+                          <div className="font-medium">${safeToFixed(product?.price)} landed</div>
                           <div className="text-sm text-gray-600">Local (Current)</div>
                         </div>
                       </div>
@@ -533,9 +546,17 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
                     }
 
                     // Final safety check before toFixed - ensure it's always a valid number
-                    const safeLandedCost = (typeof landedCost === 'number' && !isNaN(landedCost) && isFinite(landedCost)) ? landedCost : 0;
-                    const safeSavings = (typeof savings === 'number' && !isNaN(savings) && isFinite(savings)) ? savings : 0;
+                    let safeLandedCost = 0;
+                    if (typeof landedCost === 'number' && !isNaN(landedCost) && isFinite(landedCost)) {
+                      safeLandedCost = landedCost;
+                    }
+                    
+                    let safeSavings = 0;
+                    if (typeof savings === 'number' && !isNaN(savings) && isFinite(savings)) {
+                      safeSavings = savings;
+                    }
 
+                    // Use safe helper function for all number formatting
                     return (
                       <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div className="flex items-center gap-2">
@@ -543,10 +564,10 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
                           <span className="font-medium">{market?.country || 'Unknown'}</span>
                         </div>
                         <div className="text-right">
-                          <div className="font-medium">${safeLandedCost.toFixed(2)} landed</div>
+                          <div className="font-medium">${safeToFixed(safeLandedCost)} landed</div>
                           {safeSavings !== 0 && (
                             <div className={`text-sm ${safeSavings > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              {safeSavings > 0 ? '-' : '+'}${Math.abs(safeSavings).toFixed(2)}
+                              {safeSavings > 0 ? '-' : '+'}${safeToFixed(Math.abs(safeSavings))}
                             </div>
                           )}
                         </div>
