@@ -36,10 +36,11 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
       </div>
     );
   }
+  const safePrice = typeof product.price === 'number' && !isNaN(product.price) ? product.price : 0;
   const [features, setFeatures] = useState({
     conditionScore: product.conditionScore || 82,
-    couponSavings: Math.round(product.price * 0.15),
-    finalPrice: product.finalPrice || Math.round(product.price * 0.85),
+    couponSavings: Math.round(safePrice * 0.15),
+    finalPrice: product.finalPrice || Math.round(safePrice * 0.85),
     credibilityScore: product.credibilityScore || 87,
     communityRating: product.communityRating || 4.2,
     globalSavings: 0,
@@ -106,10 +107,11 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
                 }))
               : [];
             const estimatedSavings = Number(analysis.couponAnalysis.estimatedSavings || 0);
+            const currentPrice = typeof product.price === 'number' && !isNaN(product.price) ? product.price : 0;
             setFeatures(prev => ({
               ...prev,
               couponSavings: estimatedSavings,
-              finalPrice: Math.max(0, product.price - estimatedSavings),
+              finalPrice: Math.max(0, currentPrice - estimatedSavings),
               couponStack
             }));
           }
@@ -120,18 +122,25 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
               const m: Record<string, string> = { US: '🇺🇸', EU: '🇪🇺', UK: '🇬🇧', JP: '🇯🇵', CA: '🇨🇦', AU: '🇦🇺', DE: '🇩🇪', FR: '🇫🇷', IT: '🇮🇹', ES: '🇪🇸' };
               return m[cc] || '🌍';
             };
+            const basePrice = typeof product.price === 'number' && !isNaN(product.price) ? product.price : 0;
             globalMarkets = ga.markets
-              ? Object.entries(ga.markets).map(([country, v]: any) => ({
-                  country,
-                  flag: flag(country),
-                  price: v.price,
-                  landedCost: v.landedCost,
-                  savings: (ga.bestDeal?.bestMarket?.landedCost ?? ga.bestDeal?.landedCost ?? product.price) - v.landedCost
-                }))
+              ? Object.entries(ga.markets).map(([country, v]: any) => {
+                  const marketLandedCost = typeof v?.landedCost === 'number' && !isNaN(v.landedCost) ? v.landedCost : basePrice;
+                  const bestDealCost = typeof (ga.bestDeal?.bestMarket?.landedCost ?? ga.bestDeal?.landedCost) === 'number' && !isNaN(ga.bestDeal?.bestMarket?.landedCost ?? ga.bestDeal?.landedCost)
+                    ? (ga.bestDeal?.bestMarket?.landedCost ?? ga.bestDeal?.landedCost)
+                    : basePrice;
+                  return {
+                    country,
+                    flag: flag(country),
+                    price: typeof v?.price === 'number' && !isNaN(v.price) ? v.price : basePrice,
+                    landedCost: marketLandedCost,
+                    savings: bestDealCost - marketLandedCost
+                  };
+                })
               : [];
             setFeatures(prev => ({
               ...prev,
-              globalMarkets,
+              globalMarkets: Array.isArray(globalMarkets) ? globalMarkets : [],
               bestDeal: ga.bestDeal?.bestMarket?.countryCode || ga.bestDeal?.countryCode || 'US',
               recommendation: ga.recommendation || 'buy_local'
             }));
@@ -155,16 +164,16 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
           }
         }
 
-        // Update all features at once
+        // Update all features at once - ensure arrays are always arrays
         const updatedFeatures = {
           ...features,
-          priceHistory,
-          couponStack,
-          globalMarkets,
+          priceHistory: Array.isArray(priceHistory) ? priceHistory : [],
+          couponStack: Array.isArray(couponStack) ? couponStack : [],
+          globalMarkets: Array.isArray(globalMarkets) ? globalMarkets : [],
           redditSentiment,
-          conditionScore,
-          credibilityScore,
-          communityRating
+          conditionScore: typeof conditionScore === 'number' && !isNaN(conditionScore) ? conditionScore : features.conditionScore,
+          credibilityScore: typeof credibilityScore === 'number' && !isNaN(credibilityScore) ? credibilityScore : features.credibilityScore,
+          communityRating: typeof communityRating === 'number' && !isNaN(communityRating) ? communityRating : features.communityRating
         };
         setFeatures(updatedFeatures);
 
@@ -186,13 +195,17 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
       setAiRecommendation({ verdict: '', confidence: 0, reason: '', loading: true });
 
       try {
+        const currentPrice = typeof product.price === 'number' && !isNaN(product.price) ? product.price : 0;
         const lowestPrice = priceHistory.length > 0
-          ? Math.min(...priceHistory.map(h => h?.price || 0).filter(p => p > 0), product.price || 0)
-          : (product.price || 0);
+          ? Math.min(...priceHistory.map(h => (typeof h?.price === 'number' && !isNaN(h.price) ? h.price : 0)).filter(p => p > 0), currentPrice)
+          : currentPrice;
 
         const globalCheapest = currentFeatures.globalMarkets.length > 0
-          ? Math.min(...currentFeatures.globalMarkets.map(m => m?.landedCost || product.price || 0).filter(p => p > 0), product.price || 0)
-          : (product.price || 0);
+          ? Math.min(...currentFeatures.globalMarkets.map(m => {
+              const cost = typeof m?.landedCost === 'number' && !isNaN(m.landedCost) ? m.landedCost : currentPrice;
+              return cost;
+            }).filter(p => p > 0), currentPrice)
+          : currentPrice;
 
         const hasCoupon = currentFeatures.couponStack && currentFeatures.couponStack.length > 0;
 
@@ -404,7 +417,7 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
             <div className="flex items-center justify-between">
               <h4 className="font-medium">Best Coupon Stack</h4>
               <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
-                {product.price > 0 ? Math.round((features.couponSavings / product.price) * 100) : 0}% Savings
+                {safePrice > 0 ? Math.round((features.couponSavings / safePrice) * 100) : 0}% Savings
               </span>
             </div>
 
@@ -431,7 +444,7 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
             <div className="bg-green-50 p-4 rounded-lg">
               <div className="flex justify-between items-center mb-1">
                 <span>Original Price:</span>
-                <span className="line-through text-gray-500">${(product.price || 0).toFixed(2)}</span>
+                <span className="line-through text-gray-500">${safePrice.toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center font-bold text-green-600">
                 <span>Final Price:</span>
@@ -455,27 +468,33 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
             </div>
 
             <div className="space-y-2">
-              {features.globalMarkets.length > 0 ? (
-                features.globalMarkets.map((market, idx) => {
-                  const landedCost = market?.landedCost ?? product.price ?? 0;
-                  const savings = market?.savings ?? 0;
-                  return (
-                    <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <span>{market?.flag || '🌍'}</span>
-                        <span className="font-medium">{market?.country || 'Unknown'}</span>
+              {Array.isArray(features.globalMarkets) && features.globalMarkets.length > 0 ? (
+                features.globalMarkets
+                  .filter(market => market != null && typeof market === 'object')
+                  .map((market, idx) => {
+                    const landedCost = typeof market?.landedCost === 'number' && !isNaN(market.landedCost)
+                      ? market.landedCost
+                      : (typeof product?.price === 'number' && !isNaN(product.price) ? product.price : 0);
+                    const savings = typeof market?.savings === 'number' && !isNaN(market.savings)
+                      ? market.savings
+                      : 0;
+                    return (
+                      <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <span>{market?.flag || '🌍'}</span>
+                          <span className="font-medium">{market?.country || 'Unknown'}</span>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-medium">${Number(landedCost).toFixed(2)} landed</div>
+                          {savings !== 0 && (
+                            <div className={`text-sm ${savings > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {savings > 0 ? '-' : '+'}${Math.abs(Number(savings)).toFixed(2)}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <div className="font-medium">${landedCost.toFixed(2)} landed</div>
-                        {savings !== 0 && (
-                          <div className={`text-sm ${savings > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {savings > 0 ? '-' : '+'}${Math.abs(savings).toFixed(2)}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })
+                    );
+                  })
               ) : (
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center gap-2">
@@ -483,7 +502,7 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
                     <span className="font-medium">US</span>
                   </div>
                   <div className="text-right">
-                    <div className="font-medium">${(product.price || 0).toFixed(2)} landed</div>
+                    <div className="font-medium">${(typeof product?.price === 'number' && !isNaN(product.price) ? product.price : 0).toFixed(2)} landed</div>
                     <div className="text-sm text-gray-600">Local (Current)</div>
                   </div>
                 </div>
