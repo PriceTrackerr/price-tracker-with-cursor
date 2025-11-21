@@ -6,6 +6,7 @@ import { useAuth } from '../components/AuthContext';
 import { useTranslation } from 'react-i18next';
 import PriceDisplay from '../components/PriceDisplay';
 import AdvancedAnalysis from '../components/AdvancedAnalysis';
+import { getSupabaseClient } from '../lib/supabaseClient';
 
 interface Product {
   id: string;
@@ -42,30 +43,69 @@ export default function ProductDetails() {
 
   useEffect(() => {
     async function fetchProduct() {
-      if (!productId || !token) return;
+      if (!productId) return;
       
       setLoading(true);
       try {
-        const res = await fetch(`/api/products/${productId}`, {
-          headers: getAuthHeaders(),
-        });
-        
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        // Try API first
+        if (token) {
+          try {
+            const res = await fetch(`/api/products/${productId}`, {
+              headers: getAuthHeaders(),
+            });
+            
+            if (res.ok) {
+              const data = await res.json();
+              if (data.success && data.data) {
+                setProduct(data.data);
+                setLoading(false);
+                return;
+              }
+            }
+          } catch (apiError) {
+            console.warn('API fetch failed, trying Supabase:', apiError);
+          }
         }
         
-        const data = await res.json();
-        console.log('Product details API response:', data);
-        
-        if (data.success) {
-          setProduct(data.data);
-        } else {
-          console.error('Failed to fetch product:', data.message);
-          toast.error('Failed to load product details');
+        // Fallback to Supabase
+        try {
+          const supabase = getSupabaseClient();
+          const { data: productData, error: supabaseError } = await supabase
+            .from('products')
+            .select('*')
+            .eq('id', productId)
+            .single();
+          
+          if (supabaseError) {
+            throw supabaseError;
+          }
+          
+          if (productData) {
+            setProduct({
+              id: productData.id,
+              title: productData.title,
+              price: productData.price || 0,
+              currency: productData.currency || 'USD',
+              platform: productData.platform || 'unknown',
+              imageUrl: productData.image_url || '',
+              url: productData.url || '',
+              createdAt: productData.created_at || new Date().toISOString(),
+              totalMatches: productData.total_matches || 0,
+              hasPriceDrop: false,
+              priceDrop: 0,
+              priceDropPercent: 0,
+              previousPrice: productData.price || 0
+            });
+          } else {
+            throw new Error('Product not found');
+          }
+        } catch (supabaseError: any) {
+          console.error('Supabase fetch failed:', supabaseError);
+          throw supabaseError;
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error fetching product:', error);
-        toast.error('Failed to load product details');
+        toast.error(error?.message || 'Failed to load product details');
       } finally {
         setLoading(false);
       }
@@ -174,13 +214,10 @@ export default function ProductDetails() {
   if (loading) {
     return (
       <div className="max-w-2xl mx-auto p-6">
-        <div className="animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
-          <div className="h-24 bg-gray-200 rounded mb-6"></div>
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-12 bg-gray-200 rounded"></div>
-            ))}
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+            <p className="text-gray-600">Loading product details...</p>
           </div>
         </div>
       </div>

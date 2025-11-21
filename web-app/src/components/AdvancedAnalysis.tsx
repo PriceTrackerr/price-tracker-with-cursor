@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from './AuthContext';
 
 interface AdvancedAnalysisProps {
   product: {
@@ -17,15 +18,104 @@ interface AdvancedAnalysisProps {
 }
 
 export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
+  const { getAuthHeaders, token } = useAuth();
   const [activeTab, setActiveTab] = useState('condition');
+  const [loading, setLoading] = useState(true);
   const [features, setFeatures] = useState({
     conditionScore: product.conditionScore || 82,
     couponSavings: Math.round(product.price * 0.15),
     finalPrice: product.finalPrice || Math.round(product.price * 0.85),
     credibilityScore: product.credibilityScore || 87,
     communityRating: product.communityRating || 4.2,
-    globalSavings: 0
+    globalSavings: 0,
+    couponStack: [] as Array<{ code: string; discount: string; successRate: number }>,
+    globalMarkets: [] as Array<{ country: string; flag: string; price: number; landedCost: number; savings: number }>,
+    bestDeal: 'US',
+    recommendation: 'buy_local'
   });
+
+  useEffect(() => {
+    async function loadAnalysisData() {
+      if (!product.id || !token) {
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const response = await fetch(`/api/advanced/product-card-analysis/${product.id}`, {
+          headers: getAuthHeaders(),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const analysis = data.data || data;
+
+          if (analysis.conditionAnalysis) {
+            setFeatures(prev => ({
+              ...prev,
+              conditionScore: analysis.conditionAnalysis.score || prev.conditionScore
+            }));
+          }
+
+          if (analysis.couponAnalysis) {
+            const coupons = Array.isArray(analysis.couponAnalysis.coupons)
+              ? analysis.couponAnalysis.coupons.map((c: any) => ({
+                  code: c.code || '',
+                  discount: c.description || `${c.discountType === 'percentage' ? c.discountValue + '%' : `$${c.discountValue}`} off`,
+                  successRate: c.successRate || 0
+                }))
+              : [];
+            const estimatedSavings = Number(analysis.couponAnalysis.estimatedSavings || 0);
+            setFeatures(prev => ({
+              ...prev,
+              couponSavings: estimatedSavings,
+              finalPrice: Math.max(0, product.price - estimatedSavings),
+              couponStack: coupons
+            }));
+          }
+
+          if (analysis.globalAnalysis) {
+            const ga = analysis.globalAnalysis;
+            const flag = (cc: string) => {
+              const m: Record<string, string> = { US: '🇺🇸', EU: '🇪🇺', UK: '🇬🇧', JP: '🇯🇵', CA: '🇨🇦', AU: '🇦🇺', DE: '🇩🇪', FR: '🇫🇷', IT: '🇮🇹', ES: '🇪🇸' };
+              return m[cc] || '🌍';
+            };
+            const marketsArr = ga.markets
+              ? Object.entries(ga.markets).map(([country, v]: any) => ({
+                  country,
+                  flag: flag(country),
+                  price: v.price,
+                  landedCost: v.landedCost,
+                  savings: (ga.bestDeal?.bestMarket?.landedCost ?? ga.bestDeal?.landedCost ?? product.price) - v.landedCost
+                }))
+              : [];
+            setFeatures(prev => ({
+              ...prev,
+              globalMarkets: marketsArr,
+              bestDeal: ga.bestDeal?.bestMarket?.countryCode || ga.bestDeal?.countryCode || 'US',
+              recommendation: ga.recommendation || 'buy_local'
+            }));
+          }
+
+          if (analysis.communityAnalysis) {
+            const ca = analysis.communityAnalysis;
+            setFeatures(prev => ({
+              ...prev,
+              credibilityScore: Math.round(ca.trustScore ?? prev.credibilityScore),
+              communityRating: Number(ca.communityRating ?? prev.communityRating)
+            }));
+          }
+        }
+      } catch (error) {
+        console.error('Error loading advanced analysis:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadAnalysisData();
+  }, [product.id, token, getAuthHeaders]);
 
   const tabs = [
     { id: 'condition', label: '🧠 Condition', color: 'blue' },
@@ -45,6 +135,19 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
     if (score >= 60) return { level: 'Medium', color: 'bg-yellow-100 text-yellow-800' };
     return { level: 'High', color: 'bg-red-100 text-red-800' };
   };
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mt-4">
+        <div className="flex items-center justify-center min-h-[300px]">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
+            <p className="text-gray-600 text-sm">Loading analysis...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mt-4">
@@ -115,25 +218,28 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
             <div className="flex items-center justify-between">
               <h4 className="font-medium">Best Coupon Stack</h4>
               <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
-                {Math.round((features.couponSavings / product.price) * 100)}% Savings
+                {product.price > 0 ? Math.round((features.couponSavings / product.price) * 100) : 0}% Savings
               </span>
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div>
-                  <span className="font-medium">SAVE15</span>
-                  <span className="text-gray-600 ml-2">(15% off)</span>
+              {features.couponStack.length > 0 ? (
+                features.couponStack.map((coupon, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <span className="font-medium">{coupon.code || 'N/A'}</span>
+                      <span className="text-gray-600 ml-2">({coupon.discount})</span>
+                    </div>
+                    <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                      {coupon.successRate}% success
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-4 text-gray-500 text-sm">
+                  No coupons available for this product
                 </div>
-                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">94% success</span>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div>
-                  <span className="font-medium">FREESHIP</span>
-                  <span className="text-gray-600 ml-2">(Free shipping)</span>
-                </div>
-                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">92% success</span>
-              </div>
+              )}
             </div>
 
             <div className="bg-green-50 p-4 rounded-lg">
@@ -158,41 +264,40 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
             <div className="flex items-center justify-between">
               <h4 className="font-medium">Global Price Comparison</h4>
               <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
-                Best: US (Current)
+                Best: {features.bestDeal} (Current)
               </span>
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <span>🇺🇸</span>
-                  <span className="font-medium">US</span>
+              {features.globalMarkets.length > 0 ? (
+                features.globalMarkets.map((market, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <span>{market.flag}</span>
+                      <span className="font-medium">{market.country}</span>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-medium">${market.landedCost.toFixed(2)} landed</div>
+                      {market.savings !== 0 && (
+                        <div className={`text-sm ${market.savings > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {market.savings > 0 ? '-' : '+'}${Math.abs(market.savings).toFixed(2)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <span>🇺🇸</span>
+                    <span className="font-medium">US</span>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-medium">${product.price.toFixed(2)} landed</div>
+                    <div className="text-sm text-gray-600">Local (Current)</div>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <div className="font-medium">${product.price} landed</div>
-                  <div className="text-sm text-gray-600">Local (Best)</div>
-                </div>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <span>🇯🇵</span>
-                  <span className="font-medium">Japan</span>
-                </div>
-                <div className="text-right">
-                  <div className="font-medium">${Math.round(product.price * 1.03)} landed</div>
-                  <div className="text-sm text-red-600">+$31</div>
-                </div>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <span>🇬🇧</span>
-                  <span className="font-medium">UK</span>
-                </div>
-                <div className="text-right">
-                  <div className="font-medium">${Math.round(product.price * 1.12)} landed</div>
-                  <div className="text-sm text-red-600">+$120</div>
-                </div>
-              </div>
+              )}
             </div>
 
             <div className="bg-blue-50 p-4 rounded-lg">
