@@ -1,4 +1,4 @@
-import axios, { AxiosRequestConfig } from 'axios';
+import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 
@@ -15,10 +15,6 @@ export interface ScrapedItem {
   source: ProviderName;
 }
 
-<<<<<<< HEAD
-
-=======
->>>>>>> beae2b92cf5f014b837f52ea33e9850a18afb8e1
 const PROVIDER_TIMEOUT = 25_000;
 const RANDOM_DELAY_RANGE = { min: 800, max: 3_000 };
 
