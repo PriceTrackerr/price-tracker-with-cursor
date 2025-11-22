@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
@@ -7,7 +7,6 @@ import {
   Users, 
   Package, 
   AlertTriangle, 
-  TrendingUp, 
   DollarSign,
   Activity,
   BarChart3,

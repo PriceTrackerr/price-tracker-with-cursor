@@ -1,9 +1,7 @@
 import { useState } from "react";
 import { cn } from "../utils/cn";
 import { 
-  BarChart3, 
   Package, 
-  History, 
   Bell, 
   Settings, 
   Menu,

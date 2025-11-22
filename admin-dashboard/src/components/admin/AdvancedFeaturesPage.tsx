@@ -24,32 +24,21 @@ import {
   LineChart,
   Line,
   PieChart,
-  Pie,
-  Cell
+  Pie
 } from 'recharts';
 import {
   TrendingUp,
-  TrendingDown,
   Globe,
-  ShoppingCart,
   Users,
-  Star,
   Shield,
   Zap,
-  Target,
   Award,
   AlertTriangle,
   CheckCircle,
-  Clock,
-  DollarSign,
-  Package,
-  MessageSquare,
   ThumbsUp,
   Eye,
   Settings,
   BarChart3,
-  Map,
-  Coins,
   Percent
 } from 'lucide-react';
 

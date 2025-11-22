@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users as UsersIcon, Search, Filter, MoreHorizontal, Mail, Phone, Calendar, Eye, Edit, Trash2, Ban } from 'lucide-react';
+import { Users as UsersIcon, Search, Filter, MoreHorizontal, Mail, Calendar, Eye, Edit, Trash2, Ban } from 'lucide-react';
 import { useAuth } from '../components/AuthContext';
 
 interface User {
@@ -8,6 +8,7 @@ interface User {
   username: string;
   role?: string;
   createdAt: string;
+  joinDate?: string;
   lastLogin: string;
   status?: 'active' | 'inactive' | 'banned';
 }
@@ -335,7 +336,7 @@ export default function Users() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">New This Month</p>
-              <p className="text-2xl font-bold text-gray-900">{users.filter(u => new Date(u.joinDate).getMonth() === new Date().getMonth()).length}</p>
+              <p className="text-2xl font-bold text-gray-900">{users.filter(u => new Date(u.createdAt || u.joinDate || '').getMonth() === new Date().getMonth()).length}</p>
             </div>
             <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center">
               <UsersIcon className="w-6 h-6 text-purple-600" />

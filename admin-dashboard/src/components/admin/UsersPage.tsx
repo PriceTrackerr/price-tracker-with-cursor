@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, Filter, UserPlus, Ban, Trash2, Shield, User, MoreHorizontal } from "lucide-react";
+import { Search, Filter, UserPlus, Ban, Shield, User, MoreHorizontal } from "lucide-react";
 import { useAuth } from "../AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Input } from "../ui/input";
@@ -24,7 +24,7 @@ interface User {
 export function UsersPage() {
   const { token } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [_loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");

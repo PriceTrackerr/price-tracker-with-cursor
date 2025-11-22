@@ -496,16 +496,16 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
                 try {
                   if (!Array.isArray(features.globalMarkets) || features.globalMarkets.length === 0) {
                     return (
-                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-center gap-2">
-                          <span>🇺🇸</span>
-                          <span className="font-medium">US</span>
-                        </div>
-                        <div className="text-right">
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <span>🇺🇸</span>
+                  <span className="font-medium">US</span>
+                </div>
+                <div className="text-right">
                           <div className="font-medium">${safeToFixed(product?.price)} landed</div>
                           <div className="text-sm text-gray-600">Local (Current)</div>
-                        </div>
-                      </div>
+                </div>
+              </div>
                     );
                   }
                   
@@ -516,8 +516,8 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
 
                   if (validMarkets.length === 0) {
                     return (
-                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-2">
                           <span>🇺🇸</span>
                           <span className="font-medium">US</span>
                         </div>
@@ -562,31 +562,31 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
                         <div className="flex items-center gap-2">
                           <span>{market?.flag || '🌍'}</span>
                           <span className="font-medium">{market?.country || 'Unknown'}</span>
-                        </div>
-                        <div className="text-right">
+                </div>
+                <div className="text-right">
                           <div className="font-medium">${safeToFixed(safeLandedCost)} landed</div>
                           {safeSavings !== 0 && (
                             <div className={`text-sm ${safeSavings > 0 ? 'text-green-600' : 'text-red-600'}`}>
                               {safeSavings > 0 ? '-' : '+'}${safeToFixed(Math.abs(safeSavings))}
                             </div>
                           )}
-                        </div>
-                      </div>
+                </div>
+              </div>
                     );
                   });
                 } catch (error) {
                   console.error('Error rendering global markets:', error);
                   return (
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-2">
                         <span>🇺🇸</span>
                         <span className="font-medium">US</span>
-                      </div>
-                      <div className="text-right">
+                </div>
+                <div className="text-right">
                         <div className="font-medium">${safeToFixed(product?.price)} landed</div>
                         <div className="text-sm text-gray-600">Local (Current)</div>
-                      </div>
-                    </div>
+                </div>
+              </div>
                   );
                 }
               })()}

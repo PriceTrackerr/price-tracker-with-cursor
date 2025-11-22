@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Package, DollarSign, TrendingDown, Bell, Users, Activity } from 'lucide-react';
+import { Package, DollarSign, Bell, Users } from 'lucide-react';
 
 interface MetricCardProps {
   title: string;

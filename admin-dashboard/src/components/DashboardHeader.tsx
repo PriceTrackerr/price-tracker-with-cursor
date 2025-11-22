@@ -3,8 +3,6 @@ import {
   Bell, 
   Search, 
   User, 
-  Settings,
-  LogOut,
   ChevronDown
 } from "lucide-react";
 

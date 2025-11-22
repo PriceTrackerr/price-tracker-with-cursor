@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Badge } from '../ui/badge';
 import { useAuth } from '../AuthContext';
-import { Edit, Trash2, Eye, ExternalLink, Plus } from 'lucide-react';
+import { Trash2, Eye, ExternalLink, Plus } from 'lucide-react';
 
 interface Product {
   id: string;
@@ -34,8 +34,8 @@ export function ProductsPage({ onNavigateToPage }: ProductsPageProps) {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [platformFilter, setPlatformFilter] = useState("all");
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [showProductDialog, setShowProductDialog] = useState(false);
+  // const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  // const [showProductDialog, setShowProductDialog] = useState(false);
 
   // Fetch all products from backend
   const fetchProducts = async () => {
@@ -90,7 +90,7 @@ export function ProductsPage({ onNavigateToPage }: ProductsPageProps) {
     }
   };
 
-  const handleViewDetails = (product: Product) => {
+  const handleViewDetails = (_product: Product) => {
     // Navigate to advanced features page instead of showing dialog
     onNavigateToPage('advanced');
   };

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Package, Search, Filter, MoreHorizontal, ExternalLink, TrendingUp, TrendingDown } from 'lucide-react';
+import { Package, Search, Filter, MoreHorizontal, ExternalLink, TrendingDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../components/AuthContext';
 
@@ -12,6 +12,9 @@ interface Product {
   imageUrl: string;
   url: string;
   stockStatus?: string;
+  status?: 'active' | 'inactive' | 'pending';
+  priceChange?: number;
+  currentPrice?: number;
   createdAt: string;
   updatedAt: string;
   userId: string;
@@ -288,7 +291,7 @@ export default function Products() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Active Products</p>
-              <p className="text-2xl font-bold text-gray-900">{products.filter(p => p.status === 'active').length}</p>
+              <p className="text-2xl font-bold text-gray-900">{products.filter(p => (p.status || 'active') === 'active').length}</p>
             </div>
             <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
               <Package className="w-6 h-6 text-green-600" />
@@ -299,7 +302,7 @@ export default function Products() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Price Drops</p>
-              <p className="text-2xl font-bold text-gray-900">{products.filter(p => p.priceChange < 0).length}</p>
+              <p className="text-2xl font-bold text-gray-900">{products.filter(p => (p.priceChange || 0) < 0).length}</p>
             </div>
             <div className="w-12 h-12 bg-red-50 rounded-lg flex items-center justify-center">
               <TrendingDown className="w-6 h-6 text-red-600" />
@@ -310,7 +313,7 @@ export default function Products() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Total Value</p>
-              <p className="text-2xl font-bold text-gray-900">${products.reduce((sum, p) => sum + p.currentPrice, 0).toLocaleString()}</p>
+              <p className="text-2xl font-bold text-gray-900">${products.reduce((sum, p) => sum + (p.currentPrice || p.price || 0), 0).toLocaleString()}</p>
             </div>
             <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center">
               <Package className="w-6 h-6 text-purple-600" />
