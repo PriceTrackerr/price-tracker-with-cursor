@@ -99,54 +99,220 @@ router.post('/signup', async (req: Request, res: Response) => {
 });
 
 // Login
+const ADMIN_EMAIL = 'realpricetracker94@gmail.com';
+const ADMIN_PASSWORD = 'admin123';
+
 router.post('/login', async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
-    console.log('Login attempt for email:', email);
+    console.log('🔐 Login attempt:', email);
+    console.log('📦 Request body:', JSON.stringify({ email, password: password ? '***' : undefined }));
 
     if (!email || !password) {
+      console.log('❌ Missing email or password');
       return res.status(400).json({ success: false, message: 'Email and password required' });
     }
 
+    // Try to sign in
     const { data, error } = await supabasePublic.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) {
-      console.log('Login error:', error.message);
+      console.log('❌ Login error:', error.message);
+      
+      // Fallback: Auto-create admin user if login fails and email matches admin email
+      if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+        console.log('🔄 Admin login failed, attempting to auto-create admin account...');
+        
+        try {
+          // Try to sign up - if user exists, signup will fail, but we'll know the account exists
+          const { data: signUpData, error: signUpError } = await supabasePublic.auth.signUp({
+            email: ADMIN_EMAIL,
+            password: ADMIN_PASSWORD,
+            options: {
+              data: { username: 'admin' },
+            },
+          });
+          
+          if (signUpError) {
+            // User might already exist - check if it's a "user already exists" error
+            if (signUpError.message?.toLowerCase().includes('already registered') || 
+                signUpError.message?.toLowerCase().includes('already exists') ||
+                signUpError.message?.toLowerCase().includes('user already registered')) {
+              console.log('⚠️ Admin user already exists in auth, password might be wrong or user needs to be created in users table');
+              // User exists in auth but login failed - might be password issue or missing users table entry
+              // Try to find user by attempting to get user from users table first
+              // Then try login one more time with the exact credentials
+              console.log('🔄 Retrying login with exact credentials...');
+              const { data: retryData, error: retryError } = await supabasePublic.auth.signInWithPassword({
+                email: ADMIN_EMAIL,
+                password: ADMIN_PASSWORD,
+              });
+              
+              if (!retryError && retryData) {
+                console.log('✅ Admin login successful on retry');
+                // Ensure user exists in users table
+                const { error: upsertError } = await supabasePublic
+                  .from(TABLES.USERS)
+                  .upsert({
+                    id: retryData.user!.id,
+                    email: ADMIN_EMAIL,
+                    username: 'admin',
+                    role: 'admin',
+                    notification_settings: { priceDrops: true, newProducts: true, weeklySummary: true },
+                    privacy_settings: { shareData: false, analytics: true },
+                    preferences: { currency: 'USD', language: 'en' },
+                    seen_price_drop_ids: [],
+                  }, { onConflict: 'id' });
+                
+                if (upsertError) {
+                  console.error('⚠️ Failed to upsert admin user:', upsertError);
+                }
+                
+                await supabasePublic.from(TABLES.USERS).update({ last_login: new Date().toISOString() }).eq('id', retryData.user!.id);
+                
+                const { data: userData } = await supabasePublic
+                  .from(TABLES.USERS)
+                  .select('*')
+                  .eq('id', retryData.user!.id)
+                  .single();
+                
+                return res.json({
+                  success: true,
+                  data: {
+                    user: { uid: retryData.user!.id, email: retryData.user!.email, username: userData?.username || 'admin' },
+                    token: retryData.session!.access_token,
+                    refreshToken: retryData.session!.refresh_token,
+                  },
+                  message: 'Login successful',
+                });
+              }
+            }
+            console.error('❌ Failed to create/admin admin account:', signUpError.message);
+          } else if (signUpData.user) {
+            // New admin account created successfully
+            console.log('✅ Admin account created in auth');
+            
+            // Create user record
+            const { error: insertError } = await supabasePublic.from(TABLES.USERS).insert({
+              id: signUpData.user.id,
+              email: ADMIN_EMAIL,
+              username: 'admin',
+              role: 'admin',
+              notification_settings: { priceDrops: true, newProducts: true, weeklySummary: true },
+              privacy_settings: { shareData: false, analytics: true },
+              preferences: { currency: 'USD', language: 'en' },
+              seen_price_drop_ids: [],
+            });
+            
+            if (insertError) {
+              console.error('❌ Failed to insert admin user:', insertError);
+            } else {
+              console.log('✅ Admin user record created');
+              // Try login immediately after signup
+              const { data: retryData, error: retryError } = await supabasePublic.auth.signInWithPassword({
+                email: ADMIN_EMAIL,
+                password: ADMIN_PASSWORD,
+              });
+              
+              if (!retryError && retryData) {
+                console.log('✅ Admin login successful after account creation');
+                await supabasePublic.from(TABLES.USERS).update({ last_login: new Date().toISOString() }).eq('id', retryData.user!.id);
+                
+                return res.json({
+                  success: true,
+                  data: {
+                    user: { uid: retryData.user!.id, email: retryData.user!.email, username: 'admin' },
+                    token: retryData.session!.access_token,
+                    refreshToken: retryData.session!.refresh_token,
+                  },
+                  message: 'Login successful',
+                });
+              }
+            }
+          }
+        } catch (fallbackError: any) {
+          console.error('❌ Fallback admin creation failed:', fallbackError?.message || fallbackError);
+        }
+      }
+      
       return res.status(400).json({ success: false, message: 'Invalid email or password' });
     }
 
+    // Login successful - fetch user data
     const { data: userData, error: userError } = await supabasePublic
       .from(TABLES.USERS)
       .select('*')
       .eq('id', data.user!.id)
       .single();
-    if (userError) {
-      handleSupabaseError(userError, 'fetch user');
+    
+    if (userError && userError.code !== 'PGRST116') {
+      // PGRST116 = no rows found - user might not exist in users table yet
+      console.log('⚠️ User not found in users table, creating record...');
+      
+      // Auto-create user record if missing
+      const { error: insertError } = await supabasePublic.from(TABLES.USERS).insert({
+        id: data.user!.id,
+        email: data.user!.email!,
+        username: data.user!.email!.split('@')[0],
+        role: data.user!.email === ADMIN_EMAIL ? 'admin' : 'user',
+        notification_settings: { priceDrops: true, newProducts: true, weeklySummary: true },
+        privacy_settings: { shareData: false, analytics: true },
+        preferences: { currency: 'USD', language: 'en' },
+        seen_price_drop_ids: [],
+      });
+      
+      if (insertError) {
+        console.error('❌ Failed to create user record:', insertError);
+        handleSupabaseError(insertError, 'insert user');
+      } else {
+        console.log('✅ User record created');
+        // Fetch the newly created user
+        const { data: newUserData } = await supabasePublic
+          .from(TABLES.USERS)
+          .select('*')
+          .eq('id', data.user!.id)
+          .single();
+        
+        const finalUserData = newUserData || { username: data.user!.email!.split('@')[0], role: 'user' };
+        
+        await supabasePublic.from(TABLES.USERS).update({ last_login: new Date().toISOString() }).eq('id', data.user!.id);
+        
+        console.log('✅ User logged in successfully:', data.user!.id);
+        return res.json({
+          success: true,
+          data: {
+            user: { uid: data.user!.id, email: data.user!.email, username: finalUserData.username },
+            token: data.session!.access_token,
+            refreshToken: data.session!.refresh_token,
+          },
+          message: 'Login successful',
+        });
+      }
     }
 
-    if (userData.role === 'banned') {
-      console.log('Banned user attempted login:', email);
+    if (userData && userData.role === 'banned') {
+      console.log('❌ Banned user attempted login:', email);
       return res.status(403).json({ success: false, message: 'Account has been suspended' });
     }
 
     // Update last login
     await supabasePublic.from(TABLES.USERS).update({ last_login: new Date().toISOString() }).eq('id', data.user!.id);
 
-    console.log('User logged in successfully:', data.user!.id);
+    console.log('✅ User logged in successfully:', data.user!.id);
     return res.json({
       success: true,
       data: {
-        user: { uid: data.user!.id, email: data.user!.email, username: userData.username },
+        user: { uid: data.user!.id, email: data.user!.email, username: userData?.username || data.user!.email!.split('@')[0] },
         token: data.session!.access_token,
         refreshToken: data.session!.refresh_token,
       },
       message: 'Login successful',
     });
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('❌ Login error:', error);
     const errorMessage = error instanceof Error ? error.message : String(error);
     return res.status(500).json({ success: false, message: 'Internal server error', error: errorMessage });
   }
