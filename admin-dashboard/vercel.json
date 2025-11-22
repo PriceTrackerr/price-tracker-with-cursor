@@ -6,6 +6,10 @@
     {
       "source": "/api/(.*)",
       "destination": "https://price-tracker-with-cursor-web-app-s.vercel.app/api/$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ],
   "headers": [

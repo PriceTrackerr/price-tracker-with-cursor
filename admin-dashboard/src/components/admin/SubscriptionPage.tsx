@@ -77,26 +77,77 @@ export function SubscriptionPage() {
     try {
       setLoading(true);
       
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
       // Fetch subscription plans
-      const plansResponse = await fetch(apiUrl('/api/payments/plans'));
+      const plansResponse = await fetch(apiUrl('/api/payments/plans'), { headers });
       if (plansResponse.ok) {
         const plansData = await plansResponse.json();
         if (plansData.success) {
-          setPlans(plansData.data.plans);
+          setPlans(plansData.data?.plans || []);
         }
       }
 
-      // For now, we'll use mock data for stats since backend doesn't have subscription stats yet
-      // TODO: Replace with real API calls when backend implements subscription statistics
+      // Fetch users to calculate subscription stats
+      const usersResponse = await fetch(apiUrl('/api/users'), { headers });
+      const usersData = usersResponse.ok ? await usersResponse.json() : { success: false, users: [] };
+      const users = usersData.users || usersData.data || [];
+      
+      // Fetch payments/transactions if endpoint exists
+      let payments: any[] = [];
+      try {
+        const paymentsResponse = await fetch(apiUrl('/api/payments'), { headers });
+        if (paymentsResponse.ok) {
+          const paymentsData = await paymentsResponse.json();
+          payments = paymentsData.data || paymentsData.payments || [];
+        }
+      } catch (e) {
+        console.warn('Payments endpoint not available');
+      }
+
+      // Calculate real stats
+      const totalRevenue = payments.reduce((sum: number, p: any) => {
+        const amount = typeof p.amount === 'number' ? p.amount : 0;
+        return sum + amount;
+      }, 0);
+      
+      // Count active subscriptions (users with premium/paid plans)
+      const activeSubscriptions = users.filter((u: any) => {
+        const role = u.role || 'user';
+        return role === 'premium' || role === 'admin' || (u.subscription_status === 'active');
+      }).length;
+      
+      // Calculate ARPU
+      const averageRevenuePerUser = activeSubscriptions > 0 
+        ? Math.round((totalRevenue / activeSubscriptions) * 100) / 100 
+        : 0;
+      
+      // Churn rate (mock for now - would need cancellation data)
+      const churnRate = 0;
+
       setSubscriptionStats({
-        totalRevenue: 0, // Will be calculated from actual transactions
-        activeSubscriptions: 0, // Will be calculated from active subscriptions
-        churnRate: 0, // Will be calculated from subscription cancellations
-        averageRevenuePerUser: 0 // Will be calculated from total revenue / active users
+        totalRevenue,
+        activeSubscriptions,
+        churnRate,
+        averageRevenuePerUser
       });
 
-      // Recent transactions - empty for now as requested
-      setRecentTransactions([]);
+      // Transform payments to transactions
+      const transactions: Transaction[] = payments.slice(0, 10).map((p: any) => ({
+        id: p.id || p._id || '',
+        user: p.user_email || p.user?.email || 'Unknown',
+        plan: p.plan_name || p.plan || 'Unknown',
+        amount: typeof p.amount === 'number' ? p.amount : 0,
+        date: p.created_at || p.date || new Date().toISOString(),
+        status: p.status === 'completed' ? 'completed' : p.status === 'failed' ? 'failed' : 'pending'
+      }));
+      
+      setRecentTransactions(transactions);
       
     } catch (error) {
       console.error('Error fetching subscription data:', error);

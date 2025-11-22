@@ -161,9 +161,32 @@ export function DashboardOverview() {
           }));
       };
 
-      // Calculate growth rates (mock data for now)
-      const userGrowth = totalUsers > 0 ? Math.round((totalUsers / 10) * 100) : 0;
-      const productGrowth = totalProducts > 0 ? Math.round((totalProducts / 20) * 100) : 0;
+      // Calculate growth rates from real data
+      const now = new Date();
+      const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+      
+      const usersLastMonth = users.success && users.users 
+        ? users.users.filter((u: any) => {
+            const created = new Date(u.created_at || u.createdAt);
+            return created < now && created >= lastMonth;
+          }).length
+        : 0;
+      
+      const productsLastMonth = products.success && products.data
+        ? products.data.filter((p: any) => {
+            const created = new Date(p.created_at || p.createdAt);
+            return created < now && created >= lastMonth;
+          }).length
+        : 0;
+      
+      const userGrowth = usersLastMonth > 0 
+        ? Math.round(((totalUsers - usersLastMonth) / usersLastMonth) * 100)
+        : totalUsers > 0 ? 100 : 0;
+      
+      const productGrowth = productsLastMonth > 0
+        ? Math.round(((totalProducts - productsLastMonth) / productsLastMonth) * 100)
+        : totalProducts > 0 ? 100 : 0;
+      
       const revenueGrowth = 0; // No revenue yet
 
         setDashboardData({

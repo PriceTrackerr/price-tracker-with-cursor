@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Badge } from "../ui/badge";
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useAuth } from "../AuthContext";
+import { apiUrl } from "../../utils/api";
 
 // Real data will be calculated from backend
 
@@ -42,8 +43,9 @@ export function AnalyticsPage() {
     // Group users by creation month
     const usersByMonth: { [key: string]: any[] } = {};
     usersData.forEach((user: any) => {
-      if (user.createdAt) {
-        const date = new Date(user.createdAt);
+      const createdAt = user.created_at || user.createdAt;
+      if (createdAt) {
+        const date = new Date(createdAt);
         const monthKey = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
         if (!usersByMonth[monthKey]) {
           usersByMonth[monthKey] = [];
@@ -90,8 +92,9 @@ export function AnalyticsPage() {
     const productsByWeek: { [key: string]: any } = {};
     
     productsData.forEach((product: any) => {
-      if (product.createdAt) {
-        const date = new Date(product.createdAt);
+      const createdAt = product.created_at || product.createdAt;
+      if (createdAt) {
+        const date = new Date(createdAt);
         const weekKey = `Week ${Math.ceil(date.getDate() / 7)}`;
         
         if (!productsByWeek[weekKey]) {
@@ -158,63 +161,66 @@ export function AnalyticsPage() {
     try {
       setLoading(true);
       
-      const fetchWithErrorHandling = async (url: string) => {
-        try {
-          const headers: HeadersInit = {};
-          if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-          }
-          
-          const response = await fetch(url, { headers });
-          if (!response.ok) {
-            console.warn(`Failed to fetch ${url}: ${response.status}`);
-            return { success: false, data: [] };
-          }
-          return await response.json();
-        } catch (error) {
-          console.warn(`Error fetching ${url}:`, error);
-          return { success: false, data: [] };
-        }
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
       };
-
-      const [users, products, alerts] = await Promise.all([
-        fetchWithErrorHandling('/api/users'),
-        fetchWithErrorHandling('/api/products/all'),
-        fetchWithErrorHandling('/api/alerts')
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      // Fetch all users and products for detailed analytics
+      const [usersRes, productsRes, alertsRes] = await Promise.all([
+        fetch(apiUrl('/api/users'), { headers }).catch(() => ({ ok: false, json: async () => ({ success: false, users: [] }) })),
+        fetch(apiUrl('/api/products/all'), { headers }).catch(() => ({ ok: false, json: async () => ({ success: false, data: [] }) })),
+        fetch(apiUrl('/api/alerts'), { headers }).catch(() => ({ ok: false, json: async () => ({ success: false, data: [] }) }))
       ]);
+      
+      const usersData = usersRes.ok ? await usersRes.json() : { success: false, users: [] };
+      const productsData = productsRes.ok ? await productsRes.json() : { success: false, data: [] };
+      const alertsData = alertsRes.ok ? await alertsRes.json() : { success: false, data: [] };
+      
+      const users = usersData.users || usersData.data || [];
+      const products = productsData.data || [];
+      const alerts = alertsData.data || [];
 
-      // Calculate analytics metrics
-      const totalUsers = users.success ? (users.users?.length || users.data?.length || 0) : 0;
-      const totalProducts = products.success ? (products.data?.length || 0) : 0;
-      const totalAlerts = alerts.success ? (alerts.data?.length || 0) : 0;
+      // Calculate analytics metrics from real data
+      const totalUsersCount = users.length || 0;
+      const totalProductsCount = products.length || 0;
+      const totalAlertsCount = alerts.length || 0;
       
       // Calculate triggered alerts (alerts where price reached target)
-      const triggeredAlerts = alerts.success ? 
-        (alerts.data || []).filter((alert: any) => {
-          // Check if current price is less than or equal to target price
-          return alert.currentPrice && alert.targetPrice && alert.currentPrice <= alert.targetPrice;
-        }).length : 0;
+      const triggeredAlerts = alerts.filter((alert: any) => {
+        return alert.currentPrice && alert.targetPrice && alert.currentPrice <= alert.targetPrice;
+      }).length;
 
       // Calculate metrics
-      const avgProductsPerUser = totalUsers > 0 ? Math.round((totalProducts / totalUsers) * 10) / 10 : 0;
-      const alertSuccessRate = totalAlerts > 0 ? Math.round((triggeredAlerts / totalAlerts) * 1000) / 10 : 0;
+      const avgProductsPerUser = totalUsersCount > 0 ? Math.round((totalProductsCount / totalUsersCount) * 10) / 10 : 0;
+      const alertSuccessRate = totalAlertsCount > 0 ? Math.round((triggeredAlerts / totalAlertsCount) * 1000) / 10 : 0;
       const arpu = 0; // No revenue yet
-      const userRetention = 100; // Since we only have 2 users, retention is 100%
+      
+      // Calculate user retention (users who logged in within last 30 days)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const activeUsers = users.filter((u: any) => {
+        const lastLogin = u.last_login ? new Date(u.last_login) : u.created_at ? new Date(u.created_at) : null;
+        return lastLogin && lastLogin >= thirtyDaysAgo;
+      }).length;
+      const userRetention = totalUsersCount > 0 ? Math.round((activeUsers / totalUsersCount) * 100) : 0;
 
-      // Calculate chart data
-      const userGrowthData = calculateUserGrowthData(users.success ? (users.users || users.data || []) : []);
+      // Calculate chart data from real data
+      const userGrowthData = calculateUserGrowthData(users);
       const revenueBreakdown = calculateRevenueBreakdown();
-      const productTrackingData = calculateProductTrackingData(products.success ? (products.data || []) : []);
-      const platformPopularity = calculatePlatformPopularity(products.success ? (products.data || []) : []);
+      const productTrackingData = calculateProductTrackingData(products);
+      const platformPopularity = calculatePlatformPopularity(products);
 
       setAnalyticsData({
         avgProductsPerUser,
         alertSuccessRate,
         arpu,
         userRetention,
-        totalUsers,
-        totalProducts,
-        totalAlerts,
+        totalUsers: totalUsersCount,
+        totalProducts: totalProductsCount,
+        totalAlerts: totalAlertsCount,
         triggeredAlerts
       });
 
