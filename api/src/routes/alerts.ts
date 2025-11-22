@@ -24,6 +24,40 @@ interface Alert {
 router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.uid;
+    
+    // Check if user is admin - if so, return all alerts
+    const { supabase, supabasePublic, TABLES } = await import('../config/supabase');
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (token) {
+      const { data: { user: authUser } } = await supabasePublic.auth.getUser(token);
+      if (authUser) {
+        const { data: userData } = await supabasePublic
+          .from(TABLES.USERS)
+          .select('role')
+          .eq('id', authUser.id)
+          .single();
+        
+        if (userData?.role === 'admin') {
+          // Admin: Get all alerts
+          const { data: allAlerts, error: alertsError } = await supabase
+            .from(TABLES.ALERTS)
+            .select('*')
+            .order('created_at', { ascending: false });
+          
+          if (alertsError) {
+            console.error('Error fetching all alerts:', alertsError);
+            // Fallback to user's alerts
+            const alerts = await db.getAlerts(userId);
+            return res.json({ success: true, data: alerts });
+          }
+          
+          return res.json({ success: true, data: allAlerts || [] });
+        }
+      }
+    }
+    
+    // Regular user: Get only their alerts
     const alerts = await db.getAlerts(userId);
     return res.json({ success: true, data: alerts });
   } catch (error: unknown) {

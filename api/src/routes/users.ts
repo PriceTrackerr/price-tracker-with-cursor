@@ -298,10 +298,17 @@ router.post('/login', async (req: Request, res: Response) => {
       return res.status(403).json({ success: false, message: 'Account has been suspended' });
     }
 
+    // Ensure admin email has admin role
+    if (data.user!.email === ADMIN_EMAIL && userData && userData.role !== 'admin') {
+      console.log('🔧 Updating admin user role to admin');
+      await supabasePublic.from(TABLES.USERS).update({ role: 'admin' }).eq('id', data.user!.id);
+      userData.role = 'admin';
+    }
+    
     // Update last login
     await supabasePublic.from(TABLES.USERS).update({ last_login: new Date().toISOString() }).eq('id', data.user!.id);
 
-    console.log('✅ User logged in successfully:', data.user!.id);
+    console.log('✅ User logged in successfully:', data.user!.id, 'Role:', userData?.role || 'user');
     return res.json({
       success: true,
       data: {

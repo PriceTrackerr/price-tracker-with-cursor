@@ -629,32 +629,74 @@ router.get('/filters', authMiddleware, async (req: AuthRequest, res: Response) =
 // Admin: Get all tracked products
 router.get('/all', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    // Get current user
-    const user = await db.getUserById(req.user!.uid) as UserWithRole | undefined;
-    if (!user || user.role !== 'admin') {
+    // Check if user is admin using Supabase
+    const { supabase, supabasePublic, TABLES } = await import('../config/supabase');
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (!token) {
+      return res.status(401).json({ success: false, message: 'Missing token' });
+    }
+
+    const { data: { user: authUser }, error: authError } = await supabasePublic.auth.getUser(token);
+    if (authError || !authUser) {
+      return res.status(401).json({ success: false, message: 'Invalid token' });
+    }
+
+    const { data: userData, error: userError } = await supabasePublic
+      .from(TABLES.USERS)
+      .select('*')
+      .eq('id', authUser.id)
+      .single();
+    
+    if (userError || !userData || userData.role !== 'admin') {
       return res.status(403).json({ success: false, message: 'Forbidden: Admins only' });
     }
     
-    // Get all products using the readData method
-    const data = (db as any).readData();
-    const products: any[] = data.products || [];
-    const users: any[] = data.users || [];
+    // Get all products from Supabase
+    const { data: products, error: productsError } = await supabase
+      .from(TABLES.PRODUCTS)
+      .select('*')
+      .order('created_at', { ascending: false });
     
-    // Ensure every product has an id and include user information
-    const productsWithIds = products.map((p, i) => {
-      const productUser = users.find(u => u.id === p.userId);
-      return { 
-        ...p, 
-        id: p.id || `fallback_${i}`,
+    if (productsError) {
+      console.error('Error fetching products:', productsError);
+      return res.status(500).json({ success: false, message: 'Failed to fetch products' });
+    }
+    
+    // Get all users to map user info
+    const { data: users, error: usersError } = await supabase
+      .from(TABLES.USERS)
+      .select('id, email, username');
+    
+    if (usersError) {
+      console.warn('Error fetching users for product mapping:', usersError);
+    }
+    
+    // Map products and include user information
+    const productsWithUsers = (products || []).map((p: any) => {
+      const productUser = users?.find((u: any) => u.id === p.user_id);
+      return {
+        id: p.id,
+        title: p.title,
+        price: p.price,
+        currency: p.currency || 'USD',
+        platform: p.platform,
+        url: p.url,
+        imageUrl: p.image_url,
+        stockStatus: p.stock_status || 'unknown',
+        createdAt: p.created_at,
+        updatedAt: p.updated_at,
+        userId: p.user_id,
+        totalMatches: p.total_matches || 0,
         user: productUser ? {
           email: productUser.email,
-          name: productUser.name || productUser.username
+          name: productUser.username || productUser.email?.split('@')[0]
         } : undefined
       };
     });
     
-    return res.json({ success: true, data: productsWithIds });
+    return res.json({ success: true, data: productsWithUsers });
   } catch (error) {
+    console.error('Error in /all endpoint:', error);
     return res.status(500).json({ success: false, message: 'Failed to fetch all products' });
   }
 });
