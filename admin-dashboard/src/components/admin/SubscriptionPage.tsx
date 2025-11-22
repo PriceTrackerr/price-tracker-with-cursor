@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { apiUrl } from "../../utils/api";
 import { CreditCard, Users, DollarSign, TrendingUp, Crown, Star, Check, Plus, Edit, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Badge } from "../ui/badge";
@@ -77,7 +78,7 @@ export function SubscriptionPage() {
       setLoading(true);
       
       // Fetch subscription plans
-      const plansResponse = await fetch('/api/payments/plans');
+      const plansResponse = await fetch(apiUrl('/api/payments/plans'));
       if (plansResponse.ok) {
         const plansData = await plansResponse.json();
         if (plansData.success) {
@@ -128,7 +129,7 @@ export function SubscriptionPage() {
 
       // Create primary plan (respect selected interval)
       {
-        const res = await fetch('/api/payments/plans', {
+        const res = await fetch(apiUrl('/api/payments/plans'), {
           method: 'POST',
           headers: authHeaders,
           body: JSON.stringify({ ...payloadBase, interval: newPlan.interval, price: newPlan.price })
@@ -143,7 +144,7 @@ export function SubscriptionPage() {
 
       // Optionally create yearly counterpart
       if (createYearly && typeof newPlanYearlyPrice === 'number' && newPlanYearlyPrice > 0) {
-        const res2 = await fetch('/api/payments/plans', {
+        const res2 = await fetch(apiUrl('/api/payments/plans'), {
           method: 'POST',
           headers: authHeaders,
           body: JSON.stringify({ ...payloadBase, interval: 'yearly', price: newPlanYearlyPrice })
@@ -177,7 +178,7 @@ export function SubscriptionPage() {
         features: editingPlan.features
       };
 
-      const res = await fetch(`/api/payments/plans/${editingPlan.id}`, {
+      const res = await fetch(apiUrl(`/api/payments/plans/${editingPlan.id}`), {
         method: 'PUT',
         headers: authHeaders,
         body: JSON.stringify(payload)
@@ -202,7 +203,7 @@ export function SubscriptionPage() {
     if (!confirm('Are you sure you want to delete this plan?')) return;
     
     try {
-      const res = await fetch(`/api/payments/plans/${planId}`, {
+      const res = await fetch(apiUrl(`/api/payments/plans/${planId}`), {
         method: 'DELETE',
         headers: authHeaders
       });

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { apiUrl } from '../../utils/api';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -41,7 +42,7 @@ export function ProductsPage({ onNavigateToPage }: ProductsPageProps) {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/products/all', {
+      const response = await fetch(apiUrl('/api/products/all'), {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -69,7 +70,7 @@ export function ProductsPage({ onNavigateToPage }: ProductsPageProps) {
 
   const handleDeleteProduct = async (productId: string) => {
     try {
-      const response = await fetch(`/api/products/${productId}`, {
+      const response = await fetch(apiUrl(`/api/products/${productId}`), {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

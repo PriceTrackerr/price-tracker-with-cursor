@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { apiUrl } from "../../utils/api";
 import { Search, Filter, UserPlus, Ban, Shield, User, MoreHorizontal } from "lucide-react";
 import { useAuth } from "../AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
@@ -42,7 +43,7 @@ export function UsersPage() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/users', {
+      const response = await fetch(apiUrl('/api/users'), {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -57,7 +58,7 @@ export function UsersPage() {
 
       // Transform user data to match our interface
       // Get products data to count tracked products per user
-      const productsResponse = await fetch('/api/products/all', {
+      const productsResponse = await fetch(apiUrl('/api/products/all'), {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -100,7 +101,7 @@ export function UsersPage() {
       if (!user) return;
 
       const endpoint = user.status === 'banned' ? 'unban' : 'ban';
-      const response = await fetch(`/api/users/${userId}/${endpoint}`, {
+      const response = await fetch(apiUrl(`/api/users/${userId}/${endpoint}`), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -136,7 +137,7 @@ export function UsersPage() {
 
   const handleDeleteUser = async (userId: string) => {
     try {
-      const response = await fetch(`/api/users/${userId}/delete`, {
+      const response = await fetch(apiUrl(`/api/users/${userId}/delete`), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -173,7 +174,7 @@ export function UsersPage() {
 
   const handleUpdateUser = async (updatedUser: User) => {
     try {
-      const response = await fetch(`/api/users/${updatedUser.id}`, {
+      const response = await fetch(apiUrl(`/api/users/${updatedUser.id}`), {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -199,7 +200,7 @@ export function UsersPage() {
 
   const handleAddUser = async (userData: { email: string; password: string; name?: string; role: string }) => {
     try {
-      const response = await fetch('/api/users/signup', {
+      const response = await fetch(apiUrl('/api/users/signup'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

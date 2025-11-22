@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://YOUR_BACKEND_URL.vercel.app/api/$1"
+      "destination": "https://price-tracker-with-cursor-web-app-s.vercel.app/api/$1"
     }
   ],
   "headers": [
@@ -28,6 +28,6 @@
     }
   ],
   "env": {
-    "VITE_API_URL": "https://your-backend-domain.vercel.app"
+    "VITE_API_URL": "https://price-tracker-with-cursor-web-app-s.vercel.app"
   }
 }

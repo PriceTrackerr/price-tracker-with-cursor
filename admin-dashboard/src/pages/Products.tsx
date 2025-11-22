@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Package, Search, Filter, MoreHorizontal, ExternalLink, TrendingDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../components/AuthContext';
+import { apiUrl } from '../utils/api';
 
 interface Product {
   id: string;
@@ -41,7 +42,7 @@ export default function Products() {
       let adminToken = token;
       if (!adminToken) {
         try {
-          const loginResponse = await fetch('/api/users/login', {
+          const loginResponse = await fetch(apiUrl('/api/users/login'), {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -68,7 +69,7 @@ export default function Products() {
         throw new Error('No admin token available');
       }
 
-      const response = await fetch('/api/products/all', {
+      const response = await fetch(apiUrl('/api/products/all'), {
         headers: {
           'Authorization': `Bearer ${adminToken}`
         }

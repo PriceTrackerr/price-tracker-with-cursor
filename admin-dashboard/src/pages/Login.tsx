@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Lock, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../components/AuthContext';
+import { apiUrl } from '../utils/api';
 
 export default function Login() {
   const [loading, setLoading] = useState(false);
@@ -31,7 +32,7 @@ export default function Login() {
     try {
       console.log('Attempting login with:', { email, password });
       
-      const response = await fetch('/api/users/login', {
+      const response = await fetch(apiUrl('/api/users/login'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

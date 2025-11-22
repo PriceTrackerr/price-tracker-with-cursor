@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Users as UsersIcon, Search, Filter, MoreHorizontal, Mail, Calendar, Eye, Edit, Trash2, Ban } from 'lucide-react';
 import { useAuth } from '../components/AuthContext';
+import { apiUrl } from '../utils/api';
 
 interface User {
   id: string;
@@ -30,7 +31,7 @@ export default function Users() {
       let adminToken = token;
       if (!adminToken) {
         try {
-          const loginResponse = await fetch('/api/users/login', {
+          const loginResponse = await fetch(apiUrl('/api/users/login'), {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -57,7 +58,7 @@ export default function Users() {
         throw new Error('No admin token available');
       }
 
-      const response = await fetch('/api/users', {
+      const response = await fetch(apiUrl('/api/users'), {
         headers: {
           'Authorization': `Bearer ${adminToken}`
         }

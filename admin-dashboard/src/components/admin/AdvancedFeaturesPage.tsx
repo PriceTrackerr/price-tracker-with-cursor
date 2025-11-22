@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiUrl } from '../../utils/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Badge } from '../ui/badge';
@@ -98,7 +99,7 @@ const AdvancedFeaturesPage: React.FC = () => {
       setLoading(true);
       
       // Try to fetch real data from API
-      const response = await fetch('http://localhost:3001/api/advanced/admin/dashboard-stats', {
+      const response = await fetch(apiUrl('/api/advanced/admin/dashboard-stats'), {
         headers: {
           'Authorization': 'Bearer demo-admin-token'
         }

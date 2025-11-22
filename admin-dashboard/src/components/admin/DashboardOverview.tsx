@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { apiUrl } from '../../utils/api';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
@@ -86,9 +87,9 @@ export function DashboardOverview() {
       };
 
       const [users, products, alerts] = await Promise.all([
-        fetchWithErrorHandling('/api/users'),
-        fetchWithErrorHandling('/api/products/all'),
-        fetchWithErrorHandling('/api/alerts')
+        fetchWithErrorHandling(apiUrl('/api/users')),
+        fetchWithErrorHandling(apiUrl('/api/products/all')),
+        fetchWithErrorHandling(apiUrl('/api/alerts'))
       ]);
 
       // Since /api/payments doesn't have a GET endpoint, we'll use mock data
