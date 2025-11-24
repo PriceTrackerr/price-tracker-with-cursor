@@ -141,7 +141,7 @@ export function AdminDashboard() {
   return (
     <div className="flex h-screen bg-background">
       {/* Desktop Sidebar */}
-      <div className="hidden lg:flex lg:flex-col lg:w-64 bg-sidebar border-r" style={{ borderColor: '#E5E5E5' }}>
+      <div className="hidden lg:flex lg:flex-col lg:w-64 bg-white border-r" style={{ borderColor: '#E5E5E5' }}>
         <SidebarContent />
       </div>
 
@@ -157,7 +157,7 @@ export function AdminDashboard() {
                     <Menu size={20} />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-64 p-0 bg-sidebar">
+                <SheetContent side="left" className="w-64 p-0 bg-white">
                   <SidebarContent />
                 </SheetContent>
               </Sheet>
