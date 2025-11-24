@@ -762,7 +762,7 @@ router.post('/:userId/ban', authMiddleware, async (req: AuthRequest, res: Respon
       return res.status(400).json({ success: false, message: 'User ID is required' });
     }
 
-    const { data: targetUser, error: targetError } = await supabasePublic
+    const { data: targetUser, error: targetError } = await supabase
       .from(TABLES.USERS)
       .select('*')
       .eq('id', userId)
@@ -800,7 +800,7 @@ router.post('/:userId/unban', authMiddleware, async (req: AuthRequest, res: Resp
       return res.status(400).json({ success: false, message: 'User ID is required' });
     }
 
-    const { data: targetUser, error: targetError } = await supabasePublic
+    const { data: targetUser, error: targetError } = await supabase
       .from(TABLES.USERS)
       .select('*')
       .eq('id', userId)
@@ -831,7 +831,7 @@ router.post('/:userId/promote', authMiddleware, async (req: AuthRequest, res: Re
       return res.status(400).json({ success: false, message: 'User ID is required' });
     }
 
-    const { data: targetUser, error: targetError } = await supabasePublic
+    const { data: targetUser, error: targetError } = await supabase
       .from(TABLES.USERS)
       .select('*')
       .eq('id', userId)
@@ -862,7 +862,7 @@ router.post('/:userId/delete', authMiddleware, async (req: AuthRequest, res: Res
       return res.status(400).json({ success: false, message: 'User ID is required' });
     }
 
-    const { data: targetUser, error: targetError } = await supabasePublic
+    const { data: targetUser, error: targetError } = await supabase
       .from(TABLES.USERS)
       .select('*')
       .eq('id', userId)
