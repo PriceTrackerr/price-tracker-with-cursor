@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { apiUrl } from '../../utils/api';
+import { apiClient } from '../../lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
@@ -67,29 +67,19 @@ export function DashboardOverview() {
       setLoading(true);
       
       // Fetch all data in parallel with error handling
-      const fetchWithErrorHandling = async (url: string) => {
+      const fetchWithErrorHandling = async (endpoint: string) => {
         try {
-          const headers: HeadersInit = {};
-          if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-          }
-          
-          const response = await fetch(url, { headers });
-          if (!response.ok) {
-            console.warn(`Failed to fetch ${url}: ${response.status}`);
-            return { success: false, data: [] };
-          }
-          return await response.json();
+          return await apiClient.get(endpoint);
         } catch (error) {
-          console.warn(`Error fetching ${url}:`, error);
+          console.warn(`Error fetching ${endpoint}:`, error);
           return { success: false, data: [] };
         }
       };
 
       const [users, products, alerts] = await Promise.all([
-        fetchWithErrorHandling(apiUrl('/api/users')),
-        fetchWithErrorHandling(apiUrl('/api/products/all')),
-        fetchWithErrorHandling(apiUrl('/api/alerts'))
+        fetchWithErrorHandling('/api/users'),
+        fetchWithErrorHandling('/api/products/all'),
+        fetchWithErrorHandling('/api/alerts')
       ]);
 
       // Since /api/payments doesn't have a GET endpoint, we'll use mock data

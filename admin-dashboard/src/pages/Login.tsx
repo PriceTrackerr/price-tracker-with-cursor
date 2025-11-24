@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Lock, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../components/AuthContext';
-import { apiUrl } from '../utils/api';
+import { apiClient, setStoredToken } from '../lib/api';
 
 export default function Login() {
   const [loading, setLoading] = useState(false);
@@ -32,23 +32,16 @@ export default function Login() {
     try {
       console.log('Attempting login with:', { email, password });
       
-      const response = await fetch(apiUrl('/api/users/login'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
+      const data = await apiClient.post('/api/users/login', { email, password }, { requireAuth: false });
       console.log('Login response:', data);
 
-      if (response.ok && data.success) {
+      if (data.success) {
         const token = data.data?.token;
         console.log('Extracted token:', token);
         if (token) {
           console.log('Login: Calling login function with token:', token);
           login(token);
+          setStoredToken(token);
           // Navigation will be handled by the useEffect
         } else {
           setError('No token received from server');

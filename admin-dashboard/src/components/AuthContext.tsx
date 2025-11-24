@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { clearStoredToken, getStoredToken, setStoredToken } from '../lib/api';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -15,7 +16,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const stored = localStorage.getItem('admin_token');
+    const stored = getStoredToken();
     console.log('AuthContext: Stored token:', stored);
     if (stored) setToken(stored);
     setLoading(false);
@@ -24,12 +25,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = (newToken: string) => {
     console.log('AuthContext: Setting token:', newToken);
     setToken(newToken);
-    localStorage.setItem('admin_token', newToken);
+    setStoredToken(newToken);
   };
 
   const logout = () => {
     setToken(null);
-    localStorage.removeItem('admin_token');
+    clearStoredToken();
   };
 
   const isAuthenticated = !!token;

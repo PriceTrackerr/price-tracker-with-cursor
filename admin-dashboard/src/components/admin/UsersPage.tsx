@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { apiUrl } from "../../utils/api";
+import { apiClient } from "../../lib/api";
 import { Search, Filter, UserPlus, Ban, Shield, User, MoreHorizontal } from "lucide-react";
 import { useAuth } from "../AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
@@ -43,28 +43,12 @@ export function UsersPage() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await fetch(apiUrl('/api/users'), {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch users');
-      }
-
-      const data = await response.json();
+      const data = await apiClient.get('/api/users');
       const usersData = data.users || data.data || [];
 
       // Transform user data to match our interface
       // Get products data to count tracked products per user
-      const productsResponse = await fetch(apiUrl('/api/products/all'), {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      const productsData = await productsResponse.json();
+      const productsData = await apiClient.get('/api/products/all');
       const products = productsData.data || [];
 
       // Count products per user
@@ -101,18 +85,7 @@ export function UsersPage() {
       if (!user) return;
 
       const endpoint = user.status === 'banned' ? 'unban' : 'ban';
-      const response = await fetch(apiUrl(`/api/users/${userId}/${endpoint}`), {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update user status');
-      }
+      await apiClient.post(`/api/users/${userId}/${endpoint}`);
 
       // Update local state - sync with backend role
       setUsers(users.map(user => 
@@ -137,18 +110,7 @@ export function UsersPage() {
 
   const handleDeleteUser = async (userId: string) => {
     try {
-      const response = await fetch(apiUrl(`/api/users/${userId}/delete`), {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to delete user');
-      }
+      await apiClient.post(`/api/users/${userId}/delete`);
 
       // Update local state
       setUsers(users.filter(user => user.id !== userId));
@@ -174,18 +136,7 @@ export function UsersPage() {
 
   const handleUpdateUser = async (updatedUser: User) => {
     try {
-      const response = await fetch(apiUrl(`/api/users/${updatedUser.id}`), {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(updatedUser)
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update user');
-      }
+      await apiClient.put(`/api/users/${updatedUser.id}`, updatedUser);
 
       // Update local state
       setUsers(users.map(user => 
@@ -200,20 +151,7 @@ export function UsersPage() {
 
   const handleAddUser = async (userData: { email: string; password: string; name?: string; role: string }) => {
     try {
-      const response = await fetch(apiUrl('/api/users/signup'), {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(userData)
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create user');
-      }
-
-      const data = await response.json();
+      const data = await apiClient.post('/api/users/signup', userData);
       
       // Add new user to local state
       const newUser: User = {

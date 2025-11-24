@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { apiUrl } from '../../utils/api';
+import { apiClient } from '../../lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -42,18 +42,7 @@ export function ProductsPage({ onNavigateToPage }: ProductsPageProps) {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const response = await fetch(apiUrl('/api/products/all'), {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch products');
-      }
-
-      const data = await response.json();
+      const data = await apiClient.get('/api/products/all');
       setProducts(data.data || []);
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -70,17 +59,7 @@ export function ProductsPage({ onNavigateToPage }: ProductsPageProps) {
 
   const handleDeleteProduct = async (productId: string) => {
     try {
-      const response = await fetch(apiUrl(`/api/products/${productId}`), {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete product');
-      }
+      await apiClient.delete(`/api/products/${productId}`);
 
       // Update local state
       setProducts(products.filter(product => product.id !== productId));

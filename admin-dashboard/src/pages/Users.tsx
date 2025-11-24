@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Users as UsersIcon, Search, Filter, MoreHorizontal, Mail, Calendar, Eye, Edit, Trash2, Ban } from 'lucide-react';
 import { useAuth } from '../components/AuthContext';
-import { apiUrl } from '../utils/api';
+import { apiClient } from '../lib/api';
 
 interface User {
   id: string;
@@ -27,48 +27,7 @@ export default function Users() {
       setLoading(true);
       setError(null);
       
-      // First, try to login as admin if we don't have a token
-      let adminToken = token;
-      if (!adminToken) {
-        try {
-          const loginResponse = await fetch(apiUrl('/api/users/login'), {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              email: 'realpricetracker94@gmail.com',
-              password: 'admin123' // You'll need to update this with the correct password
-            }),
-          });
-          
-          if (loginResponse.ok) {
-            const loginData = await loginResponse.json();
-            if (loginData.success && loginData.data?.token) {
-              adminToken = loginData.data.token;
-              console.log('Admin login successful');
-            }
-          }
-        } catch (error) {
-          console.warn('Admin login failed:', error);
-        }
-      }
-
-      if (!adminToken) {
-        throw new Error('No admin token available');
-      }
-
-      const response = await fetch(apiUrl('/api/users'), {
-        headers: {
-          'Authorization': `Bearer ${adminToken}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch users: ${response.status}`);
-      }
-
-      const data = await response.json();
+      const data = await apiClient.get('/api/users');
       console.log('Users data:', data);
 
       if (data.success && data.users) {

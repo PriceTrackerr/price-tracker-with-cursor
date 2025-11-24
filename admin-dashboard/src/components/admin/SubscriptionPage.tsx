@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { apiUrl } from "../../utils/api";
+import { apiClient } from "../../lib/api";
 import { CreditCard, Users, DollarSign, TrendingUp, Crown, Star, Check, Plus, Edit, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Badge } from "../ui/badge";
@@ -9,7 +9,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { useAuth } from "../AuthContext";
 
 interface SubscriptionPlan {
   id: string;
@@ -43,7 +42,6 @@ interface Transaction {
 }
 
 export function SubscriptionPage() {
-  const { token } = useAuth();
   const [subscriptionStats, setSubscriptionStats] = useState<SubscriptionStats>({
     totalRevenue: 0,
     activeSubscriptions: 0,
@@ -77,35 +75,30 @@ export function SubscriptionPage() {
     try {
       setLoading(true);
       
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json',
+      const safeFetch = async (endpoint: string) => {
+        try {
+          return await apiClient.get(endpoint);
+        } catch (error) {
+          console.warn(`Failed to fetch ${endpoint}:`, error);
+          return { success: false, data: [] };
+        }
       };
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
       
       // Fetch subscription plans
-      const plansResponse = await fetch(apiUrl('/api/payments/plans'), { headers });
-      if (plansResponse.ok) {
-        const plansData = await plansResponse.json();
-        if (plansData.success) {
-          setPlans(plansData.data?.plans || []);
-        }
+      const plansResponse = await safeFetch('/api/payments/plans');
+      if (plansResponse.success) {
+        setPlans(plansResponse.data?.plans || []);
       }
 
       // Fetch users to calculate subscription stats
-      const usersResponse = await fetch(apiUrl('/api/users'), { headers });
-      const usersData = usersResponse.ok ? await usersResponse.json() : { success: false, users: [] };
-      const users = usersData.users || usersData.data || [];
+      const usersResponse = await safeFetch('/api/users');
+      const users = usersResponse.users || usersResponse.data || [];
       
       // Fetch payments/transactions if endpoint exists
       let payments: any[] = [];
       try {
-        const paymentsResponse = await fetch(apiUrl('/api/payments'), { headers });
-        if (paymentsResponse.ok) {
-          const paymentsData = await paymentsResponse.json();
-          payments = paymentsData.data || paymentsData.payments || [];
-        }
+        const paymentsResponse = await safeFetch('/api/payments');
+        payments = paymentsResponse.data || paymentsResponse.payments || [];
       } catch (e) {
         console.warn('Payments endpoint not available');
       }
@@ -156,11 +149,6 @@ export function SubscriptionPage() {
     }
   };
 
-  const authHeaders: HeadersInit = {
-    'Content-Type': 'application/json',
-    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-  };
-
   const handleCreatePlan = async () => {
     try {
       // Always create monthly or yearly based on interval
@@ -180,30 +168,21 @@ export function SubscriptionPage() {
 
       // Create primary plan (respect selected interval)
       {
-        const res = await fetch(apiUrl('/api/payments/plans'), {
-          method: 'POST',
-          headers: authHeaders,
-          body: JSON.stringify({ ...payloadBase, interval: newPlan.interval, price: newPlan.price })
+        const j = await apiClient.post('/api/payments/plans', {
+          ...payloadBase,
+          interval: newPlan.interval,
+          price: newPlan.price
         });
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          throw new Error(err.message || 'Failed to create plan');
-        }
-        const j = await res.json();
         if (j?.data?.plan?.id) createdIds.push(j.data.plan.id);
       }
 
       // Optionally create yearly counterpart
       if (createYearly && typeof newPlanYearlyPrice === 'number' && newPlanYearlyPrice > 0) {
-        const res2 = await fetch(apiUrl('/api/payments/plans'), {
-          method: 'POST',
-          headers: authHeaders,
-          body: JSON.stringify({ ...payloadBase, interval: 'yearly', price: newPlanYearlyPrice })
+        await apiClient.post('/api/payments/plans', {
+          ...payloadBase,
+          interval: 'yearly',
+          price: newPlanYearlyPrice
         });
-        if (!res2.ok) {
-          const err = await res2.json().catch(() => ({}));
-          throw new Error(err.message || 'Failed to create yearly plan');
-        }
       }
 
       await fetchSubscriptionData();
@@ -229,16 +208,7 @@ export function SubscriptionPage() {
         features: editingPlan.features
       };
 
-      const res = await fetch(apiUrl(`/api/payments/plans/${editingPlan.id}`), {
-        method: 'PUT',
-        headers: authHeaders,
-        body: JSON.stringify(payload)
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || 'Failed to update plan');
-      }
+      await apiClient.put(`/api/payments/plans/${editingPlan.id}`, payload);
 
       await fetchSubscriptionData();
       setShowEditPlanDialog(false);
@@ -254,15 +224,7 @@ export function SubscriptionPage() {
     if (!confirm('Are you sure you want to delete this plan?')) return;
     
     try {
-      const res = await fetch(apiUrl(`/api/payments/plans/${planId}`), {
-        method: 'DELETE',
-        headers: authHeaders
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || 'Failed to delete plan');
-      }
+      await apiClient.delete(`/api/payments/plans/${planId}`);
 
       await fetchSubscriptionData();
       alert('Plan deleted successfully');

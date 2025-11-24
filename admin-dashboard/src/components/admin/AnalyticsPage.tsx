@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Badge } from "../ui/badge";
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useAuth } from "../AuthContext";
-import { apiUrl } from "../../utils/api";
+import { apiClient } from "../../lib/api";
 
 // Real data will be calculated from backend
 
@@ -161,27 +161,24 @@ export function AnalyticsPage() {
     try {
       setLoading(true);
       
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json',
+      const fetchSafe = async (endpoint: string) => {
+        try {
+          return await apiClient.get(endpoint);
+        } catch (error) {
+          console.warn(`Failed to fetch ${endpoint}:`, error);
+          return { success: false, data: [] };
+        }
       };
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
       
-      // Fetch all users and products for detailed analytics
-      const [usersRes, productsRes, alertsRes] = await Promise.all([
-        fetch(apiUrl('/api/users'), { headers }).catch(() => ({ ok: false, json: async () => ({ success: false, users: [] }) })),
-        fetch(apiUrl('/api/products/all'), { headers }).catch(() => ({ ok: false, json: async () => ({ success: false, data: [] }) })),
-        fetch(apiUrl('/api/alerts'), { headers }).catch(() => ({ ok: false, json: async () => ({ success: false, data: [] }) }))
+      const [usersPayload, productsPayload, alertsPayload] = await Promise.all([
+        fetchSafe('/api/users'),
+        fetchSafe('/api/products/all'),
+        fetchSafe('/api/alerts')
       ]);
       
-      const usersData = usersRes.ok ? await usersRes.json() : { success: false, users: [] };
-      const productsData = productsRes.ok ? await productsRes.json() : { success: false, data: [] };
-      const alertsData = alertsRes.ok ? await alertsRes.json() : { success: false, data: [] };
-      
-      const users = usersData.users || usersData.data || [];
-      const products = productsData.data || [];
-      const alerts = alertsData.data || [];
+      const users = usersPayload?.users || usersPayload?.data || [];
+      const products = productsPayload?.data || [];
+      const alerts = alertsPayload?.data || [];
 
       // Calculate analytics metrics from real data
       const totalUsersCount = users.length || 0;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { apiUrl } from '../../utils/api';
+import { apiClient } from '../../lib/api';
 import { useAuth } from '../AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
@@ -102,25 +102,23 @@ const AdvancedFeaturesPage: React.FC = () => {
     try {
       setLoading(true);
       
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json',
+      const fetchSafe = async (endpoint: string) => {
+        try {
+          return await apiClient.get(endpoint);
+        } catch (error) {
+          console.warn(`Failed to fetch ${endpoint}:`, error);
+          return { success: false, data: [] };
+        }
       };
-      const { token } = useAuth();
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
       
       // Fetch real data from multiple endpoints
-      const [productsRes, usersRes] = await Promise.all([
-        fetch(apiUrl('/api/products/all'), { headers }).catch(() => ({ ok: false, json: async () => ({ success: false, data: [] }) })),
-        fetch(apiUrl('/api/users'), { headers }).catch(() => ({ ok: false, json: async () => ({ success: false, users: [] }) }))
+      const [productsPayload, usersPayload] = await Promise.all([
+        fetchSafe('/api/products/all'),
+        fetchSafe('/api/users')
       ]);
       
-      const productsData = productsRes.ok ? await productsRes.json() : { success: false, data: [] };
-      const usersData = usersRes.ok ? await usersRes.json() : { success: false, users: [] };
-      
-      const products = productsData.data || [];
-      const users = usersData.users || usersData.data || [];
+      const products = productsPayload?.data || [];
+      const users = usersPayload?.users || usersPayload?.data || [];
       
       // Calculate real metrics from actual data
       const totalProducts = products.length;
