@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { CheckCircle } from 'lucide-react';
 import { useAuth } from '../components/AuthContext';
 
 interface SubscriptionPlan {
@@ -16,6 +18,65 @@ interface SubscriptionPlan {
   };
 }
 
+const DEFAULT_PLANS: SubscriptionPlan[] = [
+  {
+    id: 'basic_monthly',
+    name: 'Basic Monthly',
+    price: 3,
+    currency: 'USD',
+    interval: 'monthly',
+    features: {
+      maxTrackedProducts: 50,
+      alertFrequency: 'daily',
+      priceHistoryDays: 60,
+      exportData: false,
+      prioritySupport: false,
+    },
+  },
+  {
+    id: 'basic_yearly',
+    name: 'Basic Yearly',
+    price: 30,
+    currency: 'USD',
+    interval: 'yearly',
+    features: {
+      maxTrackedProducts: 50,
+      alertFrequency: 'daily',
+      priceHistoryDays: 60,
+      exportData: false,
+      prioritySupport: false,
+    },
+  },
+  {
+    id: 'premium_monthly',
+    name: 'Premium Monthly',
+    price: 8,
+    currency: 'USD',
+    interval: 'monthly',
+    features: {
+      maxTrackedProducts: 200,
+      alertFrequency: 'instant',
+      priceHistoryDays: 365,
+      exportData: true,
+      prioritySupport: true,
+    },
+  },
+  {
+    id: 'premium_yearly',
+    name: 'Premium Yearly',
+    price: 80,
+    currency: 'USD',
+    interval: 'yearly',
+    features: {
+      maxTrackedProducts: 200,
+      alertFrequency: 'instant',
+      priceHistoryDays: 365,
+      exportData: true,
+      prioritySupport: true,
+    },
+  },
+];
+
 interface SubscriptionStatus {
   isActive: boolean;
   plan: string;
@@ -31,7 +92,7 @@ interface SubscriptionStatus {
 const Subscription: React.FC = () => {
   const { user } = useAuth();
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
-  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
+  const [plans, setPlans] = useState<SubscriptionPlan[]>(DEFAULT_PLANS);
   const [loading, setLoading] = useState(true);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
 
@@ -57,7 +118,7 @@ const Subscription: React.FC = () => {
         setSubscriptionStatus(subscriptionData.data.subscription);
       }
 
-      if (plansData.success) {
+      if (plansData.success && Array.isArray(plansData.data?.plans) && plansData.data.plans.length) {
         setPlans(plansData.data.plans);
       }
     } catch (error) {
@@ -67,26 +128,27 @@ const Subscription: React.FC = () => {
     }
   };
 
-  // Helpers to pick dynamic prices from backend data with fallback
-  const findPlanPrice = (keyword: 'basic' | 'premium', interval: 'monthly' | 'yearly', fallback: number) => {
-    const p = plans.find(pl => pl.interval === interval && (pl.name || '').toLowerCase().includes(keyword));
-    return p?.price ?? fallback;
+  const formatFrequency = (freq?: string) => {
+    if (!freq) return 'Daily';
+    return freq.charAt(0).toUpperCase() + freq.slice(1);
   };
 
-  const basicMonthly = findPlanPrice('basic', 'monthly', 3);
-  const basicYearly = findPlanPrice('basic', 'yearly', 30);
-  const premiumMonthly = findPlanPrice('premium', 'monthly', 8);
-  const premiumYearly = findPlanPrice('premium', 'yearly', 80);
-
-  const getFeatureIcon = (enabled: boolean) => {
-    return enabled ? '✅' : '❌';
+  const buildFeatureList = (plan?: SubscriptionPlan) => {
+    const target = plan || DEFAULT_PLANS[0];
+    const base = target.features || DEFAULT_PLANS[0].features;
+    return [
+      `${base.maxTrackedProducts} tracked products`,
+      `${formatFrequency(base.alertFrequency)} alerts`,
+      `${base.priceHistoryDays}-day price history`,
+      base.exportData ? 'Data export included' : 'Email summaries',
+      base.prioritySupport ? 'Priority support' : 'Standard support',
+    ];
   };
 
-  const formatDays = (days: number) => {
-    if (days === 0) return 'Expired';
-    if (days === 1) return '1 day';
-    return `${days} days`;
-  };
+  const effectivePlans = plans.length ? plans : DEFAULT_PLANS;
+  const plansForCycle = effectivePlans.filter((plan) => plan.interval === billingCycle);
+  const plansToDisplay = plansForCycle.length ? plansForCycle : effectivePlans;
+  const showingFallbackInterval = !plansForCycle.length && effectivePlans.length > 0;
 
   if (loading) {
     return (
@@ -172,9 +234,9 @@ const Subscription: React.FC = () => {
           <h2 className="text-2xl font-bold text-center mb-8">
             Future Plans (After Free Period)
           </h2>
-          
+
           {/* Pricing Toggle */}
-          <div className="flex items-center justify-center gap-4 mb-8">
+          <div className="flex items-center justify-center gap-4 mb-4">
             <span className="text-sm text-gray-600">Monthly</span>
             <button
               onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'yearly' : 'monthly')}
@@ -190,98 +252,94 @@ const Subscription: React.FC = () => {
             </button>
             <span className="text-sm text-gray-600">Yearly</span>
             {billingCycle === 'yearly' && (
-              <span className="text-sm text-green-600 font-semibold">Save 17%</span>
+              <span className="text-sm text-green-600 font-semibold">Save with annual billing</span>
             )}
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {/* Basic Plan */}
-            <div className="bg-white rounded-lg shadow-md p-6 border-2 border-blue-500 relative">
-              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
-                  Most Popular
-                </span>
-              </div>
-              
-              <div className="text-center mb-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Basic</h3>
-                <div className="text-3xl font-bold text-blue-600">
-                  ${billingCycle === 'yearly' ? String(basicYearly) : String(basicMonthly)}
-                  <span className="text-sm text-gray-500">/{billingCycle === 'yearly' ? 'year' : 'month'}</span>
-                </div>
-                {billingCycle === 'yearly' && (
-                  <p className="text-sm text-green-600 font-semibold mt-1">Save 17%</p>
-                )}
-              </div>
 
-              <div className="space-y-3 mb-6">
-                <div className="flex items-center">
-                  <span className="mr-2">✅</span>
-                  <span>50 tracked products</span>
-                </div>
-                <div className="flex items-center">
-                  <span className="mr-2">✅</span>
-                  <span>Daily alerts</span>
-                </div>
-                <div className="flex items-center">
-                  <span className="mr-2">✅</span>
-                  <span>60-day price history</span>
-                </div>
-                <div className="flex items-center">
-                  <span className="mr-2">❌</span>
-                  <span>Data export</span>
-                </div>
-                <div className="flex items-center">
-                  <span className="mr-2">❌</span>
-                  <span>Priority support</span>
-                </div>
-              </div>
+          {showingFallbackInterval && (
+            <p className="text-center text-sm text-gray-500 mb-4">
+              No {billingCycle} plans yet — showing {plansToDisplay[0]?.interval} plans instead.
+            </p>
+          )}
 
-              <button className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors font-semibold">
-                {subscriptionStatus?.isFreePeriod ? 'Coming Soon' : 'Choose Basic'}
-              </button>
-            </div>
-
-            {/* Premium Plan */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {/* Free Plan */}
             <div className="bg-white rounded-lg shadow-md p-6 border-2 border-gray-200">
               <div className="text-center mb-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Premium</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Free Plan</h3>
                 <div className="text-3xl font-bold text-gray-900">
-                  ${billingCycle === 'yearly' ? String(premiumYearly) : String(premiumMonthly)}
-                  <span className="text-sm text-gray-500">/{billingCycle === 'yearly' ? 'year' : 'month'}</span>
+                  $0<span className="text-sm text-gray-500">/month</span>
                 </div>
-                {billingCycle === 'yearly' && (
-                  <p className="text-sm text-green-600 font-semibold mt-1">Save 17%</p>
-                )}
+                <p className="text-gray-600 mt-1">After the 7-day premium trial</p>
               </div>
 
-              <div className="space-y-3 mb-6">
-                <div className="flex items-center">
-                  <span className="mr-2">✅</span>
-                  <span>200 tracked products</span>
+              <div className="space-y-3 mb-6 text-sm">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span>10 tracked products</span>
                 </div>
-                <div className="flex items-center">
-                  <span className="mr-2">✅</span>
-                  <span>Instant alerts</span>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span>1-2 price alerts per month</span>
                 </div>
-                <div className="flex items-center">
-                  <span className="mr-2">✅</span>
-                  <span>365-day price history</span>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span>30-day price history</span>
                 </div>
-                <div className="flex items-center">
-                  <span className="mr-2">✅</span>
-                  <span>Data export</span>
-                </div>
-                <div className="flex items-center">
-                  <span className="mr-2">✅</span>
-                  <span>Priority support</span>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span>Basic support</span>
                 </div>
               </div>
 
-              <button className="w-full bg-gray-900 text-white py-2 px-4 rounded-lg hover:bg-gray-800 transition-colors font-semibold">
-                {subscriptionStatus?.isFreePeriod ? 'Coming Soon' : 'Choose Premium'}
-              </button>
+              <Link
+                to="/auth"
+                className="w-full bg-gray-100 text-gray-900 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors font-semibold block text-center"
+              >
+                Get Started Free
+              </Link>
             </div>
+
+            {plansToDisplay.map((plan, index) => (
+              <div
+                key={plan.id}
+                className={`bg-white rounded-lg shadow-md p-6 border-2 ${
+                  index === 0 ? 'border-blue-500' : 'border-gray-200'
+                } relative`}
+              >
+                {index === 0 && (
+                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                    <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
+                      Most Popular
+                    </span>
+                  </div>
+                )}
+
+                <div className="text-center mb-6">
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">{plan.name}</h3>
+                  <div className={`text-3xl font-bold ${index === 0 ? 'text-blue-600' : 'text-gray-900'}`}>
+                    ${plan.price}
+                    <span className="text-sm text-gray-500">/{plan.interval}</span>
+                  </div>
+                </div>
+                <div className="space-y-3 mb-6 text-sm">
+                  {buildFeatureList(plan).map((feature) => (
+                    <div key={feature} className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                      <span>{feature}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  className={`w-full py-2 px-4 rounded-lg font-semibold transition-colors ${
+                    index === 0 ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-900 text-white hover:bg-gray-800'
+                  }`}
+                >
+                  {subscriptionStatus?.isFreePeriod ? 'Coming Soon' : `Choose ${plan.name}`}
+                </button>
+              </div>
+            ))}
           </div>
         </div>
 

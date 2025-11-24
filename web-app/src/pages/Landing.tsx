@@ -23,6 +23,80 @@ import {
   Award
 } from 'lucide-react';
 
+interface LandingPlan {
+  id: string;
+  name: string;
+  price: number;
+  currency: string;
+  interval: 'monthly' | 'yearly';
+  features: {
+    maxTrackedProducts: number;
+    alertFrequency: 'instant' | 'hourly' | 'daily';
+    priceHistoryDays: number;
+    exportData: boolean;
+    prioritySupport: boolean;
+  };
+}
+
+const DEFAULT_LANDING_PLANS: LandingPlan[] = [
+  {
+    id: 'basic_monthly',
+    name: 'Basic Monthly',
+    price: 3,
+    currency: 'USD',
+    interval: 'monthly',
+    features: {
+      maxTrackedProducts: 50,
+      alertFrequency: 'daily',
+      priceHistoryDays: 60,
+      exportData: false,
+      prioritySupport: false,
+    },
+  },
+  {
+    id: 'basic_yearly',
+    name: 'Basic Yearly',
+    price: 30,
+    currency: 'USD',
+    interval: 'yearly',
+    features: {
+      maxTrackedProducts: 50,
+      alertFrequency: 'daily',
+      priceHistoryDays: 60,
+      exportData: false,
+      prioritySupport: false,
+    },
+  },
+  {
+    id: 'premium_monthly',
+    name: 'Premium Monthly',
+    price: 8,
+    currency: 'USD',
+    interval: 'monthly',
+    features: {
+      maxTrackedProducts: 200,
+      alertFrequency: 'instant',
+      priceHistoryDays: 365,
+      exportData: true,
+      prioritySupport: true,
+    },
+  },
+  {
+    id: 'premium_yearly',
+    name: 'Premium Yearly',
+    price: 80,
+    currency: 'USD',
+    interval: 'yearly',
+    features: {
+      maxTrackedProducts: 200,
+      alertFrequency: 'instant',
+      priceHistoryDays: 365,
+      exportData: true,
+      prioritySupport: true,
+    },
+  },
+];
+
 // Pricing Card Component with Toggle
 interface PricingCardProps {
   title: string;
@@ -865,13 +939,13 @@ const Landing: React.FC = () => {
   console.log('Landing page component rendering...');
   
   // Fetch dynamic pricing plans
-  const [plans, setPlans] = React.useState<Array<{ id: string; name: string; price: number; interval: 'monthly' | 'yearly'; }>>([]);
+  const [plans, setPlans] = React.useState<LandingPlan[]>(DEFAULT_LANDING_PLANS);
   React.useEffect(() => {
     (async () => {
       try {
         const res = await fetch('/api/payments/plans');
         const json = await res.json();
-        if (json?.success && Array.isArray(json.data?.plans)) {
+        if (json?.success && Array.isArray(json.data?.plans) && json.data.plans.length) {
           setPlans(json.data.plans);
         }
       } catch (_) {
@@ -880,29 +954,62 @@ const Landing: React.FC = () => {
     })();
   }, []);
 
-  const findPrice = (keyword: 'basic' | 'premium', interval: 'monthly' | 'yearly', fallback: number) => {
-    const p = plans.find((pl) =>
-      (pl.interval === interval) && (pl.name || '').toLowerCase().includes(keyword)
+  const effectivePlans = plans.length ? plans : DEFAULT_LANDING_PLANS;
+
+  const findPlanVariant = (keyword: 'basic' | 'premium', interval: 'monthly' | 'yearly') =>
+    effectivePlans.find(
+      (pl) => pl.interval === interval && (pl.name || '').toLowerCase().includes(keyword)
     );
-    return p?.price ?? fallback;
+
+  const findPrice = (keyword: 'basic' | 'premium', interval: 'monthly' | 'yearly', fallback: number) =>
+    findPlanVariant(keyword, interval)?.price ?? fallback;
+
+  const formatFrequency = (freq?: string) => {
+    if (!freq) return 'Daily';
+    return freq.charAt(0).toUpperCase() + freq.slice(1);
   };
 
-  const basicMonthly = findPrice('basic', 'monthly', 3);
-  const basicYearly = findPrice('basic', 'yearly', 30);
-  const premiumMonthly = findPrice('premium', 'monthly', 8);
-  const premiumYearly = findPrice('premium', 'yearly', 80);
+  const buildFeatureList = (plan?: LandingPlan) => {
+    const target = plan || DEFAULT_LANDING_PLANS[0];
+    const base = target.features || DEFAULT_LANDING_PLANS[0].features;
+    return [
+      `${base.maxTrackedProducts} tracked products`,
+      `${formatFrequency(base.alertFrequency)} alerts`,
+      `${base.priceHistoryDays}-day price history`,
+      base.exportData ? 'Data export included' : 'Email summaries',
+      base.prioritySupport ? 'Priority support' : 'Standard support',
+    ];
+  };
+
+  const basicMonthlyPlan = findPlanVariant('basic', 'monthly');
+  const basicYearlyPlan = findPlanVariant('basic', 'yearly');
+  const premiumMonthlyPlan = findPlanVariant('premium', 'monthly');
+  const premiumYearlyPlan = findPlanVariant('premium', 'yearly');
+
+  const basicMonthly = basicMonthlyPlan?.price ?? 3;
+  const basicYearly = basicYearlyPlan?.price ?? 30;
+  const premiumMonthly = premiumMonthlyPlan?.price ?? 8;
+  const premiumYearly = premiumYearlyPlan?.price ?? 80;
+  const basicFeatures = buildFeatureList(basicMonthlyPlan || basicYearlyPlan);
+  const premiumFeatures = buildFeatureList(premiumMonthlyPlan || premiumYearlyPlan);
 
   // Build additional dynamic plans beyond Basic/Premium
   const extraPlans = React.useMemo(() => {
-    const grouped = new Map<string, { title: string; monthlyPrice?: number; yearlyPrice?: number }>();
-    plans.forEach((pl) => {
+    const grouped = new Map<
+      string,
+      { title: string; monthlyPrice?: number; yearlyPrice?: number; features: string[] }
+    >();
+    effectivePlans.forEach((pl) => {
       const name = (pl.name || '').trim();
       const lower = name.toLowerCase();
       if (!name) return;
       if (lower.includes('basic') || lower.includes('premium')) return;
-      const existing = grouped.get(name) || { title: name };
+      const existing = grouped.get(name) || { title: name, features: buildFeatureList(pl) };
       if (pl.interval === 'monthly') existing.monthlyPrice = pl.price;
       if (pl.interval === 'yearly') existing.yearlyPrice = pl.price;
+      if (!existing.features.length) {
+        existing.features = buildFeatureList(pl);
+      }
       grouped.set(name, existing);
     });
     return Array.from(grouped.values());
@@ -1009,12 +1116,7 @@ const Landing: React.FC = () => {
               isPopular={true}
               monthlyPrice={basicMonthly}
               yearlyPrice={basicYearly}
-              features={[
-                "50 tracked products",
-                "Daily price alerts", 
-                "60-day price history",
-                "Email support"
-              ]}
+              features={basicFeatures}
               buttonText="Choose Basic"
               buttonColor="blue"
             />
@@ -1025,13 +1127,7 @@ const Landing: React.FC = () => {
               isPopular={false}
               monthlyPrice={premiumMonthly}
               yearlyPrice={premiumYearly}
-              features={[
-                "200 tracked products",
-                "Instant price alerts",
-                "365-day price history", 
-                "Data export",
-                "Priority support"
-              ]}
+              features={premiumFeatures}
               buttonText="Choose Premium"
               buttonColor="gray"
             />
@@ -1044,11 +1140,7 @@ const Landing: React.FC = () => {
                 isPopular={false}
                 monthlyPrice={p.monthlyPrice ?? 0}
                 yearlyPrice={p.yearlyPrice ?? (p.monthlyPrice ? Math.round((p.monthlyPrice * 12) * 0.83) : 0)}
-                features={[
-                  "Price tracking",
-                  "Price alerts",
-                  "Price history"
-                ]}
+                features={p.features}
                 buttonText={`Choose ${p.title}`}
                 buttonColor="gray"
               />
