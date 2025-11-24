@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import { supabase, supabasePublic, TABLES, handleSupabaseError } from '../config/supabase';
 import EmailService from '../services/emailService';
+import { authMiddleware, AuthRequest } from '../middleware/auth';
 
 const emailService = new EmailService();
 const router = express.Router();
@@ -99,19 +100,23 @@ router.post('/signup', async (req: Request, res: Response) => {
 });
 
 // Login
-const ADMIN_EMAIL = 'realpricetracker94@gmail.com';
+const ADMIN_EMAIL_RAW = process.env.ADMIN_EMAIL || 'realpricetracker94@gmail.com';
+const ADMIN_EMAIL = ADMIN_EMAIL_RAW.toLowerCase();
 const ADMIN_PASSWORD = 'admin123';
 
 router.post('/login', async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body;
-    console.log('🔐 Login attempt:', email);
-    console.log('📦 Request body:', JSON.stringify({ email, password: password ? '***' : undefined }));
+    const { email: rawEmail, password } = req.body;
+    console.log('🔐 Login attempt:', rawEmail);
+    console.log('📦 Request body:', JSON.stringify({ email: rawEmail, password: password ? '***' : undefined }));
 
-    if (!email || !password) {
+    if (!rawEmail || !password) {
       console.log('❌ Missing email or password');
       return res.status(400).json({ success: false, message: 'Email and password required' });
     }
+
+    const email = String(rawEmail).trim().toLowerCase();
+    const isAdminLogin = email === ADMIN_EMAIL;
 
     // Try to sign in
     const { data, error } = await supabasePublic.auth.signInWithPassword({
@@ -123,13 +128,13 @@ router.post('/login', async (req: Request, res: Response) => {
       console.log('❌ Login error:', error.message);
       
       // Fallback: Auto-create admin user if login fails and email matches admin email
-      if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+      if (isAdminLogin && password === ADMIN_PASSWORD) {
         console.log('🔄 Admin login failed, attempting to auto-create admin account...');
         
         try {
           // Try to sign up - if user exists, signup will fail, but we'll know the account exists
           const { data: signUpData, error: signUpError } = await supabasePublic.auth.signUp({
-            email: ADMIN_EMAIL,
+            email: ADMIN_EMAIL_RAW,
             password: ADMIN_PASSWORD,
             options: {
               data: { username: 'admin' },
@@ -147,7 +152,7 @@ router.post('/login', async (req: Request, res: Response) => {
               // Then try login one more time with the exact credentials
               console.log('🔄 Retrying login with exact credentials...');
               const { data: retryData, error: retryError } = await supabasePublic.auth.signInWithPassword({
-                email: ADMIN_EMAIL,
+                email: ADMIN_EMAIL_RAW,
                 password: ADMIN_PASSWORD,
               });
               
@@ -158,7 +163,7 @@ router.post('/login', async (req: Request, res: Response) => {
                   .from(TABLES.USERS)
                   .upsert({
                     id: retryData.user!.id,
-                    email: ADMIN_EMAIL,
+                    email: ADMIN_EMAIL_RAW,
                     username: 'admin',
                     role: 'admin',
                     notification_settings: { priceDrops: true, newProducts: true, weeklySummary: true },
@@ -198,7 +203,7 @@ router.post('/login', async (req: Request, res: Response) => {
             // Create user record
             const { error: insertError } = await supabasePublic.from(TABLES.USERS).insert({
               id: signUpData.user.id,
-              email: ADMIN_EMAIL,
+              email: ADMIN_EMAIL_RAW,
               username: 'admin',
               role: 'admin',
               notification_settings: { priceDrops: true, newProducts: true, weeklySummary: true },
@@ -213,7 +218,7 @@ router.post('/login', async (req: Request, res: Response) => {
               console.log('✅ Admin user record created');
               // Try login immediately after signup
               const { data: retryData, error: retryError } = await supabasePublic.auth.signInWithPassword({
-                email: ADMIN_EMAIL,
+                email: ADMIN_EMAIL_RAW,
                 password: ADMIN_PASSWORD,
               });
               
@@ -257,7 +262,7 @@ router.post('/login', async (req: Request, res: Response) => {
         id: data.user!.id,
         email: data.user!.email!,
         username: data.user!.email!.split('@')[0],
-        role: data.user!.email === ADMIN_EMAIL ? 'admin' : 'user',
+        role: data.user!.email?.toLowerCase() === ADMIN_EMAIL ? 'admin' : 'user',
         notification_settings: { priceDrops: true, newProducts: true, weeklySummary: true },
         privacy_settings: { shareData: false, analytics: true },
         preferences: { currency: 'USD', language: 'en' },
@@ -299,7 +304,7 @@ router.post('/login', async (req: Request, res: Response) => {
     }
 
     // Ensure admin email has admin role
-    if (data.user!.email === ADMIN_EMAIL && userData && userData.role !== 'admin') {
+    if (data.user!.email?.toLowerCase() === ADMIN_EMAIL && userData && userData.role !== 'admin') {
       console.log('🔧 Updating admin user role to admin');
       await supabasePublic.from(TABLES.USERS).update({ role: 'admin' }).eq('id', data.user!.id);
       userData.role = 'admin';
@@ -562,59 +567,44 @@ router.post('/preferences', async (req: Request, res: Response) => {
 });
 
 // List all users (admin only)
-router.get('/', async (req: Request, res: Response) => {
-  const auth = req.headers.authorization;
-  if (!auth || !auth.startsWith('Bearer ')) {
-    return res.status(401).json({ success: false, message: 'Missing token' });
-  }
-
+router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const token = auth.replace('Bearer ', '');
-    const { data: { user }, error } = await supabasePublic.auth.getUser(token);
-    if (error || !user) {
-      return res.status(401).json({ success: false, message: 'Invalid token' });
+    if (req.user?.isAdmin) {
+      const { data: users, error: usersError } = await supabase
+        .from(TABLES.USERS)
+        .select('id, email, username, role, created_at, last_login');
+
+      if (usersError) {
+        handleSupabaseError(usersError, 'fetch users');
+      }
+
+      return res.json({ success: true, users: users || [] });
     }
 
-    const { data: userData, error: userError } = await supabasePublic
+    const { data: userRecord, error: singleError } = await supabase
       .from(TABLES.USERS)
-      .select('*')
-      .eq('id', user.id)
-      .single();
-    if (userError || !userData || userData.role !== 'admin') {
-      return res.status(403).json({ success: false, message: 'Forbidden: Admins only' });
+      .select('id, email, username, role, created_at, last_login')
+      .eq('id', req.user!.uid)
+      .maybeSingle();
+
+    if (singleError && singleError.code !== 'PGRST116') {
+      handleSupabaseError(singleError, 'fetch user');
     }
 
-    const { data: users, error: usersError } = await supabase.from(TABLES.USERS).select('id, email, username, role, created_at, last_login');
-    if (usersError) {
-      handleSupabaseError(usersError, 'fetch users');
-    }
-
-    return res.json({ success: true, users });
+    return res.json({
+      success: true,
+      users: userRecord ? [userRecord] : [],
+    });
   } catch (e) {
-    return res.status(401).json({ success: false, message: 'Invalid token' });
+    console.error('Failed to fetch users list:', e);
+    return res.status(500).json({ success: false, message: 'Failed to load users' });
   }
 });
 
 // Admin analytics endpoint
-router.get('/admin/analytics', async (req: Request, res: Response) => {
-  const auth = req.headers.authorization;
-  if (!auth || !auth.startsWith('Bearer ')) {
-    return res.status(401).json({ success: false, message: 'Missing token' });
-  }
-
+router.get('/admin/analytics', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const token = auth.replace('Bearer ', '');
-    const { data: { user }, error } = await supabasePublic.auth.getUser(token);
-    if (error || !user) {
-      return res.status(401).json({ success: false, message: 'Invalid token' });
-    }
-
-    const { data: userData, error: userError } = await supabasePublic
-      .from(TABLES.USERS)
-      .select('*')
-      .eq('id', user.id)
-      .single();
-    if (userError || !userData || userData.role !== 'admin') {
+    if (!req.user?.isAdmin) {
       return res.status(403).json({ success: false, message: 'Forbidden: Admins only' });
     }
 
@@ -641,7 +631,8 @@ router.get('/admin/analytics', async (req: Request, res: Response) => {
       },
     });
   } catch (e) {
-    return res.status(401).json({ success: false, message: 'Invalid token' });
+    console.error('Failed to fetch admin analytics:', e);
+    return res.status(500).json({ success: false, message: 'Failed to load analytics' });
   }
 });
 
@@ -760,25 +751,9 @@ router.get('/seen-price-drops', async (req: Request, res: Response) => {
 });
 
 // Admin user management routes
-router.post('/:userId/ban', async (req: Request, res: Response) => {
-  const auth = req.headers.authorization;
-  if (!auth || !auth.startsWith('Bearer ')) {
-    return res.status(401).json({ success: false, message: 'Missing token' });
-  }
-
+router.post('/:userId/ban', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const token = auth.replace('Bearer ', '');
-    const { data: { user }, error } = await supabasePublic.auth.getUser(token);
-    if (error || !user) {
-      return res.status(401).json({ success: false, message: 'Invalid token' });
-    }
-
-    const { data: adminUser, error: adminError } = await supabasePublic
-      .from(TABLES.USERS)
-      .select('*')
-      .eq('id', user.id)
-      .single();
-    if (adminError || !adminUser || adminUser.role !== 'admin') {
+    if (!req.user?.isAdmin) {
       return res.status(403).json({ success: false, message: 'Forbidden: Admins only' });
     }
 
@@ -796,7 +771,7 @@ router.post('/:userId/ban', async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    if (userId === user.id) {
+    if (userId === req.user!.uid) {
       return res.status(403).json({ success: false, message: 'Cannot ban yourself' });
     }
 
@@ -814,25 +789,9 @@ router.post('/:userId/ban', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/:userId/unban', async (req: Request, res: Response) => {
-  const auth = req.headers.authorization;
-  if (!auth || !auth.startsWith('Bearer ')) {
-    return res.status(401).json({ success: false, message: 'Missing token' });
-  }
-
+router.post('/:userId/unban', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const token = auth.replace('Bearer ', '');
-    const { data: { user }, error } = await supabasePublic.auth.getUser(token);
-    if (error || !user) {
-      return res.status(401).json({ success: false, message: 'Invalid token' });
-    }
-
-    const { data: adminUser, error: adminError } = await supabasePublic
-      .from(TABLES.USERS)
-      .select('*')
-      .eq('id', user.id)
-      .single();
-    if (adminError || !adminUser || adminUser.role !== 'admin') {
+    if (!req.user?.isAdmin) {
       return res.status(403).json({ success: false, message: 'Forbidden: Admins only' });
     }
 
@@ -861,25 +820,9 @@ router.post('/:userId/unban', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/:userId/promote', async (req: Request, res: Response) => {
-  const auth = req.headers.authorization;
-  if (!auth || !auth.startsWith('Bearer ')) {
-    return res.status(401).json({ success: false, message: 'Missing token' });
-  }
-
+router.post('/:userId/promote', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const token = auth.replace('Bearer ', '');
-    const { data: { user }, error } = await supabasePublic.auth.getUser(token);
-    if (error || !user) {
-      return res.status(401).json({ success: false, message: 'Invalid token' });
-    }
-
-    const { data: adminUser, error: adminError } = await supabasePublic
-      .from(TABLES.USERS)
-      .select('*')
-      .eq('id', user.id)
-      .single();
-    if (adminError || !adminUser || adminUser.role !== 'admin') {
+    if (!req.user?.isAdmin) {
       return res.status(403).json({ success: false, message: 'Forbidden: Admins only' });
     }
 
@@ -908,25 +851,9 @@ router.post('/:userId/promote', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/:userId/delete', async (req: Request, res: Response) => {
-  const auth = req.headers.authorization;
-  if (!auth || !auth.startsWith('Bearer ')) {
-    return res.status(401).json({ success: false, message: 'Missing token' });
-  }
-
+router.post('/:userId/delete', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const token = auth.replace('Bearer ', '');
-    const { data: { user }, error } = await supabasePublic.auth.getUser(token);
-    if (error || !user) {
-      return res.status(401).json({ success: false, message: 'Invalid token' });
-    }
-
-    const { data: adminUser, error: adminError } = await supabasePublic
-      .from(TABLES.USERS)
-      .select('*')
-      .eq('id', user.id)
-      .single();
-    if (adminError || !adminUser || adminUser.role !== 'admin') {
+    if (!req.user?.isAdmin) {
       return res.status(403).json({ success: false, message: 'Forbidden: Admins only' });
     }
 
@@ -944,7 +871,7 @@ router.post('/:userId/delete', async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    if (userId === user.id) {
+    if (userId === req.user?.uid) {
       return res.status(403).json({ success: false, message: 'Cannot delete yourself' });
     }
 

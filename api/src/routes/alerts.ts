@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import { getDb } from '../config/database';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
+import { supabase, TABLES } from '../config/supabase';
 import EmailService from '../services/emailService';
 
 const emailService = new EmailService();
@@ -25,35 +26,16 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.uid;
     
-    // Check if user is admin - if so, return all alerts
-    const { supabase, supabasePublic, TABLES } = await import('../config/supabase');
-    const token = req.headers.authorization?.replace('Bearer ', '');
-    
-    if (token) {
-      const { data: { user: authUser } } = await supabasePublic.auth.getUser(token);
-      if (authUser) {
-        const { data: userData } = await supabasePublic
-          .from(TABLES.USERS)
-          .select('role')
-          .eq('id', authUser.id)
-          .single();
-        
-        if (userData?.role === 'admin') {
-          // Admin: Get all alerts
-          const { data: allAlerts, error: alertsError } = await supabase
-            .from(TABLES.ALERTS)
-            .select('*')
-            .order('created_at', { ascending: false });
-          
-          if (alertsError) {
-            console.error('Error fetching all alerts:', alertsError);
-            // Fallback to user's alerts
-            const alerts = await db.getAlerts(userId);
-            return res.json({ success: true, data: alerts });
-          }
-          
-          return res.json({ success: true, data: allAlerts || [] });
-        }
+    if (req.user?.isAdmin) {
+      const { data: allAlerts, error: alertsError } = await supabase
+        .from(TABLES.ALERTS)
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (alertsError) {
+        console.error('Error fetching all alerts:', alertsError);
+      } else {
+        return res.json({ success: true, data: allAlerts || [] });
       }
     }
     
@@ -136,9 +118,8 @@ router.put('/:id/toggle', authMiddleware, async (req: AuthRequest, res: Response
       const product = await db.getProductById(alert.productId);
       if (product && product.userId === requesterId) isAuthorized = true;
     }
-    if (!isAuthorized) {
-      const requester = await db.getUserById(requesterId) as any;
-      if (requester?.role === 'admin') isAuthorized = true;
+    if (!isAuthorized && req.user?.isAdmin) {
+      isAuthorized = true;
     }
     if (!isAuthorized) {
       return res.status(403).json({ success: false, message: 'Not authorized' });

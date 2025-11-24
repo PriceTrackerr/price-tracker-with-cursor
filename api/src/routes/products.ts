@@ -3,6 +3,7 @@ import { body, validationResult } from 'express-validator';
 import { getDb } from '../config/database';
 const db = getDb();
 import { authMiddleware, AuthRequest } from '../middleware/auth';
+import { supabase, TABLES } from '../config/supabase';
 
 
 const router = express.Router();
@@ -629,25 +630,7 @@ router.get('/filters', authMiddleware, async (req: AuthRequest, res: Response) =
 // Admin: Get all tracked products
 router.get('/all', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    // Check if user is admin using Supabase
-    const { supabase, supabasePublic, TABLES } = await import('../config/supabase');
-    const token = req.headers.authorization?.replace('Bearer ', '');
-    if (!token) {
-      return res.status(401).json({ success: false, message: 'Missing token' });
-    }
-
-    const { data: { user: authUser }, error: authError } = await supabasePublic.auth.getUser(token);
-    if (authError || !authUser) {
-      return res.status(401).json({ success: false, message: 'Invalid token' });
-    }
-
-    const { data: userData, error: userError } = await supabasePublic
-      .from(TABLES.USERS)
-      .select('*')
-      .eq('id', authUser.id)
-      .single();
-    
-    if (userError || !userData || userData.role !== 'admin') {
+    if (!req.user?.isAdmin) {
       return res.status(403).json({ success: false, message: 'Forbidden: Admins only' });
     }
     
@@ -1371,23 +1354,12 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
     }
 
     // Verify user owns the product or is admin
-    let isAdmin = false;
-    if (!q) { // skip ownership checks for name-based query
-      try {
-    const user = await db.getUserById(userId) as any;
-        isAdmin = user?.role === 'admin';
-      } catch (e) {
-        console.warn('getUserById failed (continuing as non-admin):', e);
-        isAdmin = false;
-      }
-    }
-    if (!q) {
-    if (sourceProduct.userId !== userId && !isAdmin) {
+    const isAdmin = !!req.user?.isAdmin;
+    if (!q && sourceProduct.userId !== userId && !isAdmin) {
       return res.status(403).json({
         success: false,
         error: 'Not authorized'
       });
-      }
     }
 
     console.log(`🔍 Getting stored matches for product: ${sourceProduct.title} (ID: ${productId})`);
@@ -1867,8 +1839,7 @@ router.get('/:productId', authMiddleware, async (req: AuthRequest, res: Response
       return res.status(404).json({ success: false, error: 'Product not found' });
     }
     // Allow owner or admin
-    const user = await db.getUserById(userId) as any;
-    const isAdmin = user?.role === 'admin';
+    const isAdmin = !!req.user?.isAdmin;
     if (product.userId !== userId && !isAdmin) {
       return res.status(403).json({ success: false, error: 'Not authorized' });
     }
