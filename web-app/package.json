@@ -1,7 +1,7 @@
 {
-  "name": "real-price-tracker-web",
+  "name": "price-tracker-web",
   "version": "1.0.0",
-  "description": "Web dashboard for Real Price Tracker",
+  "description": "Web dashboard for Price Tracker",
   "private": true,
   "scripts": {
     "dev": "vite",
