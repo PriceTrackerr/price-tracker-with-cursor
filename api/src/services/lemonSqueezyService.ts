@@ -46,14 +46,24 @@ class LemonSqueezyService {
      */
     async createCheckoutSession(
         userId: string,
-        planId: string,
+        variantId: string,
         email: string,
         customData?: Record<string, any>
     ): Promise<{ checkoutUrl: string; checkoutId: string }> {
         try {
             const { createCheckout } = await import('@lemonsqueezy/lemonsqueezy.js');
 
-            const checkout: any = await createCheckout(LEMONSQUEEZY_STORE_ID, planId, {
+            console.log('Creating LemonSqueezy checkout:', {
+                storeId: LEMONSQUEEZY_STORE_ID,
+                variantId,
+                email,
+                userId
+            });
+
+            // Convert variant ID to number
+            const variantIdNum = parseInt(variantId, 10);
+
+            const checkoutData = {
                 checkoutData: {
                     email,
                     custom: {
@@ -61,19 +71,40 @@ class LemonSqueezyService {
                         ...customData,
                     },
                 },
-            });
+            };
+
+            console.log('Checkout data:', JSON.stringify(checkoutData, null, 2));
+
+            const checkout: any = await createCheckout(LEMONSQUEEZY_STORE_ID, variantIdNum, checkoutData);
+
+            console.log('LemonSqueezy response:', JSON.stringify(checkout, null, 2));
 
             if (!checkout || !checkout.data) {
-                throw new Error('Failed to create checkout session');
+                console.error('No checkout data returned from LemonSqueezy');
+                throw new Error('Failed to create checkout session - no data returned');
             }
 
+            const checkoutUrl = checkout.data.attributes?.url;
+            const checkoutId = checkout.data.id;
+
+            if (!checkoutUrl) {
+                console.error('No checkout URL in response');
+                throw new Error('Failed to create checkout session - no URL returned');
+            }
+
+            console.log('Checkout created successfully:', { checkoutUrl, checkoutId });
+
             return {
-                checkoutUrl: checkout.data.attributes?.url || '',
-                checkoutId: checkout.data.id || '',
+                checkoutUrl,
+                checkoutId,
             };
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error creating checkout session:', error);
-            throw new Error('Failed to create checkout session');
+            console.error('Error details:', error.message);
+            if (error.cause) {
+                console.error('Error cause:', JSON.stringify(error.cause, null, 2));
+            }
+            throw error;
         }
     }
 
@@ -298,26 +329,20 @@ class LemonSqueezyService {
             throw error;
         }
 
-        console.log(`Subscription expired for user ${userId}, downgraded to free tier`);
+        console.log(`Subscription expired for user ${userId}`);
     }
 
     private async handlePaymentSuccess(data: any, supabase: any) {
         console.log(`Payment successful for subscription ${data.id}`);
-        // Additional logic if needed (e.g., send confirmation email)
     }
 
     private async handlePaymentFailed(data: any, supabase: any) {
         const userId = data.custom_data?.user_id;
-        if (!userId) {
-            throw new Error('User ID not found in subscription data');
-        }
-
         console.log(`Payment failed for user ${userId}`);
-        // Additional logic (e.g., send payment failure notification)
     }
 
     /**
-     * Check if user has access to a feature based on their subscription
+     * Check if user has access to a feature
      */
     async checkFeatureAccess(
         userId: string,
@@ -331,16 +356,14 @@ class LemonSqueezyService {
             .single();
 
         if (error || !user) {
+            console.error('Error fetching user:', error);
             return false;
         }
 
-        // If subscription is not active, treat as free tier
-        if (user.subscription_status !== 'active' && user.subscription_status !== 'on_trial') {
-            user.subscription_tier = 'free';
-        }
+        const tier = user.subscription_tier || 'free';
+        const tierConfig = SUBSCRIPTION_TIERS[tier];
 
-        const tier = SUBSCRIPTION_TIERS[user.subscription_tier || 'free'];
-        return tier[feature] || false;
+        return tierConfig[feature] || false;
     }
 
     /**
@@ -359,37 +382,32 @@ class LemonSqueezyService {
             .single();
 
         if (userError || !user) {
-            throw new Error('User not found');
+            console.error('Error fetching user:', userError);
+            return { canTrack: false, currentCount: 0, limit: 5, tier: 'free' };
         }
 
-        // If subscription is not active, treat as free tier
-        let tier = user.subscription_tier || 'free';
-        if (user.subscription_status !== 'active' && user.subscription_status !== 'on_trial') {
-            tier = 'free';
-        }
-
+        const tier = user.subscription_tier || 'free';
         const tierConfig = SUBSCRIPTION_TIERS[tier];
         const limit = tierConfig.productLimit;
 
-        // Get current product count for today
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        // Get today's count
+        const today = new Date().toISOString().split('T')[0];
 
         const { count, error: countError } = await supabase
             .from('tracked_products')
             .select('*', { count: 'exact', head: true })
             .eq('user_id', userId)
-            .gte('tracked_at', today.toISOString());
+            .gte('created_at', today);
 
         if (countError) {
-            throw new Error('Error fetching product count');
+            console.error('Error counting products:', countError);
+            return { canTrack: false, currentCount: 0, limit, tier };
         }
 
         const currentCount = count || 0;
-        const canTrack = currentCount < limit;
 
         return {
-            canTrack,
+            canTrack: currentCount < limit,
             currentCount,
             limit,
             tier,
@@ -397,7 +415,7 @@ class LemonSqueezyService {
     }
 
     /**
-     * Check notification limit
+     * Check if user can send more notifications
      */
     async checkNotificationLimit(userId: string, supabase: any): Promise<{
         canSend: boolean;
@@ -411,37 +429,32 @@ class LemonSqueezyService {
             .single();
 
         if (userError || !user) {
-            throw new Error('User not found');
+            console.error('Error fetching user:', userError);
+            return { canSend: false, currentCount: 0, limit: 1 };
         }
 
-        // If subscription is not active, treat as free tier
-        let tier = user.subscription_tier || 'free';
-        if (user.subscription_status !== 'active' && user.subscription_status !== 'on_trial') {
-            tier = 'free';
-        }
-
+        const tier = user.subscription_tier || 'free';
         const tierConfig = SUBSCRIPTION_TIERS[tier];
         const limit = tierConfig.notificationsPerDay;
 
-        // Get notification count for today
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        // Get today's count
+        const today = new Date().toISOString().split('T')[0];
 
         const { count, error: countError } = await supabase
             .from('notifications')
             .select('*', { count: 'exact', head: true })
             .eq('user_id', userId)
-            .gte('created_at', today.toISOString());
+            .gte('created_at', today);
 
         if (countError) {
-            throw new Error('Error fetching notification count');
+            console.error('Error counting notifications:', countError);
+            return { canSend: false, currentCount: 0, limit };
         }
 
         const currentCount = count || 0;
-        const canSend = currentCount < limit;
 
         return {
-            canSend,
+            canSend: currentCount < limit,
             currentCount,
             limit,
         };
