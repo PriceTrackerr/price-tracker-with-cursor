@@ -245,9 +245,9 @@ router.get('/plans', async (req: Request, res: Response) => {
                 description: 'Perfect for trying out the service',
             },
             {
-                id: process.env.LEMONSQUEEZY_PRO_MONTHLY_ID || 'pro',
-                name: 'Pro',
-                price: 9.99,
+                id: process.env.LEMONSQUEEZY_PRO_MONTHLY_ID || '704199',
+                name: 'Price Tracker Pro',
+                price: 4.99,
                 interval: 'monthly',
                 trialDays: 7,
                 features: {
@@ -257,6 +257,20 @@ router.get('/plans', async (req: Request, res: Response) => {
                     notificationsPerDay: 10,
                 },
                 description: 'For serious price trackers',
+            },
+            {
+                id: process.env.LEMONSQUEEZY_PRO_YEARLY_ID || '704210',
+                name: 'Price Tracker Pro',
+                price: 39.99,
+                interval: 'yearly',
+                trialDays: 7,
+                features: {
+                    productLimit: 10,
+                    aiRecommendation: true,
+                    exportData: true,
+                    notificationsPerDay: 10,
+                },
+                description: 'For serious price trackers - Save $20/year!',
             },
         ];
 
