@@ -251,12 +251,12 @@ router.get('/plans', async (req: Request, res: Response) => {
                 interval: 'monthly',
                 trialDays: 7,
                 features: {
-                    productLimit: 10,
+                    productLimit: 999,
                     aiRecommendation: true,
                     exportData: true,
-                    notificationsPerDay: 10,
+                    notificationsPerDay: 100,
                 },
-                description: 'For serious price trackers',
+                description: 'Unlimited tracking for serious price trackers',
             },
             {
                 id: process.env.LEMONSQUEEZY_PRO_YEARLY_ID || '704210',
@@ -265,12 +265,12 @@ router.get('/plans', async (req: Request, res: Response) => {
                 interval: 'yearly',
                 trialDays: 7,
                 features: {
-                    productLimit: 10,
+                    productLimit: 999,
                     aiRecommendation: true,
                     exportData: true,
-                    notificationsPerDay: 10,
+                    notificationsPerDay: 100,
                 },
-                description: 'For serious price trackers - Save $20/year!',
+                description: 'Unlimited tracking - Save $20/year!',
             },
         ];
 

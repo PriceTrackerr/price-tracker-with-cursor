@@ -32,10 +32,10 @@ export const SUBSCRIPTION_TIERS: Record<string, SubscriptionTier> = {
     },
     pro: {
         name: 'pro',
-        productLimit: 10,
+        productLimit: 999,
         aiRecommendation: true,
         exportData: true,
-        notificationsPerDay: 10,
+        notificationsPerDay: 100,
         trialDays: 7,
     },
 };

@@ -63,6 +63,9 @@ const Subscription: React.FC = () => {
   };
 
   const handleUpgrade = async (planId: string) => {
+    console.log('handleUpgrade called with planId:', planId);
+    console.log('Current user:', user);
+
     if (!user) {
       toast.error('Please log in to upgrade');
       return;
@@ -70,18 +73,28 @@ const Subscription: React.FC = () => {
 
     setProcessingPlan(planId);
     try {
+      console.log('Sending checkout request to:', `${API_BASE}/subscriptions/create-checkout`);
+      console.log('Request data:', { planId, userId: user.id, email: user.email });
+
       const response = await axios.post(`${API_BASE}/subscriptions/create-checkout`, {
         planId,
         userId: user.id,
         email: user.email,
       });
 
-      if (response.data.success) {
+      console.log('Checkout response:', response.data);
+
+      if (response.data.success && response.data.checkoutUrl) {
+        console.log('Redirecting to:', response.data.checkoutUrl);
         // Redirect to LemonSqueezy checkout
         window.location.href = response.data.checkoutUrl;
+      } else {
+        console.error('No checkout URL in response:', response.data);
+        toast.error('Failed to get checkout URL');
       }
     } catch (error: any) {
       console.error('Error creating checkout:', error);
+      console.error('Error response:', error.response?.data);
       toast.error(error.response?.data?.error || 'Failed to start checkout');
     } finally {
       setProcessingPlan(null);
@@ -101,7 +114,7 @@ const Subscription: React.FC = () => {
   const paidPlans = plans.filter(p => p.id !== 'free');
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
@@ -198,8 +211,8 @@ const Subscription: React.FC = () => {
               <div
                 key={plan.id}
                 className={`relative rounded-2xl shadow-xl overflow-hidden transition-transform hover:scale-105 ${isMonthly
-                    ? 'bg-gradient-to-br from-blue-600 to-purple-600 text-white'
-                    : 'bg-gradient-to-br from-purple-600 to-pink-600 text-white'
+                  ? 'bg-gradient-to-br from-blue-600 to-purple-600 text-white'
+                  : 'bg-gradient-to-br from-purple-600 to-pink-600 text-white'
                   }`}
               >
                 {isMonthly && (
@@ -246,13 +259,13 @@ const Subscription: React.FC = () => {
                     <li className="flex items-start">
                       <Check className="w-5 h-5 mr-3 flex-shrink-0 text-green-300" />
                       <span>
-                        <strong>{plan.features.productLimit}</strong> products tracked
+                        <strong>Unlimited</strong> product tracking
                       </span>
                     </li>
                     <li className="flex items-start">
                       <Check className="w-5 h-5 mr-3 flex-shrink-0 text-green-300" />
                       <span>
-                        <strong>{plan.features.notificationsPerDay}</strong> price drop notifications per day
+                        <strong>Unlimited</strong> price drop notifications
                       </span>
                     </li>
                     <li className="flex items-start">
@@ -290,8 +303,8 @@ const Subscription: React.FC = () => {
                     onClick={() => handleUpgrade(plan.id)}
                     disabled={processingPlan === plan.id || isCurrentPlan}
                     className={`w-full py-3 px-6 rounded-lg font-semibold transition-all ${isCurrentPlan
-                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                        : 'bg-white text-blue-600 hover:bg-gray-100 hover:shadow-lg'
+                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                      : 'bg-white text-blue-600 hover:bg-gray-100 hover:shadow-lg'
                       }`}
                   >
                     {processingPlan === plan.id ? (
