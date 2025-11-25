@@ -24,6 +24,7 @@ import advancedFeaturesRoutes from './routes/advancedFeatures';
 import featuresRoutes from './routes/features';
 import productMatchingRoutes from './routes/productMatching';
 import aiRecommendationRoutes from './routes/aiRecommendation';
+import subscriptionRoutes from './routes/subscriptions';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler';
@@ -47,24 +48,24 @@ app.use(
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps, Postman, etc.)
       if (!origin) return callback(null, true);
-      
+
       // Check if origin is in allowed list
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
-      
+
       // Allow Chrome extensions
-      if (origin.startsWith('chrome-extension://') || 
-          origin.startsWith('moz-extension://') || 
-          origin.startsWith('safari-extension://')) {
+      if (origin.startsWith('chrome-extension://') ||
+        origin.startsWith('moz-extension://') ||
+        origin.startsWith('safari-extension://')) {
         return callback(null, true);
       }
-      
+
       // In development, allow all origins
       if (process.env.NODE_ENV === 'development') {
         return callback(null, true);
       }
-      
+
       callback(new Error('Not allowed by CORS'));
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -215,6 +216,7 @@ app.get('/api', (req, res) => {
       '/api/webhooks',
       '/api/notifications',
       '/api/payments',
+      '/api/subscriptions',
       '/api/advanced',
       '/api/features',
       '/api/product-matching',
@@ -244,6 +246,7 @@ app.use('/api/alerts', alertRoutes);
 app.use('/api/webhooks', webhookRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/advanced', advancedFeaturesRoutes);
 app.use('/api/features', featuresRoutes);
 app.use('/api/product-matching', productMatchingRoutes);

@@ -5,7 +5,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.communityService = exports.CommunityService = void 0;
 const axios_1 = __importDefault(require("axios"));
-const storage_1 = __importDefault(require("../config/storage"));
+const database_1 = require("../config/database");
+const db = (0, database_1.getDb)();
 class CommunityService {
     async calculateCredibilityScore(product) {
         const factors = {
@@ -82,7 +83,7 @@ class CommunityService {
     }
     async getProductQuery(productId) {
         try {
-            const product = await storage_1.default.getProductById(productId);
+            const product = await db.getProductById(productId);
             if (product?.title) {
                 return product.title.split(' ').slice(0, 5).join(' ');
             }
@@ -207,7 +208,7 @@ class CommunityService {
         return trendingDeals.sort((a, b) => b.trendingScore - a.trendingScore);
     }
     async analyzePriceHistory(product) {
-        const history = await storage_1.default.getPriceHistory(product.id);
+        const history = await db.getPriceHistory(product.id);
         if (history.length < 2)
             return 30;
         const priceDrops = history.filter((entry, index) => index > 0 && entry.price < history[index - 1].price);

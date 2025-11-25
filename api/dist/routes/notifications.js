@@ -4,13 +4,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
-const storage_1 = __importDefault(require("../config/storage"));
+const database_1 = require("../config/database");
 const auth_1 = require("../middleware/auth");
 const router = express_1.default.Router();
+const db = (0, database_1.getDb)();
 router.get('/', auth_1.authMiddleware, async (req, res) => {
     try {
         const userId = req.user.uid;
-        const notifications = await storage_1.default.getNotifications(userId);
+        const notifications = await db.getNotifications(userId);
         return res.json({ success: true, data: notifications });
     }
     catch (error) {
@@ -24,14 +25,14 @@ router.put('/:id/read', auth_1.authMiddleware, async (req, res) => {
         if (!id) {
             return res.status(400).json({ success: false, message: 'Notification ID is required' });
         }
-        const notification = await storage_1.default.getNotificationById(id);
+        const notification = await db.getNotificationById(id);
         if (!notification) {
             return res.status(404).json({ success: false, message: 'Notification not found' });
         }
         if (notification.userId !== req.user.uid) {
             return res.status(403).json({ success: false, message: 'Not authorized' });
         }
-        await storage_1.default.updateNotification(id, { isRead: true });
+        await db.updateNotification(id, { isRead: true });
         return res.json({ success: true, message: 'Notification marked as read' });
     }
     catch (error) {
@@ -42,7 +43,7 @@ router.put('/:id/read', auth_1.authMiddleware, async (req, res) => {
 router.post('/clear', auth_1.authMiddleware, async (req, res) => {
     try {
         const userId = req.user.uid;
-        await storage_1.default.clearNotifications(userId);
+        await db.clearNotifications(userId);
         return res.json({ success: true });
     }
     catch (error) {
@@ -53,10 +54,10 @@ router.post('/clear', auth_1.authMiddleware, async (req, res) => {
 router.post('/mark-read', auth_1.authMiddleware, async (req, res) => {
     try {
         const userId = req.user.uid;
-        const notifications = await storage_1.default.getNotifications(userId);
+        const notifications = await db.getNotifications(userId);
         for (const notification of notifications) {
             if (!notification.isRead) {
-                await storage_1.default.updateNotification(notification.id, { isRead: true });
+                await db.updateNotification(notification.id, { isRead: true });
             }
         }
         return res.json({ success: true, message: 'All notifications marked as read' });

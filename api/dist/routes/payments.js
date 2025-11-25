@@ -38,12 +38,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const auth_1 = require("../middleware/auth");
-const storage_1 = __importDefault(require("../config/storage"));
+const database_1 = require("../config/database");
 const paymentService_1 = __importStar(require("../services/paymentService"));
 const uuid_1 = require("uuid");
 const router = express_1.default.Router();
+const db = (0, database_1.getDb)();
 async function getEffectivePlans() {
-    const stored = await storage_1.default.getSubscriptionPlans();
+    const stored = await db.getSubscriptionPlans();
     if (!stored || stored.length === 0)
         return paymentService_1.SUBSCRIPTION_PLANS;
     const byId = {};
@@ -51,7 +52,7 @@ async function getEffectivePlans() {
         byId[p.id] = { ...p };
     for (const sp of stored)
         byId[sp.id] = { ...byId[sp.id], ...sp };
-    const deletedIds = await storage_1.default.getDeletedSubscriptionPlanIds?.() ?? [];
+    const deletedIds = await db.getDeletedSubscriptionPlanIds?.() ?? [];
     return Object.entries(byId)
         .filter(([id]) => !deletedIds.includes(id))
         .map(([, plan]) => plan);
@@ -79,7 +80,7 @@ router.get('/plans', async (req, res) => {
 });
 router.post('/plans', auth_1.authMiddleware, async (req, res) => {
     try {
-        const admin = await storage_1.default.getUserById(String(req.user.uid));
+        const admin = await db.getUserById(String(req.user.uid));
         if (!admin || admin.role !== 'admin') {
             return res.status(403).json({ success: false, message: 'Forbidden' });
         }
@@ -95,7 +96,7 @@ router.post('/plans', auth_1.authMiddleware, async (req, res) => {
             interval,
             features,
         };
-        await storage_1.default.addSubscriptionPlan(plan);
+        await db.addSubscriptionPlan(plan);
         return res.json({ success: true, data: { plan } });
     }
     catch (e) {
@@ -105,12 +106,12 @@ router.post('/plans', auth_1.authMiddleware, async (req, res) => {
 });
 router.put('/plans/:id', auth_1.authMiddleware, async (req, res) => {
     try {
-        const admin = await storage_1.default.getUserById(String(req.user.uid));
+        const admin = await db.getUserById(String(req.user.uid));
         if (!admin || admin.role !== 'admin') {
             return res.status(403).json({ success: false, message: 'Forbidden' });
         }
         const planId = String(req.params.id);
-        const updated = await storage_1.default.updateSubscriptionPlan(planId, req.body || {});
+        const updated = await db.updateSubscriptionPlan(planId, req.body || {});
         if (!updated) {
             return res.status(404).json({ success: false, message: 'Plan not found' });
         }
@@ -123,12 +124,12 @@ router.put('/plans/:id', auth_1.authMiddleware, async (req, res) => {
 });
 router.delete('/plans/:id', auth_1.authMiddleware, async (req, res) => {
     try {
-        const admin = await storage_1.default.getUserById(String(req.user.uid));
+        const admin = await db.getUserById(String(req.user.uid));
         if (!admin || admin.role !== 'admin') {
             return res.status(403).json({ success: false, message: 'Forbidden' });
         }
         const planId = String(req.params.id);
-        const deleted = await storage_1.default.deleteSubscriptionPlan(planId);
+        const deleted = await db.deleteSubscriptionPlan(planId);
         if (!deleted) {
             return res.status(404).json({ success: false, message: 'Plan not found' });
         }
@@ -141,13 +142,13 @@ router.delete('/plans/:id', auth_1.authMiddleware, async (req, res) => {
 });
 router.get('/subscription', auth_1.authMiddleware, async (req, res) => {
     try {
-        const user = await storage_1.default.getUserById(String(req.user.uid));
+        const user = await db.getUserById(String(req.user.uid));
         if (!user) {
             return res.status(404).json({ success: false, message: 'User not found' });
         }
         const subscriptionStatus = paymentService_1.default.getCurrentSubscriptionStatus(user);
-        const userProducts = await storage_1.default.getProducts(user.id);
-        const userAlerts = await storage_1.default.getAllAlerts().then(alerts => alerts.filter(alert => alert.userId === user.id));
+        const userProducts = await db.getProducts(user.id);
+        const userAlerts = await db.getAllAlerts().then((alerts) => alerts.filter((alert) => alert.userId === user.id));
         const now = new Date();
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         const alertsThisMonth = userAlerts.filter((alert) => new Date(alert.createdAt) >= startOfMonth).length;
@@ -185,7 +186,7 @@ router.post('/subscribe', auth_1.authMiddleware, async (req, res) => {
         if (!plan) {
             return res.status(400).json({ success: false, message: 'Invalid plan' });
         }
-        const user = await storage_1.default.getUserById(String(req.user.uid));
+        const user = await db.getUserById(String(req.user.uid));
         if (!user) {
             return res.status(404).json({ success: false, message: 'User not found' });
         }
@@ -222,7 +223,7 @@ router.post('/subscribe', auth_1.authMiddleware, async (req, res) => {
                 planName: plan.name
             }
         };
-        await storage_1.default.addPayment(payment);
+        await db.addPayment(payment);
         return res.json({
             success: true,
             data: {
@@ -239,7 +240,7 @@ router.post('/subscribe', auth_1.authMiddleware, async (req, res) => {
 });
 router.get('/history', auth_1.authMiddleware, async (req, res) => {
     try {
-        const payments = await storage_1.default.getUserPayments(String(req.user.uid));
+        const payments = await db.getUserPayments(String(req.user.uid));
         res.json({
             success: true,
             data: { payments }
@@ -252,7 +253,7 @@ router.get('/history', auth_1.authMiddleware, async (req, res) => {
 });
 router.post('/cancel', auth_1.authMiddleware, async (req, res) => {
     try {
-        const user = await storage_1.default.getUserById(String(req.user.uid));
+        const user = await db.getUserById(String(req.user.uid));
         if (!user || !user.subscription) {
             return res.status(404).json({ success: false, message: 'No active subscription found' });
         }
@@ -260,7 +261,7 @@ router.post('/cancel', auth_1.authMiddleware, async (req, res) => {
             ...user.subscription,
             status: 'cancelled'
         };
-        await storage_1.default.updateUser(user.id, { subscription: updatedSubscription });
+        await db.updateUser(user.id, { subscription: updatedSubscription });
         return res.json({
             success: true,
             message: 'Subscription cancelled successfully'
@@ -273,7 +274,7 @@ router.post('/cancel', auth_1.authMiddleware, async (req, res) => {
 });
 router.get('/affiliate/dashboard', auth_1.authMiddleware, async (req, res) => {
     try {
-        const user = await storage_1.default.getUserById(req.user.uid);
+        const user = await db.getUserById(req.user.uid);
         if (!user) {
             return res.status(404).json({ success: false, message: 'User not found' });
         }
@@ -286,10 +287,10 @@ router.get('/affiliate/dashboard', auth_1.authMiddleware, async (req, res) => {
                 totalEarnings: 0,
                 pendingEarnings: 0
             };
-            await storage_1.default.updateUser(user.id, { affiliate });
+            await db.updateUser(user.id, { affiliate });
         }
-        const transactions = await storage_1.default.getAffiliateTransactions(user.id);
-        const referrals = await storage_1.default.getAffiliateReferrals(user.id);
+        const transactions = await db.getAffiliateTransactions(user.id);
+        const referrals = await db.getAffiliateReferrals(user.id);
         return res.json({
             success: true,
             data: {
@@ -314,7 +315,7 @@ router.post('/affiliate/enable', auth_1.authMiddleware, async (req, res) => {
                 message: 'Payout method is required'
             });
         }
-        const user = await storage_1.default.getUserById(req.user.uid);
+        const user = await db.getUserById(req.user.uid);
         if (!user) {
             return res.status(404).json({ success: false, message: 'User not found' });
         }
@@ -327,7 +328,7 @@ router.post('/affiliate/enable', auth_1.authMiddleware, async (req, res) => {
             payoutMethod,
             payoutDetails
         };
-        await storage_1.default.updateUser(user.id, { affiliate });
+        await db.updateUser(user.id, { affiliate });
         return res.json({
             success: true,
             data: { affiliate },
@@ -348,7 +349,7 @@ router.post('/affiliate/payout', auth_1.authMiddleware, async (req, res) => {
                 message: 'Valid amount is required'
             });
         }
-        const user = await storage_1.default.getUserById(req.user.uid);
+        const user = await db.getUserById(req.user.uid);
         if (!user || !user.affiliate || !user.affiliate.isAffiliate) {
             return res.status(404).json({ success: false, message: 'Affiliate account not found' });
         }
@@ -374,7 +375,7 @@ router.post('/affiliate/payout', auth_1.authMiddleware, async (req, res) => {
             requestedAt: new Date().toISOString(),
             details: user.affiliate.payoutDetails
         };
-        await storage_1.default.addPayoutRequest(payoutRequest);
+        await db.addPayoutRequest(payoutRequest);
         return res.json({
             success: true,
             data: { payoutRequest },

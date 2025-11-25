@@ -37,15 +37,24 @@ exports.DEFAULT_CONFIG = void 0;
 exports.matchProducts = matchProducts;
 exports.findProductMatches = findProductMatches;
 const stringSimilarity = __importStar(require("string-similarity"));
+let natural;
+try {
+    natural = require('natural');
+}
+catch {
+    natural = undefined;
+}
 exports.DEFAULT_CONFIG = {
-    minScore: 0.7,
+    minScore: 0.5,
     maxResults: 5,
-    priceTolerancePercent: 20,
+    priceTolerancePercent: 30,
     weights: {
-        titleFuzzy: 0.4,
-        brandMatch: 0.3,
-        modelVariant: 0.2,
-        priceCloseness: 0.1
+        titleFuzzy: 0.35,
+        brandMatch: 0.35,
+        modelVariant: 0.15,
+        priceCloseness: 0.05,
+        attributeSimilarity: 0.15,
+        tfidfSimilarity: 0.1
     }
 };
 var ProductCategory;
@@ -223,17 +232,36 @@ function extractProductInfo(normalizedTitle) {
             break;
         }
     }
-    if (normalizedTitle.includes('phone') || normalizedTitle.includes('iphone')) {
+    const title = normalizedTitle.toLowerCase();
+    if (title.includes('phone') || title.includes('iphone') || title.includes('samsung') || title.includes('galaxy') || title.includes('pixel')) {
         info.category = 'phone';
     }
-    else if (normalizedTitle.includes('laptop') || normalizedTitle.includes('macbook')) {
+    else if (title.includes('laptop') || title.includes('macbook') || title.includes('notebook') || title.includes('computer')) {
         info.category = 'laptop';
     }
-    else if (normalizedTitle.includes('tv') || normalizedTitle.includes('television')) {
+    else if (title.includes('tv') || title.includes('television') || title.includes('monitor') || title.includes('display')) {
         info.category = 'tv';
     }
-    else if (normalizedTitle.includes('headphone') || normalizedTitle.includes('earphone') || normalizedTitle.includes('airpods')) {
+    else if (title.includes('headphone') || title.includes('earphone') || title.includes('airpods') || title.includes('speaker') || title.includes('audio')) {
         info.category = 'audio';
+    }
+    else if (title.includes('watch') || title.includes('smartwatch') || title.includes('fitness')) {
+        info.category = 'watch';
+    }
+    else if (title.includes('tablet') || title.includes('ipad')) {
+        info.category = 'tablet';
+    }
+    else if (title.includes('camera') || title.includes('lens') || title.includes('photo')) {
+        info.category = 'camera';
+    }
+    else if (title.includes('game') || title.includes('gaming') || title.includes('console')) {
+        info.category = 'gaming';
+    }
+    else if (title.includes('clothing') || title.includes('shirt') || title.includes('dress') || title.includes('jacket')) {
+        info.category = 'clothing';
+    }
+    else if (title.includes('shoe') || title.includes('sneaker') || title.includes('boot')) {
+        info.category = 'shoes';
     }
     return info;
 }
@@ -261,7 +289,10 @@ function calculateFuzzyScore(title1, title2) {
 function calculateBrandScore(info1, info2) {
     if (!info1.brand || !info2.brand)
         return 0;
-    return info1.brand === info2.brand ? 1 : 0;
+    if (info1.brand === info2.brand)
+        return 1;
+    const brandSimilarity = stringSimilarity.compareTwoStrings(info1.brand.toLowerCase(), info2.brand.toLowerCase());
+    return brandSimilarity >= 0.7 ? brandSimilarity : 0;
 }
 function calculateModelScore(info1, info2) {
     if (!info1.modelTokens.length || !info2.modelTokens.length)
@@ -286,12 +317,58 @@ function calculatePriceScore(price1, price2, tolerancePercent = 20) {
 function calculateSemanticScore(title1, title2) {
     return 0;
 }
-function calculateOverallScore(fuzzyScore, brandScore, modelScore, priceScore, semanticScore, config) {
+function calculateTfidfSimilarity(title1, title2) {
+    if (!natural)
+        return 0;
+    try {
+        const TfIdf = natural.TfIdf;
+        const tfidf = new TfIdf();
+        tfidf.addDocument(title1);
+        tfidf.addDocument(title2);
+        const terms1 = {};
+        const terms2 = {};
+        tfidf.listTerms(0).forEach((t) => { terms1[t.term] = t.tfidf; });
+        tfidf.listTerms(1).forEach((t) => { terms2[t.term] = t.tfidf; });
+        const keys = new Set([...Object.keys(terms1), ...Object.keys(terms2)]);
+        let dot = 0, n1 = 0, n2 = 0;
+        keys.forEach(k => { const a = terms1[k] || 0, b = terms2[k] || 0; dot += a * b; n1 += a * a; n2 += b * b; });
+        if (n1 === 0 || n2 === 0)
+            return 0;
+        return Math.max(0, Math.min(1, dot / (Math.sqrt(n1) * Math.sqrt(n2))));
+    }
+    catch {
+        return 0;
+    }
+}
+function calculateAttributeSimilarity(info1, info2) {
+    let score = 0, total = 0;
+    if (info1.color || info2.color) {
+        total++;
+        if (info1.color && info2.color && info1.color === info2.color)
+            score++;
+    }
+    if (info1.storage || info2.storage) {
+        total++;
+        if (info1.storage && info2.storage && info1.storage === info2.storage)
+            score++;
+    }
+    if (info1.size || info2.size) {
+        total++;
+        if (info1.size && info2.size && info1.size === info2.size)
+            score++;
+    }
+    return total === 0 ? 0 : score / total;
+}
+function calculateOverallScore(fuzzyScore, brandScore, modelScore, priceScore, semanticScore, attributeScore, tfidfScore, config) {
     const { weights } = config;
     let totalScore = (fuzzyScore * weights.titleFuzzy +
         brandScore * weights.brandMatch +
         modelScore * weights.modelVariant +
-        priceScore * weights.priceCloseness);
+        priceScore * weights.priceCloseness +
+        (weights.attributeSimilarity ?? 0.15) * attributeScore +
+        (weights.tfidfSimilarity ?? 0.1) * tfidfScore);
+    if (brandScore > 0)
+        totalScore += 0.2;
     if (semanticScore > 0) {
         const semanticWeight = 0.1;
         totalScore = totalScore * 0.9 + semanticScore * semanticWeight;
@@ -300,22 +377,27 @@ function calculateOverallScore(fuzzyScore, brandScore, modelScore, priceScore, s
 }
 function matchProducts(source, candidates, config = exports.DEFAULT_CONFIG) {
     const filteredCandidates = candidates.filter(c => c.id !== source.id);
+    console.log('Candidates after filter:', filteredCandidates.length);
     const sourceNormalized = normalizeTitle(source.title);
     const sourceInfo = extractProductInfo(sourceNormalized);
     const results = [];
     for (const candidate of filteredCandidates) {
         const candidateNormalized = normalizeTitle(candidate.title);
         const candidateInfo = extractProductInfo(candidateNormalized);
-        if (sourceInfo.category && candidateInfo.category &&
-            sourceInfo.category !== candidateInfo.category) {
-            continue;
+        if (sourceInfo.category && candidateInfo.category) {
+            const categorySimilarity = stringSimilarity.compareTwoStrings(sourceInfo.category.toLowerCase(), candidateInfo.category.toLowerCase());
+            if (categorySimilarity < 0.3) {
+                continue;
+            }
         }
         const fuzzyScore = calculateFuzzyScore(sourceNormalized, candidateNormalized);
         const brandScore = calculateBrandScore(sourceInfo, candidateInfo);
         const modelScore = calculateModelScore(sourceInfo, candidateInfo);
         const priceScore = calculatePriceScore(source.price, candidate.price, config.priceTolerancePercent);
         const semanticScore = calculateSemanticScore(sourceNormalized, candidateNormalized);
-        const overallScore = calculateOverallScore(fuzzyScore, brandScore, modelScore, priceScore, semanticScore, config);
+        const attributeScore = calculateAttributeSimilarity(sourceInfo, candidateInfo);
+        const tfidfScore = calculateTfidfSimilarity(sourceNormalized, candidateNormalized);
+        const overallScore = calculateOverallScore(fuzzyScore, brandScore, modelScore, priceScore, semanticScore, attributeScore, tfidfScore, config);
         if (overallScore >= config.minScore) {
             const priceDiff = source.price - candidate.price;
             const priceDiffPercent = source.price > 0 ? Math.abs(priceDiff / source.price) * 100 : 0;

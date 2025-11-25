@@ -5,6 +5,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PaymentService = exports.SUBSCRIPTION_PLANS = exports.FREE_PERIOD_MONTHS = void 0;
 const axios_1 = __importDefault(require("axios"));
+const database_1 = require("../config/database");
+const db = (0, database_1.getDb)();
 exports.FREE_PERIOD_MONTHS = 6;
 exports.SUBSCRIPTION_PLANS = [
     {

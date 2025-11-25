@@ -6,6 +6,7 @@ export declare const TABLES: {
     readonly ALERTS: "alerts";
     readonly NOTIFICATIONS: "notifications";
     readonly PRICE_HISTORY: "price_history";
+    readonly PRODUCT_MATCHES: "product_matches";
     readonly PAYMENTS: "payments";
     readonly AFFILIATE_TRANSACTIONS: "affiliate_transactions";
     readonly PAYOUT_REQUESTS: "payout_requests";

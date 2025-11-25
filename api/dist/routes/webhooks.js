@@ -4,15 +4,16 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
-const storage_1 = __importDefault(require("../config/storage"));
+const database_1 = require("../config/database");
 const paymentService_1 = __importDefault(require("../services/paymentService"));
 const uuid_1 = require("uuid");
 const router = express_1.default.Router();
+const db = (0, database_1.getDb)();
 async function processAffiliateCommission(referredUserId, amount, type, referralCode) {
     try {
         let affiliateUser;
         if (referralCode) {
-            const allUsers = await storage_1.default.getUsers();
+            const allUsers = await db.getUsers();
             affiliateUser = allUsers.find((u) => u.affiliate?.referralCode === referralCode);
         }
         if (!affiliateUser || !affiliateUser.affiliate?.isAffiliate) {
@@ -29,10 +30,10 @@ async function processAffiliateCommission(referredUserId, amount, type, referral
             status: 'approved',
             createdAt: new Date().toISOString()
         };
-        await storage_1.default.addAffiliateTransaction(transaction);
+        await db.addAffiliateTransaction(transaction);
         const currentPendingEarnings = affiliateUser.affiliate.pendingEarnings || 0;
         const currentTotalEarnings = affiliateUser.affiliate.totalEarnings || 0;
-        await storage_1.default.updateUser(affiliateUser.id, {
+        await db.updateUser(affiliateUser.id, {
             affiliate: {
                 ...affiliateUser.affiliate,
                 pendingEarnings: currentPendingEarnings + commission,
@@ -72,7 +73,7 @@ async function activateSubscription(user, payment) {
             prioritySupport: true
         }
     };
-    await storage_1.default.updateUser(user.id, { subscription });
+    await db.updateUser(user.id, { subscription });
     const referralCode = new URLSearchParams(user.referralSource || '').get('ref');
     if (referralCode) {
         await processAffiliateCommission(user.id, payment.amount, 'subscription', referralCode);
@@ -94,14 +95,14 @@ router.post('/stripe', async (req, res) => {
         if (event.type === 'checkout.session.completed') {
             const session = event.data.object;
             const { user_id, plan_id } = session.metadata;
-            const payments = await storage_1.default.getUserPayments(user_id);
+            const payments = await db.getUserPayments(user_id);
             const payment = payments.find(p => p.paymentGatewayId === session.id);
             if (payment) {
-                await storage_1.default.updatePayment(payment.id, {
+                await db.updatePayment(payment.id, {
                     status: 'completed',
                     completedAt: new Date().toISOString()
                 });
-                const user = await storage_1.default.getUserById(payment.userId);
+                const user = await db.getUserById(payment.userId);
                 if (user && payment.type === 'subscription') {
                     await activateSubscription(user, payment);
                 }
@@ -126,20 +127,20 @@ router.post('/paypal', async (req, res) => {
         const { event_type, resource } = req.body;
         if (event_type === 'PAYMENT.CAPTURE.COMPLETED') {
             const { id, amount, custom_id } = resource;
-            const allUsers = await storage_1.default.getUsers();
+            const allUsers = await db.getUsers();
             let payment = null;
             for (const user of allUsers) {
-                const userPayments = await storage_1.default.getUserPayments(user.id);
+                const userPayments = await db.getUserPayments(user.id);
                 payment = userPayments.find(p => p.paymentGatewayId === id);
                 if (payment)
                     break;
             }
             if (payment) {
-                await storage_1.default.updatePayment(payment.id, {
+                await db.updatePayment(payment.id, {
                     status: 'completed',
                     completedAt: new Date().toISOString()
                 });
-                const user = await storage_1.default.getUserById(payment.userId);
+                const user = await db.getUserById(payment.userId);
                 if (user && payment.type === 'subscription') {
                     await activateSubscription(user, payment);
                 }

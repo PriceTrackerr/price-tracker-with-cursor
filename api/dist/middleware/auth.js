@@ -1,33 +1,30 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.authMiddleware = void 0;
-const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const storage_1 = __importDefault(require("../config/storage"));
-const JWT_SECRET = process.env.JWT_SECRET || 'changeme';
+exports.authMiddleware = exports.isAdminEmail = void 0;
+const supabase_1 = require("../config/supabase");
+const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'realpricetracker94@gmail.com').toLowerCase();
+const isAdminEmail = (email) => !!email && email.toLowerCase() === ADMIN_EMAIL;
+exports.isAdminEmail = isAdminEmail;
 const authMiddleware = async (req, res, next) => {
     const auth = req.headers.authorization;
-    if (!auth) {
+    if (!auth || !auth.startsWith('Bearer ')) {
         console.log('[AUTH] Missing Authorization header');
-        return res.status(401).json({ success: false, message: 'Missing token from auth.ts function' });
+        return res.status(401).json({ success: false, message: 'Missing token' });
     }
     try {
         const token = auth.replace('Bearer ', '');
-        console.log('[AUTH] Verifying token:', token.substring(0, 20) + '...');
-        const decoded = jsonwebtoken_1.default.verify(token, JWT_SECRET);
-        const user = await storage_1.default.getUserById(decoded.uid);
-        if (!user) {
-            console.log('[AUTH] User not found for uid:', decoded.uid);
-            return res.status(404).json({ success: false, message: 'User not found' });
+        console.log('[AUTH] Validating Supabase token:', token.substring(0, 20) + '...');
+        const { data: { user: authUser }, error } = await supabase_1.supabasePublic.auth.getUser(token);
+        if (error || !authUser) {
+            console.log('[AUTH] Supabase token invalid:', error?.message);
+            return res.status(401).json({ success: false, message: 'Invalid token' });
         }
-        if (user.role === 'banned') {
-            console.log('[AUTH] Banned user attempted access:', decoded.uid);
-            return res.status(403).json({ success: false, message: 'Account has been suspended' });
-        }
-        req.user = { uid: decoded.uid, email: decoded.email };
-        console.log('[AUTH] Successfully authenticated user:', decoded.uid);
+        req.user = {
+            uid: authUser.id,
+            email: authUser.email || '',
+            isAdmin: (0, exports.isAdminEmail)(authUser.email || ''),
+        };
+        console.log('[AUTH] Successfully authenticated user:', authUser.id, 'Admin:', req.user.isAdmin);
         return next();
     }
     catch (e) {

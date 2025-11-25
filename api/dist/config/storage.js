@@ -5,33 +5,41 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
-const DATA_FILE = path_1.default.join(__dirname, '../../data/data.json');
+const DATA_FILE = process.env.VERCEL ? '/tmp/data.json' : path_1.default.join(__dirname, '../../data/data.json');
 const dataDir = path_1.default.dirname(DATA_FILE);
-if (!fs_1.default.existsSync(dataDir)) {
-    fs_1.default.mkdirSync(dataDir, { recursive: true });
+try {
+    if (dataDir && dataDir !== '/' && !fs_1.default.existsSync(dataDir)) {
+        fs_1.default.mkdirSync(dataDir, { recursive: true });
+    }
+}
+catch (_) {
 }
 if (!fs_1.default.existsSync(DATA_FILE)) {
-    fs_1.default.writeFileSync(DATA_FILE, JSON.stringify({
-        products: [],
-        users: [],
-        alerts: [],
-        notifications: [],
-        priceHistory: [],
-        payments: [],
-        affiliateTransactions: [],
-        payoutRequests: [],
-        subscriptionPlans: [],
-        subscriptionPlansDeleted: [],
-        coupons: [],
-        couponStacks: [],
-        priceGuarantees: [],
-        expertCurators: [],
-        sharedWatchlists: [],
-        communityVotes: [],
-        dealComments: [],
-        globalMarketData: [],
-        automationRules: []
-    }));
+    try {
+        fs_1.default.writeFileSync(DATA_FILE, JSON.stringify({
+            products: [],
+            users: [],
+            alerts: [],
+            notifications: [],
+            priceHistory: [],
+            payments: [],
+            affiliateTransactions: [],
+            payoutRequests: [],
+            subscriptionPlans: [],
+            subscriptionPlansDeleted: [],
+            coupons: [],
+            couponStacks: [],
+            priceGuarantees: [],
+            expertCurators: [],
+            sharedWatchlists: [],
+            communityVotes: [],
+            dealComments: [],
+            globalMarketData: [],
+            automationRules: []
+        }));
+    }
+    catch (error) {
+    }
 }
 class FileStorage {
     readData() {

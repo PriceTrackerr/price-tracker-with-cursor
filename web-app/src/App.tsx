@@ -11,6 +11,7 @@ import Alerts from './pages/Alerts'
 import Settings from './pages/Settings'
 import ProductDetails from './pages/ProductDetails'
 import Subscription from './pages/Subscription'
+import Pricing from './pages/Pricing'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import TermsAndConditions from './pages/TermsAndConditions'
 import ResetPassword from './pages/ResetPassword'
@@ -23,7 +24,7 @@ import i18n from './i18n'
 
 function AppContent() {
   const { reconnecting } = useAuth();
-  
+
   return (
     <I18nextProvider i18n={i18n}>
       <Router>
@@ -67,12 +68,17 @@ function AppContent() {
                 <Subscription />
               </Layout>
             } />
+            <Route path="/pricing" element={
+              <Layout>
+                <Pricing />
+              </Layout>
+            } />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
             <Route path="/reset-password/*" element={<ResetPassword />} />
 
           </Routes>
-          <Toaster 
+          <Toaster
             position="top-right"
             toastOptions={{
               duration: 4000,

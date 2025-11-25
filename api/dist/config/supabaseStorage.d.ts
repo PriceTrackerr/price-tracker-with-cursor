@@ -1,4 +1,17 @@
 import type { Product, User, Alert, Notification, PriceHistory, Payment, AffiliateTransaction, PayoutRequest, SubscriptionPlan } from './storage';
+interface ProductMatch {
+    id?: string;
+    sourceProductId: string;
+    matchedProductId: string;
+    confidence: number;
+    similarity: number;
+    matchReason: string;
+    priceDifference: number;
+    priceDifferencePercent: number;
+    savings: string;
+    createdAt: string;
+    updatedAt: string;
+}
 declare class SupabaseStorage {
     getSubscriptionPlans(): Promise<SubscriptionPlan[]>;
     getDeletedSubscriptionPlanIds(): Promise<string[]>;
@@ -29,6 +42,9 @@ declare class SupabaseStorage {
     updateNotification(id: string, update: Partial<Notification>): Promise<boolean>;
     deleteNotification(id: string): Promise<boolean>;
     clearNotifications(userId: string): Promise<void>;
+    addProductMatch(matchData: Omit<ProductMatch, 'id' | 'createdAt' | 'updatedAt'>): Promise<string>;
+    getProductMatches(sourceProductId: string): Promise<ProductMatch[]>;
+    deleteProductMatches(sourceProductId: string): Promise<boolean>;
     addPriceHistory(historyData: Omit<PriceHistory, 'id' | 'timestamp'>): Promise<string>;
     getPriceHistory(productId: string): Promise<PriceHistory[]>;
     addPayment(paymentData: Payment): Promise<string>;

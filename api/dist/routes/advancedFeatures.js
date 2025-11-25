@@ -14,8 +14,9 @@ const automationEngine_1 = require("../services/automationEngine");
 const ebayService_1 = require("../services/ebayService");
 const freeCouponService_1 = require("../services/freeCouponService");
 const currencyService_1 = require("../services/currencyService");
-const storage_1 = __importDefault(require("../config/storage"));
+const database_1 = require("../config/database");
 const router = express_1.default.Router();
+const db = (0, database_1.getDb)();
 const conditionService = new conditionScoringService_1.ConditionScoringService();
 const couponService = new couponStackingService_1.CouponStackingService();
 const arbitrageService = new globalArbitrageService_1.GlobalArbitrageService();
@@ -27,7 +28,7 @@ const freeCouponService = new freeCouponService_1.FreeCouponService();
 const currencyService = new currencyService_1.CurrencyService();
 router.get('/metrics', auth_1.authMiddleware, async (req, res) => {
     try {
-        const allProducts = await storage_1.default.getProducts();
+        const allProducts = await db.getProducts();
         const conditionMetrics = {
             totalAnalyses: allProducts.length,
             averageScore: 78.5,
@@ -95,7 +96,7 @@ router.get('/metrics', auth_1.authMiddleware, async (req, res) => {
 router.get('/enhanced-analysis/:productId', auth_1.authMiddleware, async (req, res) => {
     try {
         const { productId } = req.params;
-        const product = await storage_1.default.getProductById(productId);
+        const product = await db.getProductById(productId);
         if (!product) {
             return res.status(404).json({ success: false, message: 'Product not found' });
         }
@@ -121,7 +122,7 @@ router.get('/enhanced-analysis/:productId', auth_1.authMiddleware, async (req, r
 router.post('/condition/analyze/:productId', auth_1.authMiddleware, async (req, res) => {
     try {
         const { productId } = req.params;
-        const product = await storage_1.default.getProductById(productId);
+        const product = await db.getProductById(productId);
         if (!product) {
             return res.status(404).json({ success: false, message: 'Product not found' });
         }
@@ -170,7 +171,7 @@ router.post('/condition/analyze/:productId', auth_1.authMiddleware, async (req, 
 router.post('/condition/compare/:productId', auth_1.authMiddleware, async (req, res) => {
     try {
         const { productId } = req.params;
-        const product = await storage_1.default.getProductById(productId);
+        const product = await db.getProductById(productId);
         if (!product) {
             return res.status(404).json({ success: false, message: 'Product not found' });
         }
@@ -202,7 +203,7 @@ router.post('/condition/compare/:productId', auth_1.authMiddleware, async (req, 
 router.get('/coupons/find/:productId', auth_1.authMiddleware, async (req, res) => {
     try {
         const { productId } = req.params;
-        const product = await storage_1.default.getProductById(productId);
+        const product = await db.getProductById(productId);
         if (!product) {
             return res.status(404).json({ success: false, message: 'Product not found' });
         }
@@ -235,7 +236,7 @@ router.get('/coupons/find/:productId', auth_1.authMiddleware, async (req, res) =
 router.post('/coupons/validate', auth_1.authMiddleware, async (req, res) => {
     try {
         const { coupons, productId } = req.body;
-        const product = await storage_1.default.getProductById(productId);
+        const product = await db.getProductById(productId);
         if (!product) {
             return res.status(404).json({ success: false, message: 'Product not found' });
         }
@@ -255,7 +256,7 @@ router.get('/arbitrage/opportunities/:productId', auth_1.authMiddleware, async (
     try {
         const { productId } = req.params;
         const { userCountry = 'US' } = req.query;
-        const product = await storage_1.default.getProductById(productId);
+        const product = await db.getProductById(productId);
         if (!product) {
             return res.status(404).json({ success: false, message: 'Product not found' });
         }
@@ -349,7 +350,7 @@ router.post('/arbitrage/landed-cost', auth_1.authMiddleware, async (req, res) =>
 router.get('/community/credibility/:productId', auth_1.authMiddleware, async (req, res) => {
     try {
         const { productId } = req.params;
-        const product = await storage_1.default.getProductById(productId);
+        const product = await db.getProductById(productId);
         if (!product) {
             return res.status(404).json({ success: false, message: 'Product not found' });
         }
@@ -431,7 +432,7 @@ router.get('/health', async (req, res) => {
 router.get('/product-card-analysis/:productId', auth_1.authMiddleware, async (req, res) => {
     try {
         const { productId } = req.params;
-        const product = await storage_1.default.getProductById(productId);
+        const product = await db.getProductById(productId);
         if (!product) {
             return res.status(404).json({ success: false, message: 'Product not found' });
         }
@@ -546,7 +547,7 @@ router.get('/admin/dashboard-stats', auth_1.authMiddleware, async (req, res) => 
         const [ebayProducts, currencyRates, recentAnalyses] = await Promise.allSettled([
             ebayService.searchProducts('iPhone 15'),
             currencyService.getExchangeRate('USD', 'EUR'),
-            storage_1.default.getProducts(req.user.uid)
+            db.getProducts(req.user.uid)
         ]);
         let totalConditionScore = 0;
         let analyzedProducts = 0;

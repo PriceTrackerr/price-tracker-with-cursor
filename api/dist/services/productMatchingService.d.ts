@@ -41,6 +41,8 @@ export interface MatchingConfig {
         brandMatch: number;
         modelVariant: number;
         priceCloseness: number;
+        attributeSimilarity?: number;
+        tfidfSimilarity?: number;
     };
 }
 export declare const DEFAULT_CONFIG: MatchingConfig;

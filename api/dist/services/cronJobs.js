@@ -6,11 +6,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.initializeCronJobs = void 0;
 exports.checkPriceAlerts = checkPriceAlerts;
 const node_cron_1 = __importDefault(require("node-cron"));
-const storage_1 = __importDefault(require("../config/storage"));
+const database_1 = require("../config/database");
 const emailService_1 = __importDefault(require("./emailService"));
 const emailService = new emailService_1.default();
+const db = (0, database_1.getDb)();
 async function storeDashboardNotification(product, alert) {
-    await storage_1.default.addNotification({
+    await db.addNotification({
         productId: product.id,
         productTitle: product.title,
         productUrl: product.url,
@@ -34,28 +35,36 @@ async function sendBrowserNotification(product, alert) {
     };
 }
 async function checkPriceAlerts() {
-    const alerts = await storage_1.default.getAllAlerts();
+    const alerts = await db.getAllAlerts();
     console.log(`[DEBUG] Loaded ${alerts.length} alerts`);
     const priceDropsByUser = {};
     for (const alert of alerts) {
         console.log(`[DEBUG] Checking alert ${alert.id} for product ${alert.productId}`);
-        const product = await storage_1.default.getProductById(alert.productId);
+        const product = await db.getProductById(alert.productId);
         if (!product) {
             console.log(`[DEBUG] Product not found for alert ${alert.id}`);
             continue;
         }
         const currentPrice = product.price || 0;
         const targetPrice = alert.targetPrice;
+        console.log(`[DEBUG] Alert ${alert.id}: currentPrice=${currentPrice}, targetPrice=${targetPrice}, alert.currentPrice=${alert.currentPrice}`);
+        if (alert.currentPrice !== currentPrice) {
+            console.log(`[DEBUG] Updating alert ${alert.id} current price from ${alert.currentPrice} to ${currentPrice}`);
+            await db.updateAlert(alert.id, { currentPrice });
+        }
         if (currentPrice <= targetPrice) {
             let previousPrice = currentPrice;
-            const history = await storage_1.default.getPriceHistory(alert.productId);
+            const history = await db.getPriceHistory(alert.productId);
             previousPrice = history.length > 1 ? history[history.length - 2]?.price || currentPrice : currentPrice;
             console.log(`[DEBUG] Alert ${alert.id}: currentPrice=${currentPrice}, targetPrice=${targetPrice}, previousPrice=${previousPrice}`);
-            if (currentPrice < previousPrice) {
+            const isNewTrigger = alert.currentPrice > targetPrice && currentPrice <= targetPrice;
+            const isPriceDrop = currentPrice < previousPrice;
+            console.log(`[DEBUG] Alert ${alert.id}: isNewTrigger=${isNewTrigger}, isPriceDrop=${isPriceDrop}`);
+            if (isNewTrigger || isPriceDrop) {
                 console.log(`[DEBUG] Price drop detected for alert ${alert.id} (product ${product.title})`);
                 let recipientEmail = alert.email;
                 if (!recipientEmail && alert.userId) {
-                    const user = await storage_1.default.getUserById(alert.userId);
+                    const user = await db.getUserById(alert.userId);
                     if (user && user.email && user.role !== 'banned')
                         recipientEmail = user.email;
                 }
@@ -76,7 +85,7 @@ async function checkPriceAlerts() {
                 }
                 let notificationEmail = recipientEmail;
                 if (!notificationEmail && alert.userId) {
-                    const user = await storage_1.default.getUserById(alert.userId);
+                    const user = await db.getUserById(alert.userId);
                     if (user && user.email && user.role !== 'banned')
                         notificationEmail = user.email;
                 }
@@ -84,8 +93,8 @@ async function checkPriceAlerts() {
                     await storeDashboardNotification({ ...product, email: notificationEmail }, alert);
                 }
                 await sendBrowserNotification(product, alert);
-                await storage_1.default.updateAlert(alert.id, { currentPrice, triggeredAt: new Date().toISOString() });
-                await storage_1.default.addPriceHistory({
+                await db.updateAlert(alert.id, { currentPrice, triggeredAt: new Date().toISOString() });
+                await db.addPriceHistory({
                     productId: product.id,
                     price: currentPrice,
                     currency: product.currency || '$',
@@ -104,7 +113,7 @@ async function checkPriceAlerts() {
                 shouldSendRestockAlert = true;
             }
             else if (alert.userId) {
-                const user = await storage_1.default.getUserById(alert.userId);
+                const user = await db.getUserById(alert.userId);
                 if (user && user.role !== 'banned') {
                     shouldSendRestockAlert = true;
                 }
@@ -113,7 +122,7 @@ async function checkPriceAlerts() {
                 if (alert.email) {
                     await emailService.sendRestockAlert(alert.email, product.title, product.url, product.platform);
                 }
-                await storage_1.default.addNotification({
+                await db.addNotification({
                     productId: product.id,
                     productTitle: product.title,
                     productUrl: product.url,
@@ -128,7 +137,7 @@ async function checkPriceAlerts() {
             }
         }
         if (product.stockStatus !== product.previousStockStatus) {
-            await storage_1.default.updateProduct(product.id, { previousStockStatus: product.stockStatus || 'unknown' });
+            await db.updateProduct(product.id, { previousStockStatus: product.stockStatus || 'unknown' });
         }
     }
     for (const [userEmail, priceDrops] of Object.entries(priceDropsByUser)) {
@@ -149,12 +158,12 @@ async function checkPriceAlerts() {
     }
 }
 const initializeCronJobs = () => {
-    node_cron_1.default.schedule('*/10 * * * *', async () => {
+    node_cron_1.default.schedule('*/30 * * * *', async () => {
         console.log('[CRON] Running scheduled price drop check...');
         await checkPriceAlerts();
         console.log('[CRON] Price drop check complete.');
     });
-    console.log('Cron jobs initialized');
+    console.log('Cron jobs initialized (checking every 30 minutes)');
 };
 exports.initializeCronJobs = initializeCronJobs;
 //# sourceMappingURL=cronJobs.js.map

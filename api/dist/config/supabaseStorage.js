@@ -93,16 +93,22 @@ class SupabaseStorage {
     async addProduct(productData) {
         try {
             const now = new Date().toISOString();
-            const product = {
-                ...productData,
-                stockStatus: productData.stockStatus || 'unknown',
-                discountInfo: productData.discountInfo ?? undefined,
-                createdAt: now,
-                updatedAt: now
+            const toInsert = {
+                url: productData.url,
+                title: productData.title,
+                price: productData.price,
+                currency: productData.currency,
+                platform: productData.platform,
+                image_url: productData.imageUrl || '',
+                user_id: productData.userId,
+                stock_status: productData.stockStatus || 'unknown',
+                discount_info: productData.discountInfo ?? undefined,
+                created_at: now,
+                updated_at: now
             };
             const { data, error } = await supabase_1.supabase
                 .from(supabase_1.TABLES.PRODUCTS)
-                .insert(product)
+                .insert(toInsert)
                 .select()
                 .single();
             if (error)
@@ -117,12 +123,28 @@ class SupabaseStorage {
         try {
             let query = supabase_1.supabase.from(supabase_1.TABLES.PRODUCTS).select('*');
             if (userId) {
-                query = query.eq('userId', userId);
+                query = query.eq('user_id', userId);
             }
-            const { data, error } = await query.order('createdAt', { ascending: false });
+            const { data, error } = await query.order('created_at', { ascending: false });
             if (error)
                 throw error;
-            return data || [];
+            const mapped = (data || []).map((row) => ({
+                id: row.id,
+                url: row.url,
+                title: row.title,
+                price: row.price,
+                currency: row.currency,
+                platform: row.platform,
+                imageUrl: row.image_url || '',
+                createdAt: row.created_at,
+                updatedAt: row.updated_at,
+                userId: row.user_id,
+                stockStatus: row.stock_status || 'unknown',
+                discountInfo: row.discount_info,
+                matchedProducts: row.matched_products || [],
+                totalMatches: row.total_matches || (row.matched_products ? row.matched_products.length : 0),
+            }));
+            return mapped;
         }
         catch (error) {
             (0, supabase_1.handleSupabaseError)(error, 'getProducts');
@@ -137,7 +159,25 @@ class SupabaseStorage {
                 .single();
             if (error && error.code !== 'PGRST116')
                 throw error;
-            return data || undefined;
+            if (!data)
+                return undefined;
+            const row = data;
+            return {
+                id: row.id,
+                url: row.url,
+                title: row.title,
+                price: row.price,
+                currency: row.currency,
+                platform: row.platform,
+                imageUrl: row.image_url || '',
+                createdAt: row.created_at,
+                updatedAt: row.updated_at,
+                userId: row.user_id,
+                stockStatus: row.stock_status || 'unknown',
+                discountInfo: row.discount_info,
+                matchedProducts: row.matched_products || [],
+                totalMatches: row.total_matches || (row.matched_products ? row.matched_products.length : 0),
+            };
         }
         catch (error) {
             (0, supabase_1.handleSupabaseError)(error, 'getProductById');
@@ -159,9 +199,26 @@ class SupabaseStorage {
     }
     async updateProduct(id, update) {
         try {
+            const mapped = {};
+            const mapField = (from, to) => {
+                if (update[from] !== undefined)
+                    mapped[to] = update[from];
+            };
+            mapField('url', 'url');
+            mapField('title', 'title');
+            mapField('price', 'price');
+            mapField('currency', 'currency');
+            mapField('platform', 'platform');
+            mapField('imageUrl', 'image_url');
+            mapField('userId', 'user_id');
+            mapField('stockStatus', 'stock_status');
+            mapField('discountInfo', 'discount_info');
+            mapField('matchedProducts', 'matched_products');
+            mapField('totalMatches', 'total_matches');
+            mapped['updated_at'] = new Date().toISOString();
             const { error } = await supabase_1.supabase
                 .from(supabase_1.TABLES.PRODUCTS)
-                .update({ ...update, updatedAt: new Date().toISOString() })
+                .update(mapped)
                 .eq('id', id);
             if (error)
                 throw error;
@@ -267,20 +324,31 @@ class SupabaseStorage {
     async addAlert(alertData) {
         try {
             const now = new Date().toISOString();
-            const alert = {
-                ...alertData,
-                createdAt: now
+            const alertToInsert = {
+                user_id: alertData.userId,
+                product_id: alertData.productId,
+                product_title: alertData.productTitle,
+                target_price: alertData.targetPrice,
+                current_price: alertData.currentPrice,
+                is_active: alertData.isActive,
+                email: alertData.email || null,
+                created_at: now
             };
+            console.log('🔍 Inserting alert with data:', alertToInsert);
             const { data, error } = await supabase_1.supabase
                 .from(supabase_1.TABLES.ALERTS)
-                .insert(alert)
+                .insert(alertToInsert)
                 .select()
                 .single();
-            if (error)
+            if (error) {
+                console.error('🚨 Supabase insert error:', error);
                 throw error;
+            }
+            console.log('✅ Alert created successfully with ID:', data.id);
             return data.id;
         }
         catch (error) {
+            console.error('🚨 addAlert error:', error);
             (0, supabase_1.handleSupabaseError)(error, 'addAlert');
         }
     }
@@ -288,12 +356,23 @@ class SupabaseStorage {
         try {
             let query = supabase_1.supabase.from(supabase_1.TABLES.ALERTS).select('*');
             if (userId) {
-                query = query.eq('userId', userId);
+                query = query.eq('user_id', userId);
             }
-            const { data, error } = await query.order('createdAt', { ascending: false });
+            const { data, error } = await query.order('created_at', { ascending: false });
             if (error)
                 throw error;
-            return data || [];
+            return (data || []).map((alert) => ({
+                id: alert.id,
+                productId: alert.product_id,
+                productTitle: alert.product_title,
+                targetPrice: alert.target_price,
+                currentPrice: alert.current_price,
+                isActive: alert.is_active,
+                email: alert.email,
+                notifyOnRestock: alert.notify_on_restock || false,
+                createdAt: alert.created_at,
+                userId: alert.user_id
+            }));
         }
         catch (error) {
             (0, supabase_1.handleSupabaseError)(error, 'getAlerts');
@@ -304,11 +383,22 @@ class SupabaseStorage {
             const { data, error } = await supabase_1.supabase
                 .from(supabase_1.TABLES.ALERTS)
                 .select('*')
-                .eq('isActive', true)
-                .order('createdAt', { ascending: false });
+                .eq('is_active', true)
+                .order('created_at', { ascending: false });
             if (error)
                 throw error;
-            return data || [];
+            return (data || []).map((alert) => ({
+                id: alert.id,
+                productId: alert.product_id,
+                productTitle: alert.product_title,
+                targetPrice: alert.target_price,
+                currentPrice: alert.current_price,
+                isActive: alert.is_active,
+                email: alert.email,
+                notifyOnRestock: alert.notify_on_restock || false,
+                createdAt: alert.created_at,
+                userId: alert.user_id
+            }));
         }
         catch (error) {
             (0, supabase_1.handleSupabaseError)(error, 'getAllAlerts');
@@ -323,7 +413,20 @@ class SupabaseStorage {
                 .single();
             if (error && error.code !== 'PGRST116')
                 throw error;
-            return data || undefined;
+            if (!data)
+                return undefined;
+            return {
+                id: data.id,
+                productId: data.product_id,
+                productTitle: data.product_title,
+                targetPrice: data.target_price,
+                currentPrice: data.current_price,
+                isActive: data.is_active,
+                email: data.email,
+                notifyOnRestock: data.notify_on_restock || false,
+                createdAt: data.created_at,
+                userId: data.user_id,
+            };
         }
         catch (error) {
             (0, supabase_1.handleSupabaseError)(error, 'getAlertById');
@@ -360,13 +463,15 @@ class SupabaseStorage {
     async addNotification(notificationData) {
         try {
             const now = new Date().toISOString();
-            const notification = {
+            const notificationToInsert = {
                 ...notificationData,
+                user_id: notificationData.userId,
                 timestamp: now
             };
+            delete notificationToInsert.userId;
             const { data, error } = await supabase_1.supabase
                 .from(supabase_1.TABLES.NOTIFICATIONS)
-                .insert(notification)
+                .insert(notificationToInsert)
                 .select()
                 .single();
             if (error)
@@ -381,7 +486,7 @@ class SupabaseStorage {
         try {
             let query = supabase_1.supabase.from(supabase_1.TABLES.NOTIFICATIONS).select('*');
             if (userId) {
-                query = query.eq('userId', userId);
+                query = query.eq('user_id', userId);
             }
             const { data, error } = await query.order('timestamp', { ascending: false });
             if (error)
@@ -440,7 +545,7 @@ class SupabaseStorage {
             const { error } = await supabase_1.supabase
                 .from(supabase_1.TABLES.NOTIFICATIONS)
                 .delete()
-                .eq('userId', userId);
+                .eq('user_id', userId);
             if (error)
                 throw error;
         }
@@ -448,16 +553,87 @@ class SupabaseStorage {
             (0, supabase_1.handleSupabaseError)(error, 'clearNotifications');
         }
     }
+    async addProductMatch(matchData) {
+        try {
+            const now = new Date().toISOString();
+            const matchToInsert = {
+                source_product_id: matchData.sourceProductId,
+                matched_product_id: matchData.matchedProductId,
+                confidence: matchData.confidence,
+                similarity: matchData.similarity,
+                match_reason: matchData.matchReason,
+                price_difference: matchData.priceDifference,
+                price_difference_percent: matchData.priceDifferencePercent,
+                savings: matchData.savings,
+                created_at: now,
+                updated_at: now
+            };
+            const { data, error } = await supabase_1.supabase
+                .from(supabase_1.TABLES.PRODUCT_MATCHES)
+                .insert(matchToInsert)
+                .select()
+                .single();
+            if (error)
+                throw error;
+            return data.id;
+        }
+        catch (error) {
+            (0, supabase_1.handleSupabaseError)(error, 'addProductMatch');
+        }
+    }
+    async getProductMatches(sourceProductId) {
+        try {
+            const { data, error } = await supabase_1.supabase
+                .from(supabase_1.TABLES.PRODUCT_MATCHES)
+                .select('*')
+                .eq('product_id', sourceProductId)
+                .order('created_at', { ascending: false });
+            if (error)
+                throw error;
+            return (data || []).map((match) => ({
+                id: match.id,
+                sourceProductId: match.source_product_id,
+                matchedProductId: match.matched_product_id,
+                confidence: match.confidence,
+                similarity: match.similarity,
+                matchReason: match.match_reason,
+                priceDifference: match.price_difference,
+                priceDifferencePercent: match.price_difference_percent,
+                savings: match.savings,
+                createdAt: match.created_at,
+                updatedAt: match.updated_at
+            }));
+        }
+        catch (error) {
+            (0, supabase_1.handleSupabaseError)(error, 'getProductMatches');
+        }
+    }
+    async deleteProductMatches(sourceProductId) {
+        try {
+            const { error } = await supabase_1.supabase
+                .from(supabase_1.TABLES.PRODUCT_MATCHES)
+                .delete()
+                .eq('product_id', sourceProductId);
+            if (error)
+                throw error;
+            return true;
+        }
+        catch (error) {
+            (0, supabase_1.handleSupabaseError)(error, 'deleteProductMatches');
+        }
+    }
     async addPriceHistory(historyData) {
         try {
             const now = new Date().toISOString();
-            const history = {
-                ...historyData,
+            const toInsert = {
+                product_id: historyData.productId,
+                price: historyData.price,
+                currency: historyData.currency,
                 timestamp: now
             };
             const { data, error } = await supabase_1.supabase
                 .from(supabase_1.TABLES.PRICE_HISTORY)
-                .insert(history)
+                .insert(toInsert)
                 .select()
                 .single();
             if (error)
@@ -473,7 +649,7 @@ class SupabaseStorage {
             const { data, error } = await supabase_1.supabase
                 .from(supabase_1.TABLES.PRICE_HISTORY)
                 .select('*')
-                .eq('productId', productId)
+                .eq('product_id', productId)
                 .order('timestamp', { ascending: true });
             if (error)
                 throw error;
