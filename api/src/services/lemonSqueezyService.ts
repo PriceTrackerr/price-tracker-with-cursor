@@ -53,7 +53,19 @@ class LemonSqueezyService {
         try {
             const { createCheckout } = await import('@lemonsqueezy/lemonsqueezy.js');
 
-            const checkout: any = await createCheckout(LEMONSQUEEZY_STORE_ID, planId, {
+            // Convert planId to number (LemonSqueezy expects numeric variant IDs)
+            const variantId = parseInt(planId, 10);
+            if (isNaN(variantId)) {
+                throw new Error(`Invalid variant ID: ${planId}`);
+            }
+
+            console.log('Creating checkout with:', {
+                storeId: LEMONSQUEEZY_STORE_ID,
+                variantId,
+                email
+            });
+
+            const checkout: any = await createCheckout(LEMONSQUEEZY_STORE_ID, variantId, {
                 checkoutData: {
                     email,
                     custom: {
