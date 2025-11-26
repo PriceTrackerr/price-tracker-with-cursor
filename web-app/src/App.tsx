@@ -15,6 +15,8 @@ import Pricing from './pages/Pricing'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import TermsAndConditions from './pages/TermsAndConditions'
 import ResetPassword from './pages/ResetPassword'
+import About from './pages/About'
+import Features from './pages/Features'
 
 import { AuthProvider, useAuth } from './components/AuthContext'
 import { ReconnectingIndicator } from './components/AuthContext'
@@ -76,6 +78,8 @@ function AppContent() {
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
             <Route path="/reset-password/*" element={<ResetPassword />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/features" element={<Features />} />
 
           </Routes>
           <Toaster
