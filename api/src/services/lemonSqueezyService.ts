@@ -4,7 +4,7 @@ import crypto from 'crypto';
 // Initialize LemonSqueezy with API key
 const LEMONSQUEEZY_API_KEY = process.env.LEMONSQUEEZY_API_KEY || '';
 const LEMONSQUEEZY_WEBHOOK_SECRET = process.env.LEMONSQUEEZY_WEBHOOK_SECRET || '';
-const LEMONSQUEEZY_STORE_ID = process.env.LEMONSQUEEZY_STORE_ID || '';
+const LEMONSQUEEZY_STORE_ID = parseInt(process.env.LEMONSQUEEZY_STORE_ID || '0', 10);
 
 lemonSqueezySetup({
     apiKey: LEMONSQUEEZY_API_KEY,
