@@ -75,13 +75,23 @@ class LemonSqueezyService {
                 },
             });
 
-            if (!checkout || !checkout.data) {
+            console.log('LemonSqueezy checkout response:', JSON.stringify(checkout, null, 2));
+
+            if (!checkout || !checkout.data || !checkout.data.data) {
+                console.error('Checkout failed - no data in response');
                 throw new Error('Failed to create checkout session');
             }
 
+            // The URL is at checkout.data.data.attributes.url (note the double .data)
+            const checkoutUrl = checkout.data.data.attributes?.url || '';
+            const checkoutId = checkout.data.data.id || '';
+
+            console.log('Extracted checkout URL:', checkoutUrl);
+            console.log('Extracted checkout ID:', checkoutId);
+
             return {
-                checkoutUrl: checkout.data.attributes?.url || '',
-                checkoutId: checkout.data.id || '',
+                checkoutUrl,
+                checkoutId,
             };
         } catch (error) {
             console.error('Error creating checkout session:', error);
