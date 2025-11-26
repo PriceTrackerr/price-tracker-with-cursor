@@ -83,7 +83,7 @@ The SQL script will:
 
 ### Pro Monthly
 - **Price**: $4.99/month
-- **Variant ID**: `1108151`
+- **Variant ID**: `1112137`
 - **Products**: Unlimited
 - **Notifications**: Unlimited
 - **AI Recommendations**: ✅ Yes
@@ -92,7 +92,7 @@ The SQL script will:
 
 ### Pro Yearly
 - **Price**: $39.99/year
-- **Variant ID**: `1108168`
+- **Variant ID**: `1112146`
 - **Products**: Unlimited
 - **Notifications**: Unlimited
 - **AI Recommendations**: ✅ Yes
@@ -107,13 +107,13 @@ The SQL script will:
 ### Backend (`api/.env`)
 ```bash
 # LemonSqueezy Configuration
-LEMONSQUEEZY_API_KEY=eyJ0eXAi... (your renewed API key)
-LEMONSQUEEZY_WEBHOOK_SECRET=test_webhook
+LEMONSQUEEZY_API_KEY=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI5NGQ1OWNlZi1kYmI4LTRlYTUtYjE3OC1kMjU0MGZjZDY5MTkiLCJqdGkiOiI2MzIwYTYyMTJlNjhlMTM4ODc3N2JjN2MyYjhiYmEzZTY3YjMxOTE0MDUxNzZhN2YzZjgyNGQ1N2JmZWQzNWZhOTE1YTg2Y2QwMTA5NzI5YSIsImlhdCI6MTc2NDE2MTY5Ny4yMzgyOTYsIm5iZiI6MTc2NDE2MTY5Ny4yMzgyOTgsImV4cCI6MjA3OTY5NDQ5Ny4yMjU4NDcsInN1YiI6IjUzNzIwMDIiLCJzY29wZXMiOltdfQ.UhI6So3cq8MB1pcwS8GvynoY9uZpi6EvX6fJruB0hclXMwskL3UZkRhKMUJJZ0NALgI49S63UyDZkLvhy8GkkZj0Lz-H-FRrT6_eCbo5Q_a-90fEVrzSwWzh0VZ5ZFrgivyd4yyxfv4xhp5f9zoXIPgSoR5LdjtOIfHlbQh1h2bjhqJdOzbEuC3CLqFE51MOO417AtzfkXe092EgTmz5sPpuodNVKcAEHv-UHm5PRXn6WSO8cBEhZN0joWOj_puYF5LT_0M4TvvC0b2j-6CUbYk5a7LTnDODSIbCevhATi5c137y9ARrrLhip9pLjBFEYxlAH-1UuTNI_jdfu1hdUc064n2dIvM3e3ZH4rmAGkvfsJ8HQdU33P4n6T89M9kBcSZ1zTlEq8vFF4l7kt13zuKYefvH4CBjXrgMNsnCeCQmYNlvyXaMchUD46zgpDNvEAcP5odZ_JNxEbkU9UzuK5LAGJZRYiVqWn8b8CnmnEvXVhOT7B3d3eeNoTGUHS-L0Q54UDvDXyYQNmEyo8Fr-jedjozYVvdk8zhRgUmD_4gzUtBvA0hTzVPDEJmny10A_J7ILOydiMQ5YN-u0tJO4tZmi0oph_UWrzQ0t11hDD2TUqQyqAyjOrWa1ffIcVG26HH4CLeXdVcloR6LfKTCKb7nN-tiyWoOHBOzYmYhKq8
+LEMONSQUEEZY_WEBHOOK_SECRET=price-tracker-web_hookJaLvj0HixlqBwN
 LEMONSQUEEZY_STORE_ID=212646
 
 # Variant IDs (NOT Product IDs!)
-LEMONSQUEEZY_PRO_MONTHLY_ID=1108151
-LEMONSQUEEZY_PRO_YEARLY_ID=1108168
+LEMONSQUEEZY_PRO_MONTHLY_ID=1112137
+LEMONSQUEEZY_PRO_YEARLY_ID=1112146
 ```
 
 ### Frontend (`web-app/.env`)
@@ -137,7 +137,7 @@ https://price-tracker-with-cursor-web-app-s.vercel.app/api/subscriptions/webhook
 
 ### Webhook Secret
 ```
-test_webhook
+price-tracker-web_hookJaLvj0HixlqBwN
 ```
 
 ### Events to Subscribe
@@ -162,7 +162,7 @@ git push
 ```
 
 ### Step 2: Test Checkout
-1. Go to your live site: `https://your-site.vercel.app/pricing`
+1. Go to your live site: `https://your-site.vercel.app/subscription`
 2. Click **"Upgrade to Pro"** on Monthly or Yearly plan
 3. Open browser console (F12) to see logs
 4. You should be redirected to LemonSqueezy checkout page
