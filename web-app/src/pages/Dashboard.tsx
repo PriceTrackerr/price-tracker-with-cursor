@@ -3,10 +3,10 @@ import { useAuth } from '../components/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { 
-  Package, 
-  DollarSign, 
-  TrendingDown, 
+import {
+  Package,
+  DollarSign,
+  TrendingDown,
   Bell,
   ExternalLink,
   MoreVertical,
@@ -71,7 +71,7 @@ function MetricCard({ title, value, subtitle, icon: Icon, trend, color, onClick 
   const colors = colorClasses[color];
 
   return (
-    <div 
+    <div
       className={`relative overflow-hidden border-0 shadow-lg shadow-gray-200/50 hover:shadow-xl hover:shadow-gray-200/60 transition-all duration-300 hover:-translate-y-1 bg-white rounded-xl ${onClick ? 'cursor-pointer' : ''}`}
       onClick={onClick}
     >
@@ -88,9 +88,8 @@ function MetricCard({ title, value, subtitle, icon: Icon, trend, color, onClick 
             </div>
             {trend && (
               <div className="flex items-center gap-1">
-                <span className={`text-sm font-medium ${
-                  trend.isPositive ? "text-green-600" : "text-red-600"
-                }`}>
+                <span className={`text-sm font-medium ${trend.isPositive ? "text-green-600" : "text-red-600"
+                  }`}>
                   {trend.isPositive ? '+' : ''}{trend.value}
                 </span>
                 <span className="text-sm text-gray-500">from last month</span>
@@ -113,7 +112,7 @@ function CreateAlertModal({ product, isOpen, onClose }: { product: any, isOpen: 
 
   const handleCreateAlert = async () => {
     if (!targetPrice || parseFloat(targetPrice) <= 0) return;
-    
+
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
@@ -131,7 +130,7 @@ function CreateAlertModal({ product, isOpen, onClose }: { product: any, isOpen: 
       });
 
       const data = await response.json();
-      
+
       if (data.success) {
         toast.success('Alert created successfully!');
         onClose();
@@ -159,11 +158,11 @@ function CreateAlertModal({ product, isOpen, onClose }: { product: any, isOpen: 
             <XCircle className="w-6 h-6" />
           </button>
         </div>
-        
+
         <div className="mb-4">
           <p className="text-sm text-gray-600 mb-2">Product: {product.title}</p>
           <p className="text-sm text-gray-600 mb-4">Current Price: ${product.price}</p>
-          
+
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Target Price
           </label>
@@ -180,7 +179,7 @@ function CreateAlertModal({ product, isOpen, onClose }: { product: any, isOpen: 
             />
           </div>
         </div>
-        
+
         <div className="flex justify-end space-x-3">
           <button
             onClick={onClose}
@@ -221,7 +220,7 @@ function ProductTable({ searchTerm, navigate }: { searchTerm: string; navigate: 
 
   const fetchProducts = async () => {
     if (!token) return;
-    
+
     try {
       const response = await fetch('/api/products', {
         headers: {
@@ -232,7 +231,7 @@ function ProductTable({ searchTerm, navigate }: { searchTerm: string; navigate: 
       console.log('Dashboard ProductTable - API Response:', data);
       if (data.success) {
         // Sort by date (newest first) and show ALL products
-        const sortedProducts = data.data.sort((a: any, b: any) => 
+        const sortedProducts = data.data.sort((a: any, b: any) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
         console.log('Dashboard ProductTable - Setting products:', sortedProducts.length);
@@ -287,7 +286,7 @@ function ProductTable({ searchTerm, navigate }: { searchTerm: string; navigate: 
   };
 
   // Filter products based on search term
-  const filteredProducts = products.filter(product => 
+  const filteredProducts = products.filter(product =>
     product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.platform.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -327,7 +326,7 @@ function ProductTable({ searchTerm, navigate }: { searchTerm: string; navigate: 
               <h2 className="text-xl font-semibold text-gray-900">All Tracked Products</h2>
               <p className="text-sm text-gray-600 mt-1">Monitor price changes across platforms (sorted by date)</p>
             </div>
-            <button 
+            <button
               onClick={() => navigate('/products')}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
@@ -376,7 +375,7 @@ function ProductTable({ searchTerm, navigate }: { searchTerm: string; navigate: 
                             <StockIcon className={`w-3 h-3 ${stock.color}`} />
                             <span className={`text-xs font-medium ${stock.color}`}>{stock.label}</span>
                           </div>
-                          
+
                           {/* Matched Products Indicator */}
                           {product.matchedProducts && product.matchedProducts.length > 0 && (
                             <div className="flex items-center gap-1 mt-1">
@@ -406,14 +405,13 @@ function ProductTable({ searchTerm, navigate }: { searchTerm: string; navigate: 
                           {(() => {
                             const priceChange = getPriceChange(product) || getMockPriceChange(product);
                             if (!priceChange) return null;
-                            
+
                             return (
                               <>
                                 {priceChange.isPositive && <TrendingDown className="w-3 h-3 text-green-600" />}
                                 {!priceChange.isPositive && <TrendingUp className="w-3 h-3 text-red-600" />}
-                                <span className={`text-xs font-medium ${
-                                  priceChange.isPositive ? 'text-green-600' : 'text-red-600'
-                                }`}>
+                                <span className={`text-xs font-medium ${priceChange.isPositive ? 'text-green-600' : 'text-red-600'
+                                  }`}>
                                   {priceChange.isPositive ? '' : '+'}${priceChange.value} ({priceChange.percent}%)
                                 </span>
                               </>
@@ -448,7 +446,7 @@ function ProductTable({ searchTerm, navigate }: { searchTerm: string; navigate: 
       </div>
 
       {/* Create Alert Modal */}
-      <CreateAlertModal 
+      <CreateAlertModal
         product={selectedProduct}
         isOpen={showAlertModal}
         onClose={() => {
@@ -464,7 +462,7 @@ export default function Dashboard() {
   const { getAuthHeaders, user, loading: authLoading, token } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  
+
   const [products, setProducts] = useState<any[]>([]);
   const [alerts, setAlerts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -484,15 +482,15 @@ export default function Dashboard() {
       console.log('Dashboard - No token available');
       return;
     }
-    
+
     console.log('Dashboard - Fetching dashboard data...');
     try {
       const timestamp = Date.now();
       const randomParam = Math.random().toString(36).substring(7);
-      
+
       const [productsRes, alertsRes] = await Promise.all([
         fetch(`/api/products?t=${timestamp}&r=${randomParam}&fresh=true`, {
-          headers: { 
+          headers: {
             'Authorization': `Bearer ${token}`,
             'Cache-Control': 'no-cache, no-store, must-revalidate',
             'Pragma': 'no-cache',
@@ -500,7 +498,7 @@ export default function Dashboard() {
           }
         }),
         fetch(`/api/alerts?t=${timestamp}&r=${randomParam}&fresh=true`, {
-          headers: { 
+          headers: {
             'Authorization': `Bearer ${token}`,
             'Cache-Control': 'no-cache, no-store, must-revalidate',
             'Pragma': 'no-cache',
@@ -525,24 +523,24 @@ export default function Dashboard() {
         console.log('Dashboard - Products fetched:', productsArray.length);
         setProducts(productsArray);
         const totalValue = productsArray.reduce((sum: number, p: any) => sum + (p.price || 0), 0);
-        
+
         // Only calculate price drops if we have seen price drop IDs loaded
         // This prevents temporary numbers from showing
         const priceDrops = productsArray.filter((p: any) => {
           if (!p.priceHistory || p.priceHistory.length < 2) {
             return false;
           }
-          
-          const sortedHistory = p.priceHistory.sort((a: any, b: any) => 
+
+          const sortedHistory = p.priceHistory.sort((a: any, b: any) =>
             new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
           );
-          
+
           const last = sortedHistory[sortedHistory.length - 1];
           const prev = sortedHistory[sortedHistory.length - 2];
-          
+
           const hasDrop = last && prev && last.price < prev.price;
           const isSeen = seenPriceDropIds.includes(p.id);
-          
+
           return hasDrop && !isSeen; // Only count unseen price drops
         }).length;
 
@@ -593,7 +591,7 @@ export default function Dashboard() {
       if (!token) return;
 
       // Update price history for all products
-      const updatePromises = products.map(product => 
+      const updatePromises = products.map(product =>
         fetch(`/api/alerts/update-price-history/${product.id}`, {
           method: 'POST',
           headers: {
@@ -617,7 +615,7 @@ export default function Dashboard() {
     if (!token) {
       return;
     }
-    
+
     try {
       setLoading(true);
       const response = await fetch('/api/users/seen-price-drops', {
@@ -653,7 +651,7 @@ export default function Dashboard() {
         },
         body: JSON.stringify({ productId })
       });
-      
+
       if (response.ok) {
         // Update local state
         setSeenPriceDropIds(prev => [...prev, productId]);
@@ -670,7 +668,7 @@ export default function Dashboard() {
     // Get products with price drops
     const productsWithDrops = products.filter((p: any) => {
       if (!p.priceHistory || p.priceHistory.length < 2) return false;
-      const sortedHistory = p.priceHistory.sort((a: any, b: any) => 
+      const sortedHistory = p.priceHistory.sort((a: any, b: any) =>
         new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
       );
       const last = sortedHistory[sortedHistory.length - 1];
@@ -679,7 +677,7 @@ export default function Dashboard() {
       const isSeen = seenPriceDropIds.includes(p.id);
       return hasDrop && !isSeen;
     });
-    
+
     if (productsWithDrops.length > 0) {
       const dropIds = productsWithDrops.map((p: any) => p.id).join(',');
       navigate(`/history?highlight=${dropIds}`);
@@ -702,7 +700,7 @@ export default function Dashboard() {
     };
 
     window.addEventListener('priceDropMarkedAsSeen', handlePriceDropMarkedAsSeen);
-    
+
     return () => {
       window.removeEventListener('priceDropMarkedAsSeen', handlePriceDropMarkedAsSeen);
     };
@@ -849,7 +847,7 @@ export default function Dashboard() {
               <h2 className="text-xl font-semibold text-gray-900">Recent Tracked Products</h2>
               <p className="text-sm text-gray-600 mt-1">Monitor price changes across platforms</p>
             </div>
-            <button 
+            <button
               onClick={() => navigate('/products')}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
@@ -863,83 +861,83 @@ export default function Dashboard() {
                 <p>No products tracked yet</p>
                 <p className="text-sm">Start tracking products to see them here</p>
               </div>
-                         ) : (
-               products.map((product) => (
-                 <div key={product.id} className="p-4 hover:bg-gray-50 transition-colors">
-                   <div className="flex items-center gap-4">
-                     {/* Product Image */}
-                     <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-                       <img
-                         src={product.imageUrl || 'https://via.placeholder.com/64x64'}
-                         alt={product.title}
-                         className="w-full h-full object-cover"
-                         onError={(e) => {
-                           (e.target as HTMLImageElement).src = 'https://via.placeholder.com/64x64';
-                         }}
-                       />
-                     </div>
-                     
-                     {/* Product Info */}
-                     <div className="flex-1 min-w-0 space-y-2">
-                       <h3 className="font-medium text-gray-900 truncate">
-                         {product.title.length > 50 ? product.title.substring(0, 50) + '...' : product.title}
-                       </h3>
-                       <p className="text-sm text-gray-500 capitalize">{product.platform}</p>
-                     </div>
-                     
-                     {/* Price Info */}
-                     <div className="text-right space-y-1 flex-shrink-0">
-                       <div className="flex items-center gap-2">
-                         <span className="text-lg font-bold text-gray-900">
-                           ${product.price}
-                         </span>
-                         {product.originalPrice && product.originalPrice > product.price && (
-                           <span className="text-sm text-gray-500 line-through">
-                             ${product.originalPrice}
-                           </span>
-                         )}
-                       </div>
-                     </div>
-                     
-                     {/* Action Buttons */}
-                     <div className="flex items-center space-x-2 flex-shrink-0">
-                       <button
-                         onClick={() => {
-                           setSelectedProduct(product);
-                           setShowAlertModal(true);
-                         }}
-                         className="p-2 hover:bg-blue-50 rounded-lg transition-colors text-blue-600"
-                         title="Create Alert"
-                       >
-                         <Plus className="w-4 h-4" />
-                       </button>
-                       <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                         <Eye className="w-4 h-4 text-gray-600" />
-                       </button>
-                       <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                         <MoreVertical className="w-4 h-4 text-gray-600" />
-                       </button>
-                     </div>
-                   </div>
-                 </div>
-               ))
-             )}
+            ) : (
+              products.map((product) => (
+                <div key={product.id} className="p-4 hover:bg-gray-50 transition-colors">
+                  <div className="flex items-center gap-4">
+                    {/* Product Image */}
+                    <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                      <img
+                        src={product.imageUrl || 'https://via.placeholder.com/64x64'}
+                        alt={product.title}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'https://via.placeholder.com/64x64';
+                        }}
+                      />
+                    </div>
+
+                    {/* Product Info */}
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <h3 className="font-medium text-gray-900 truncate">
+                        {product.title.length > 50 ? product.title.substring(0, 50) + '...' : product.title}
+                      </h3>
+                      <p className="text-sm text-gray-500 capitalize">{product.platform}</p>
+                    </div>
+
+                    {/* Price Info */}
+                    <div className="text-right space-y-1 flex-shrink-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg font-bold text-gray-900">
+                          ${product.price}
+                        </span>
+                        {product.originalPrice && product.originalPrice > product.price && (
+                          <span className="text-sm text-gray-500 line-through">
+                            ${product.originalPrice}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex items-center space-x-2 flex-shrink-0">
+                      <button
+                        onClick={() => {
+                          setSelectedProduct(product);
+                          setShowAlertModal(true);
+                        }}
+                        className="p-2 hover:bg-blue-50 rounded-lg transition-colors text-blue-600"
+                        title="Create Alert"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                      <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                        <Eye className="w-4 h-4 text-gray-600" />
+                      </button>
+                      <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                        <MoreVertical className="w-4 h-4 text-gray-600" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>
-      
-             {/* Original ProductTable (commented out for debugging) */}
-       {/* <ProductTable searchTerm="" navigate={navigate} /> */}
-       
-       {/* Create Alert Modal */}
-       <CreateAlertModal 
-         product={selectedProduct}
-         isOpen={showAlertModal}
-         onClose={() => {
-           setShowAlertModal(false);
-           setSelectedProduct(null);
-         }}
-       />
-     </div>
-   );
- } 
+
+      {/* Original ProductTable (commented out for debugging) */}
+      {/* <ProductTable searchTerm="" navigate={navigate} /> */}
+
+      {/* Create Alert Modal */}
+      <CreateAlertModal
+        product={selectedProduct}
+        isOpen={showAlertModal}
+        onClose={() => {
+          setShowAlertModal(false);
+          setSelectedProduct(null);
+        }}
+      />
+    </div>
+  );
+} 

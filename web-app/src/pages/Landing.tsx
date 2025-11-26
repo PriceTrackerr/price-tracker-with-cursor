@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../components/AuthContext';
-import { 
-  Menu, 
-  X, 
-  LogIn, 
-  Chrome, 
-  Play, 
-  CheckCircle, 
-  TrendingDown, 
-  Bell, 
-  Shield, 
-  Zap, 
+import {
+  Menu,
+  X,
+  LogIn,
+  Chrome,
+  Play,
+  CheckCircle,
+  TrendingDown,
+  Bell,
+  Shield,
+  Zap,
   Star,
   Globe,
   Download,
@@ -111,22 +111,22 @@ interface PricingCardProps {
 function PricingCard({ title, isPopular, monthlyPrice, yearlyPrice, features, buttonText, buttonColor }: PricingCardProps) {
   const { user } = useAuth();
   const [isYearly, setIsYearly] = useState(false);
-  
+
   const currentPrice = isYearly ? yearlyPrice : monthlyPrice;
   const savings = isYearly ? Math.round((monthlyPrice * 12 - yearlyPrice) / (monthlyPrice * 12) * 100) : 0;
-  
+
   const getBorderColor = () => {
     if (isPopular) return 'border-blue-500';
     return 'border-gray-200';
   };
-  
+
   const getButtonClasses = () => {
     if (buttonColor === 'blue') {
       return 'w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors block text-center';
     }
     return 'w-full bg-gray-900 text-white py-3 px-6 rounded-lg font-semibold hover:bg-gray-800 transition-colors block text-center';
   };
-  
+
   const getPriceColor = () => {
     if (buttonColor === 'blue') return 'text-blue-600';
     return 'text-gray-900';
@@ -141,10 +141,10 @@ function PricingCard({ title, isPopular, monthlyPrice, yearlyPrice, features, bu
           </span>
         </div>
       )}
-      
+
       <div className="text-center mb-6">
         <h3 className="text-2xl font-bold text-gray-900 mb-2">{title}</h3>
-        
+
         {/* Pricing Toggle */}
         <div className="flex items-center justify-center gap-4 mb-4">
           <span className={`text-sm ${!isYearly ? 'text-gray-900 font-semibold' : 'text-gray-500'}`}>
@@ -152,35 +152,33 @@ function PricingCard({ title, isPopular, monthlyPrice, yearlyPrice, features, bu
           </span>
           <button
             onClick={() => setIsYearly(!isYearly)}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-              isYearly ? 'bg-blue-600' : 'bg-gray-200'
-            }`}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isYearly ? 'bg-blue-600' : 'bg-gray-200'
+              }`}
           >
             <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                isYearly ? 'translate-x-6' : 'translate-x-1'
-              }`}
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isYearly ? 'translate-x-6' : 'translate-x-1'
+                }`}
             />
           </button>
           <span className={`text-sm ${isYearly ? 'text-gray-900 font-semibold' : 'text-gray-500'}`}>
             Yearly
           </span>
         </div>
-        
+
         <div className={`text-4xl font-bold ${getPriceColor()} mb-2`}>
           ${currentPrice}
           <span className="text-lg text-gray-500">
             /{isYearly ? 'year' : 'month'}
           </span>
         </div>
-        
+
         {isYearly && savings > 0 && (
           <p className="text-green-600 font-semibold text-sm">
             Save {savings}% with yearly billing
           </p>
         )}
       </div>
-      
+
       <ul className="space-y-4 mb-8">
         {features.map((feature, index) => (
           <li key={index} className="flex items-center">
@@ -189,7 +187,7 @@ function PricingCard({ title, isPopular, monthlyPrice, yearlyPrice, features, bu
           </li>
         ))}
       </ul>
-      
+
       <Link to={user ? "/dashboard" : "/auth"} className={getButtonClasses()}>
         {buttonText}
       </Link>
@@ -210,9 +208,9 @@ function Navigation() {
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-[#2563EB] rounded-lg flex items-center justify-center shadow-sm">
               <svg width="24" height="24" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="0" y="0" width="100" height="100" rx="20" fill="#2563EB"/>
-                <path d="M25 70 C35 50, 65 50, 75 30" stroke="white" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round"/>
-                <circle cx="75" cy="30" r="6" fill="white"/>
+                <rect x="0" y="0" width="100" height="100" rx="20" fill="#2563EB" />
+                <path d="M25 70 C35 50, 65 50, 75 30" stroke="white" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
+                <circle cx="75" cy="30" r="6" fill="white" />
               </svg>
             </div>
             <span className="text-xl font-bold text-gray-900">Price Tracker</span>
@@ -350,24 +348,24 @@ function HeroSection() {
                 <span className="text-indigo-600">Shop Smarter.</span>
               </h1>
               <p className="text-base sm:text-lg lg:text-xl text-gray-600 leading-relaxed">
-                Your ultimate price tracking solution for AliExpress, eBay, Amazon, Shein, and Walmart. 
+                Your ultimate price tracking solution for AliExpress, eBay, Amazon, Shein, and Walmart.
                 Get alerts, see history, and never miss a deal.
               </p>
             </div>
-            
+
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-              <button 
+              <button
                 className="bg-blue-600 hover:bg-blue-700 text-white px-6 sm:px-8 py-4 sm:py-6 rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center gap-2"
                 onClick={() => window.open('https://chrome.google.com/webstore', '_blank')}
               >
                 <Chrome className="w-5 h-5" />
                 Add to Chrome (It's Free!)
               </button>
-              <button 
+              <button
                 className="px-6 sm:px-8 py-4 sm:py-6 rounded-xl border-2 border-gray-300 hover:border-blue-600 transition-all duration-300 flex items-center justify-center gap-2"
                 onClick={() => {
-                  document.getElementById('how-it-works')?.scrollIntoView({ 
-                    behavior: 'smooth' 
+                  document.getElementById('how-it-works')?.scrollIntoView({
+                    behavior: 'smooth'
                   });
                 }}
               >
@@ -398,9 +396,9 @@ function HeroSection() {
                 <div className="text-center">
                   <div className="w-16 h-16 bg-[#2563EB] rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
                     <svg width="32" height="32" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <rect x="0" y="0" width="100" height="100" rx="20" fill="#2563EB"/>
-                      <path d="M25 70 C35 50, 65 50, 75 30" stroke="white" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round"/>
-                      <circle cx="75" cy="30" r="6" fill="white"/>
+                      <rect x="0" y="0" width="100" height="100" rx="20" fill="#2563EB" />
+                      <path d="M25 70 C35 50, 65 50, 75 30" stroke="white" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
+                      <circle cx="75" cy="30" r="6" fill="white" />
                     </svg>
                   </div>
                   <p className="text-gray-600 font-medium">Price Tracker Dashboard</p>
@@ -436,7 +434,7 @@ function MultiStoreSection() {
             One extension works everywhere. No need to visit multiple sites or apps.
           </p>
         </div>
-        
+
         <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-8">
           {[
             { name: 'Amazon', icon: '🛒', color: 'bg-orange-100' },
@@ -503,7 +501,7 @@ function BrowserExtensionSection() {
               Powerful Browser Extension
             </h2>
             <p className="text-xl text-gray-600 mb-8">
-              Install our Chrome extension and start tracking prices with just one click. 
+              Install our Chrome extension and start tracking prices with just one click.
               No complex setup required.
             </p>
             <div className="space-y-4">
@@ -562,7 +560,7 @@ function PriceHistorySection() {
               Visual Price History
             </h2>
             <p className="text-xl text-gray-600 mb-8">
-              See price trends over time with our interactive charts. 
+              See price trends over time with our interactive charts.
               Make informed decisions about when to buy.
             </p>
             <div className="space-y-4">
@@ -614,7 +612,7 @@ function PriceDropAlertSection() {
               Smart Price Drop Alerts
             </h2>
             <p className="text-xl text-gray-600 mb-8">
-              Set your target price and get instant notifications when prices drop. 
+              Set your target price and get instant notifications when prices drop.
               Never miss the best deals again.
             </p>
             <div className="space-y-4">
@@ -678,7 +676,7 @@ function WhyChooseUsSection() {
             Join thousands of users who are already saving money with our powerful price tracking tools.
           </p>
         </div>
-        
+
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {[
             {
@@ -739,7 +737,7 @@ function HowItWorksSection() {
             Get started in just 3 simple steps
           </p>
         </div>
-        
+
         <div className="grid md:grid-cols-3 gap-8">
           {[
             {
@@ -749,7 +747,7 @@ function HowItWorksSection() {
               icon: Download
             },
             {
-              step: "2", 
+              step: "2",
               title: "Browse Products",
               description: "Visit any product page on supported stores and click track.",
               icon: ShoppingCart
@@ -813,7 +811,7 @@ function FAQSection() {
             Everything you need to know about Price Tracker
           </p>
         </div>
-        
+
         <div className="space-y-4">
           {faqs.map((faq, index) => (
             <div key={index} className="bg-white rounded-2xl shadow-lg">
@@ -849,7 +847,7 @@ function CTASection() {
           Join thousands of users who are already saving money with Price Tracker
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <button 
+          <button
             className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 rounded-xl text-lg font-semibold transition-colors flex items-center justify-center gap-2"
             onClick={() => window.open('https://chrome.google.com/webstore', '_blank')}
           >
@@ -879,9 +877,9 @@ function Footer() {
             <div className="flex items-center gap-3 mb-4">
               <div className="w-8 h-8 bg-[#2563EB] rounded-lg flex items-center justify-center shadow-sm">
                 <svg width="16" height="16" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect x="0" y="0" width="100" height="100" rx="20" fill="#2563EB"/>
-                  <path d="M25 70 C35 50, 65 50, 75 30" stroke="white" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round"/>
-                  <circle cx="75" cy="30" r="6" fill="white"/>
+                  <rect x="0" y="0" width="100" height="100" rx="20" fill="#2563EB" />
+                  <path d="M25 70 C35 50, 65 50, 75 30" stroke="white" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
+                  <circle cx="75" cy="30" r="6" fill="white" />
                 </svg>
               </div>
               <span className="text-xl font-bold">Price Tracker</span>
@@ -893,7 +891,7 @@ function Footer() {
               <a href="#" className="text-gray-400 hover:text-white transition-colors">
                 <span className="sr-only">Twitter</span>
                 <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84"/>
+                  <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
                 </svg>
               </a>
             </div>
@@ -937,7 +935,7 @@ function Footer() {
 // Main Landing Page Component
 const Landing: React.FC = () => {
   console.log('Landing page component rendering...');
-  
+
   // Fetch dynamic pricing plans
   const [plans, setPlans] = React.useState<LandingPlan[]>(DEFAULT_LANDING_PLANS);
   React.useEffect(() => {
@@ -1019,34 +1017,34 @@ const Landing: React.FC = () => {
     <div className="min-h-screen bg-white">
       {/* Navigation */}
       <Navigation />
-      
+
       {/* Hero Section */}
       <div className="pt-16">
         <HeroSection />
       </div>
-      
+
       {/* Multi-Store Tracking */}
       <section id="features">
         <MultiStoreSection />
       </section>
-      
+
       {/* Multi-Language Support */}
       <MultiLanguageSection />
-      
+
       {/* Browser Extension */}
       <BrowserExtensionSection />
-      
+
       {/* Price History */}
       <PriceHistorySection />
-      
+
       {/* Price Drop Alerts */}
       <PriceDropAlertSection />
-      
+
       {/* Why Choose Us */}
       <section id="features">
         <WhyChooseUsSection />
       </section>
-      
+
       {/* Pricing Section */}
       <section id="pricing" className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1085,7 +1083,7 @@ const Landing: React.FC = () => {
                 </div>
                 <p className="text-gray-600">After 7-day trial</p>
               </div>
-              
+
               <ul className="space-y-4 mb-8">
                 <li className="flex items-center">
                   <CheckCircle className="w-5 h-5 text-green-500 mr-3" />
@@ -1104,14 +1102,14 @@ const Landing: React.FC = () => {
                   <span>Basic support</span>
                 </li>
               </ul>
-              
+
               <Link to="/auth" className="w-full bg-gray-100 text-gray-900 py-3 px-6 rounded-lg font-semibold hover:bg-gray-200 transition-colors block text-center">
                 Get Started Free
               </Link>
             </div>
 
             {/* Basic Plan */}
-            <PricingCard 
+            <PricingCard
               title="Basic"
               isPopular={true}
               monthlyPrice={basicMonthly}
@@ -1122,7 +1120,7 @@ const Landing: React.FC = () => {
             />
 
             {/* Premium Plan */}
-            <PricingCard 
+            <PricingCard
               title="Premium"
               isPopular={false}
               monthlyPrice={premiumMonthly}
@@ -1167,20 +1165,20 @@ const Landing: React.FC = () => {
           </div>
         </div>
       </section>
-      
+
       {/* How It Works */}
       <section id="how-it-works">
         <HowItWorksSection />
       </section>
-      
+
       {/* FAQ */}
       <section id="faq">
         <FAQSection />
       </section>
-      
+
       {/* CTA */}
       <CTASection />
-      
+
       {/* Footer */}
       <Footer />
     </div>
