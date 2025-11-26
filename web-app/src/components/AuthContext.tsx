@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { Wifi, WifiOff } from 'lucide-react';
 
-interface User {
+export interface User {
   id: string;
   email: string;
   username?: string;
@@ -17,6 +17,12 @@ interface User {
   preferences?: {
     currency: string;
     language: string;
+  };
+  subscription?: {
+    tier: 'free' | 'pro';
+    status: string;
+    renewsAt?: string;
+    endsAt?: string;
   };
 }
 
@@ -39,15 +45,15 @@ const AuthContext = createContext<AuthContextType>({
   reconnecting: false,
   login: async () => false,
   signup: async () => false,
-  logout: () => {},
+  logout: () => { },
   getAuthHeaders: () => ({}),
-  bootstrapSession: async () => {},
+  bootstrapSession: async () => { },
 });
 
 // Reconnecting Indicator Component
 export function ReconnectingIndicator({ reconnecting }: { reconnecting: boolean }) {
   if (!reconnecting) return null;
-  
+
   return (
     <div className="fixed top-4 right-4 z-50 bg-yellow-500 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2">
       <Wifi className="w-4 h-4 animate-pulse" />
@@ -67,7 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (retryCount > 0) {
       setReconnecting(true);
     }
-    
+
     try {
       const res = await fetch('https://price-tracker-with-cursor-web-app-s.vercel.app/api/users/me', {
         headers: { Authorization: `Bearer ${t}` },
@@ -81,6 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           notificationSettings: data.user.notificationSettings,
           privacySettings: data.user.privacySettings,
           preferences: data.user.preferences,
+          subscription: data.user.subscription,
         };
         setUser(userData);
         // Save user data to localStorage for persistence
@@ -188,7 +195,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     // Default return for when no cleanup is needed
-    return () => {};
+    return () => { };
   }, [fetchUser, user]);
 
   // Add a backup mechanism to restore token from sessionStorage if localStorage fails
@@ -198,12 +205,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('Restoring token from sessionStorage');
       setToken(backupToken);
       localStorage.setItem('token', backupToken);
-      
+
       // Sync token to extension if available
       if (typeof chrome !== 'undefined' && chrome.storage) {
         chrome.storage.local.set({ authToken: backupToken });
       }
-      
+
       // Only fetch user if we don't already have user data
       if (!user) {
         fetchUser(backupToken);
@@ -325,7 +332,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user'); // Clear user data too
     sessionStorage.removeItem('token'); // Clear backup storage too
-    
+
     // Notify extension about logout
     if (typeof chrome !== 'undefined' && chrome.runtime) {
       try {
@@ -337,7 +344,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('Extension not listening for logout notification');
       }
     }
-    
+
     // Remove token from extension if available
     if (typeof chrome !== 'undefined' && chrome.storage) {
       chrome.storage.local.remove('authToken');

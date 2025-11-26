@@ -3,9 +3,9 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../components/AuthContext';
 import ProductMatching from '../components/ProductMatching';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { 
-  Plus, 
-  Trash2, 
+import {
+  Plus,
+  Trash2,
   TrendingDown,
   TrendingUp,
   ExternalLink,
@@ -93,13 +93,13 @@ interface PriceHistoryEntry {
 }
 
 // Advanced Filter Component
-function AdvancedFilters({ 
-  filters, 
-  filterOptions, 
-  onFilterChange, 
-  onClearFilters 
-}: { 
-  filters: FilterState; 
+function AdvancedFilters({
+  filters,
+  filterOptions,
+  onFilterChange,
+  onClearFilters
+}: {
+  filters: FilterState;
   filterOptions: FilterOptions | null;
   onFilterChange: (key: keyof FilterState, value: any) => void;
   onClearFilters: () => void;
@@ -265,22 +265,20 @@ function AdvancedFilters({
               <div className="flex space-x-2">
                 <button
                   onClick={() => onFilterChange('sortOrder', 'asc')}
-                  className={`flex items-center space-x-1 px-3 py-2 rounded-lg border ${
-                    filters.sortOrder === 'asc' 
-                      ? 'bg-blue-500 text-white border-blue-500' 
-                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                  }`}
+                  className={`flex items-center space-x-1 px-3 py-2 rounded-lg border ${filters.sortOrder === 'asc'
+                    ? 'bg-blue-500 text-white border-blue-500'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    }`}
                 >
                   <SortAsc className="w-4 h-4" />
                   <span>Asc</span>
                 </button>
                 <button
                   onClick={() => onFilterChange('sortOrder', 'desc')}
-                  className={`flex items-center space-x-1 px-3 py-2 rounded-lg border ${
-                    filters.sortOrder === 'desc' 
-                      ? 'bg-blue-500 text-white border-blue-500' 
-                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                  }`}
+                  className={`flex items-center space-x-1 px-3 py-2 rounded-lg border ${filters.sortOrder === 'desc'
+                    ? 'bg-blue-500 text-white border-blue-500'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    }`}
                 >
                   <SortDesc className="w-4 h-4" />
                   <span>Desc</span>
@@ -304,17 +302,17 @@ function ProductPriceHistory({ productId }: { productId: string }) {
     async function fetchHistory() {
       setLoading(true);
       try {
-      const res = await fetch(`/api/products/${productId}/history`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (data.success) {
-        setHistory(data.data);
-      }
+        const res = await fetch(`/api/products/${productId}/history`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.success) {
+          setHistory(data.data);
+        }
       } catch (error) {
         console.error('Error fetching price history:', error);
       } finally {
-      setLoading(false);
+        setLoading(false);
       }
     }
     fetchHistory();
@@ -392,7 +390,7 @@ function generateProductKey(title: string): string {
 }
 
 const ProductCard: React.FC<{
-  product: Product; 
+  product: Product;
   onDelete: (id: string) => void;
   onViewHistory: (product: Product) => void;
   onViewMatches: (product: Product) => void;
@@ -401,7 +399,7 @@ const ProductCard: React.FC<{
 }> = ({ product, onDelete, onViewHistory, onViewMatches, highlighted, globalMatchCount = 0 }) => {
   const [showAllHistory, setShowAllHistory] = useState(false);
   const navigate = useNavigate();
-  
+
   // Debug highlight prop
   useEffect(() => {
     if (highlighted) {
@@ -418,22 +416,22 @@ const ProductCard: React.FC<{
         isPositive: false
       };
     }
-    
+
     // Fallback to old calculation if new data not available
     if (!product.priceHistory || product.priceHistory.length < 2) return null;
-    
+
     const sortedHistory = [...product.priceHistory].sort(
       (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
     );
-    
+
     const latest = sortedHistory[sortedHistory.length - 1];
     const previous = sortedHistory[sortedHistory.length - 2];
-    
+
     if (!latest || !previous) return null;
-    
+
     const change = latest.price - previous.price;
     const changePercent = (change / previous.price) * 100;
-    
+
     return {
       change,
       changePercent,
@@ -442,8 +440,8 @@ const ProductCard: React.FC<{
   };
 
   const priceChange = getPriceChange();
-  const displayHistory = showAllHistory 
-    ? product.priceHistory?.slice(-10) 
+  const displayHistory = showAllHistory
+    ? product.priceHistory?.slice(-10)
     : product.priceHistory?.slice(-3);
 
   const getPlatformIcon = (platform: string) => {
@@ -486,26 +484,25 @@ const ProductCard: React.FC<{
   };
 
   return (
-    <div 
+    <div
       id={`product-${product.id}`}
-      className={`product-card bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-200 ${
-        highlighted ? 'highlighted-product' : ''
-      }`}
+      className={`product-card bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-200 ${highlighted ? 'highlighted-product' : ''
+        }`}
       onClick={() => navigate(`/products/${product.id}`)}
     >
       {/* Product Image - Responsive */}
       <div className="relative h-48 sm:h-56 md:h-64 bg-gray-100">
-          <img
-            src={product.imageUrl || 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400&h=300&fit=crop'}
-            alt={product.title || 'Product image'}
-            loading="lazy"
-            onError={(e) => {
-              const el = e.target as HTMLImageElement;
-              el.src = 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400&h=300&fit=crop';
-            }}
+        <img
+          src={product.imageUrl || 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400&h=300&fit=crop'}
+          alt={product.title || 'Product image'}
+          loading="lazy"
+          onError={(e) => {
+            const el = e.target as HTMLImageElement;
+            el.src = 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400&h=300&fit=crop';
+          }}
           className="w-full h-full object-cover"
         />
-        
+
         {/* Platform Badge */}
         <div className="absolute top-3 left-3">
           <div className="flex items-center gap-1 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-full shadow-sm">
@@ -522,7 +519,7 @@ const ProductCard: React.FC<{
             {getStockStatusIcon(product.stockStatus)}
             <span className="text-xs font-medium text-gray-700">
               {getStockStatusText(product.stockStatus)}
-              </span>
+            </span>
           </div>
         </div>
 
@@ -534,7 +531,7 @@ const ProductCard: React.FC<{
               <span className="text-xs font-medium text-white">
                 {product.discountInfo}
               </span>
-          </div>
+            </div>
           </div>
         )}
 
@@ -549,7 +546,7 @@ const ProductCard: React.FC<{
             </div>
           </div>
         )}
-        </div>
+      </div>
 
       {/* Content */}
       <div className="p-3 md:p-4">
@@ -579,21 +576,20 @@ const ProductCard: React.FC<{
             <DollarSign className="w-4 h-4 text-gray-500" />
             <span className="text-lg md:text-xl font-bold text-gray-900">
               {product.currency}{product.price.toFixed(2)}
-                          </span>
+            </span>
             {priceChange && (
-              <div className={`flex items-center gap-1 text-xs font-medium ${
-                priceChange.isPositive ? 'text-red-600' : 'text-green-600'
-              }`}>
+              <div className={`flex items-center gap-1 text-xs font-medium ${priceChange.isPositive ? 'text-red-600' : 'text-green-600'
+                }`}>
                 {priceChange.isPositive ? (
                   <TrendingUp className="w-3 h-3" />
                 ) : (
                   <TrendingDown className="w-3 h-3" />
                 )}
-                {priceChange.isPositive ? '+' : ''}{priceChange.change.toFixed(2)} 
+                {priceChange.isPositive ? '+' : ''}{priceChange.change.toFixed(2)}
                 ({priceChange.isPositive ? '+' : ''}{priceChange.changePercent.toFixed(1)}%)
-                        </div>
+              </div>
             )}
-                      </div>
+          </div>
         </div>
 
         {/* Price History */}
@@ -602,7 +598,7 @@ const ProductCard: React.FC<{
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-medium text-gray-700">Price History</span>
               {product.priceHistory.length > 3 && (
-                    <button 
+                <button
                   onClick={() => setShowAllHistory(!showAllHistory)}
                   className="text-xs text-blue-600 hover:text-blue-700 font-medium"
                 >
@@ -617,26 +613,26 @@ const ProductCard: React.FC<{
                       Show More
                     </>
                   )}
-                    </button>
-                  )}
+                </button>
+              )}
             </div>
-            
+
             <div className="space-y-1">
               {displayHistory?.map((entry, index) => (
                 <div key={entry.id} className="flex items-center justify-between text-xs">
-                        <span className="text-gray-500">
+                  <span className="text-gray-500">
                     {new Date(entry.timestamp).toLocaleDateString()}
                   </span>
                   <span className="font-medium text-gray-900">
                     {entry.currency}{entry.price.toFixed(2)}
-                        </span>
-                      </div>
-              ))}
+                  </span>
                 </div>
+              ))}
             </div>
+          </div>
         )}
 
-                {/* Action Buttons */}
+        {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           {/* Buy Now button */}
           <a
@@ -645,12 +641,12 @@ const ProductCard: React.FC<{
             rel="noopener noreferrer"
             className="flex-1 px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors text-center"
           >
-              Buy Now
+            Buy Now
           </a>
-            
+
           {/* Action buttons */}
           <div className="flex items-center justify-center gap-1">
-            <button 
+            <button
               onClick={(e) => {
                 e.stopPropagation();
                 navigate(`/products/${product.id}`);
@@ -660,7 +656,7 @@ const ProductCard: React.FC<{
             >
               <Eye className="w-4 h-4" />
             </button>
-            <button 
+            <button
               onClick={(e) => {
                 e.stopPropagation();
                 onViewMatches(product);
@@ -676,23 +672,23 @@ const ProductCard: React.FC<{
                 onViewHistory(product);
               }}
               className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                title="View Price History"
-              >
+              title="View Price History"
+            >
               <TrendingUp className="w-4 h-4" />
-              </button>
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(product.id);
-                }}
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(product.id);
+              }}
               className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                title="Delete Product"
-              >
+              title="Delete Product"
+            >
               <Trash2 className="w-4 h-4" />
             </button>
-            </div>
           </div>
         </div>
+      </div>
 
     </div>
   );
@@ -700,6 +696,7 @@ const ProductCard: React.FC<{
 
 export default function Products() {
   const { user, token } = useAuth();
+  const navigate = useNavigate();
 
   // Show loading state while auth is initializing
   if (token === undefined) {
@@ -746,7 +743,7 @@ export default function Products() {
   const handleViewMatches = (product: Product) => {
     setSelectedProductForMatches(product);
   };
-  
+
   // Advanced filtering state
   const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(null);
   const [filters, setFilters] = useState<FilterState>({
@@ -809,7 +806,7 @@ export default function Products() {
       }
     `;
     document.head.appendChild(style);
-    
+
     return () => {
       document.head.removeChild(style);
     };
@@ -819,31 +816,31 @@ export default function Products() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const productId = urlParams.get('highlight');
-    
+
     if (productId) {
-      
+
       // Wait for products to load, then scroll and highlight
       const checkAndHighlight = () => {
         const productElement = document.getElementById(`product-${productId}`);
-        
+
         if (productElement && products.length > 0) {
-          
+
           // Remove the parameter from URL after we found the element
           const newUrl = new URL(window.location.href);
           newUrl.searchParams.delete('highlight');
           window.history.replaceState({}, '', newUrl.toString());
-          
+
           // Scroll to element
-          productElement.scrollIntoView({ 
-            behavior: 'smooth', 
+          productElement.scrollIntoView({
+            behavior: 'smooth',
             block: 'center'
           });
-          
+
           // Wait for scroll to complete, then add highlight
           setTimeout(() => {
             // Set the highlighted product ID to trigger the animation
             setHighlightedProductId(productId);
-            
+
             // Remove highlight after 1.5 seconds
             setTimeout(() => {
               setHighlightedProductId(null);
@@ -854,7 +851,7 @@ export default function Products() {
           setTimeout(checkAndHighlight, 100);
         }
       };
-      
+
       // Start checking
       checkAndHighlight();
     } else {
@@ -866,7 +863,7 @@ export default function Products() {
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const popup = urlParams.get('popup');
-    
+
     if (popup === 'true') {
       setShowAddModal(true);
       // Remove the parameter from URL
@@ -874,7 +871,7 @@ export default function Products() {
       newUrl.searchParams.delete('popup');
       window.history.replaceState({}, '', newUrl.toString());
     }
-    
+
     // Handle search term from navigation state
     if (location.state?.searchTerm) {
       // Removed debug log
@@ -917,7 +914,7 @@ export default function Products() {
   // Fetch filter options
   const fetchFilterOptions = useCallback(async () => {
     if (!token) return;
-    
+
     try {
       const response = await fetch('/api/products/filters', {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -1229,13 +1226,20 @@ export default function Products() {
   };
 
   const handleExport = async (format: 'csv' | 'json') => {
+    if ((user?.subscription?.tier || 'free') !== 'pro') {
+      toast.error('Exporting data is a Pro feature. Upgrade to unlock!', {
+        icon: '🔒',
+      });
+      navigate('/subscription');
+      return;
+    }
     try {
       const response = await fetch(`/api/products/export/${format}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
@@ -1255,17 +1259,17 @@ export default function Products() {
   // Filter products based on search term and date filter
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.title.toLowerCase().includes(filters.search.toLowerCase()) ||
-                         product.platform.toLowerCase().includes(filters.search.toLowerCase());
-    
+      product.platform.toLowerCase().includes(filters.search.toLowerCase());
+
     if (!matchesSearch) return false;
-    
+
     // Apply date filter
     const productDate = new Date(product.createdAt);
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
     const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
-    
+
     switch (filters.stockStatus) {
       case 'in_stock':
         return productDate >= today;
@@ -1298,7 +1302,7 @@ export default function Products() {
               <div className="h-10 bg-gray-200 rounded w-40"></div>
             </div>
           </div>
-          
+
           {/* Products Grid Skeleton */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -1329,16 +1333,30 @@ export default function Products() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h2 className="text-xl md:text-2xl font-semibold text-gray-900">Products</h2>
-              <p className="text-sm md:text-base text-gray-600 mt-1">{filteredProducts.length} tracked products</p>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-sm md:text-base text-gray-600">
+                  {filteredProducts.length} tracked products
+                </p>
+                {(user?.subscription?.tier || 'free') === 'free' && (
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${products.length >= 5 ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'
+                    }`}>
+                    {products.length}/5 Used
+                  </span>
+                )}
+              </div>
             </div>
-            
+
             {/* Mobile: Stack controls vertically, Desktop: Horizontal */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               <button
                 onClick={() => handleExport('csv')}
                 className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <Download className="-ml-1 mr-2 h-4 w-4" />
+                {(user?.subscription?.tier || 'free') === 'free' ? (
+                  <span className="mr-2 text-xs">🔒</span>
+                ) : (
+                  <Download className="-ml-1 mr-2 h-4 w-4" />
+                )}
                 Export CSV
               </button>
 
@@ -1389,7 +1407,7 @@ export default function Products() {
                 <span className="text-sm text-blue-600">"{filters.search}"</span>
                 <span className="text-sm text-blue-600">({filteredProducts.length} products)</span>
               </div>
-              <button 
+              <button
                 onClick={() => handleFilterChange('search', '')}
                 className="text-blue-600 hover:text-blue-800"
               >
@@ -1425,8 +1443,23 @@ export default function Products() {
             {!filters.search && (
               <div className="mt-6">
                 <button
-                  onClick={() => setShowAddModal(true)}
-                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                  onClick={() => {
+                    const currentTier = user?.subscription?.tier || 'free';
+                    const limit = currentTier === 'free' ? 5 : 999;
+                    if (products.length >= limit) {
+                      toast.error(`Free tier limit reached (${limit} products). Upgrade to Pro for unlimited tracking!`, {
+                        duration: 5000,
+                        icon: '🔒',
+                      });
+                      navigate('/subscription');
+                    } else {
+                      setShowAddModal(true);
+                    }
+                  }}
+                  className={`inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white ${(user?.subscription?.tier || 'free') === 'free' && products.length >= 5
+                    ? 'bg-gray-600 hover:bg-gray-700'
+                    : 'bg-blue-600 hover:bg-blue-700'
+                    }`}
                 >
                   <Plus className="-ml-1 mr-2 h-5 w-5" />
                   Add Product
@@ -1557,42 +1590,42 @@ export default function Products() {
         />
       )}
 
-              {/* Delete Confirmation Modal */}
-        {showDeleteModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 max-w-md mx-4">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Delete Product</h3>
-                <button 
-                  onClick={() => {
-                    setShowDeleteModal(false);
-                    setProductToDelete(null);
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              <p className="text-gray-600 mb-6">
-                Are you sure you want to delete this product? This action cannot be undone.
-              </p>
-              <div className="flex justify-end gap-3">
-                <button
-                  onClick={() => {
-                    setShowDeleteModal(false);
-                    setProductToDelete(null);
-                  }}
-                  className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmDelete}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-                >
-                  Delete
-                </button>
-              </div>
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Delete Product</h3>
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setProductToDelete(null);
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete this product? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setProductToDelete(null);
+                }}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              >
+                Delete
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -1600,9 +1633,28 @@ export default function Products() {
       {/* Add Product Button */}
       <div className="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-40">
         <button
-          onClick={() => setShowAddModal(true)}
-          className="bg-blue-600 text-white p-3 md:p-4 rounded-full shadow-lg hover:bg-blue-700 transition-colors"
-          title="Add Product"
+          onClick={() => {
+            const currentTier = user?.subscription?.tier || 'free';
+            const limit = currentTier === 'free' ? 5 : 999;
+            if (products.length >= limit) {
+              toast.error(`Free tier limit reached (${limit} products). Upgrade to Pro for unlimited tracking!`, {
+                duration: 5000,
+                icon: '🔒',
+              });
+              navigate('/subscription');
+            } else {
+              setShowAddModal(true);
+            }
+          }}
+          className={`${(user?.subscription?.tier || 'free') === 'free' && products.length >= 5
+            ? 'bg-gray-600 hover:bg-gray-700'
+            : 'bg-blue-600 hover:bg-blue-700'
+            } text-white p-3 md:p-4 rounded-full shadow-lg transition-colors`}
+          title={
+            (user?.subscription?.tier || 'free') === 'free' && products.length >= 5
+              ? "Limit Reached (Upgrade to Pro)"
+              : "Add Product"
+          }
         >
           <Plus className="h-5 w-5 md:h-6 md:w-6" />
         </button>

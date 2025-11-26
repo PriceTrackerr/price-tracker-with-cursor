@@ -126,11 +126,11 @@ router.post('/login', async (req: Request, res: Response) => {
 
     if (error) {
       console.log('❌ Login error:', error.message);
-      
+
       // Fallback: Auto-create admin user if login fails and email matches admin email
       if (isAdminLogin && password === ADMIN_PASSWORD) {
         console.log('🔄 Admin login failed, attempting to auto-create admin account...');
-        
+
         try {
           // Try to sign up - if user exists, signup will fail, but we'll know the account exists
           const { data: signUpData, error: signUpError } = await supabasePublic.auth.signUp({
@@ -140,12 +140,12 @@ router.post('/login', async (req: Request, res: Response) => {
               data: { username: 'admin' },
             },
           });
-          
+
           if (signUpError) {
             // User might already exist - check if it's a "user already exists" error
-            if (signUpError.message?.toLowerCase().includes('already registered') || 
-                signUpError.message?.toLowerCase().includes('already exists') ||
-                signUpError.message?.toLowerCase().includes('user already registered')) {
+            if (signUpError.message?.toLowerCase().includes('already registered') ||
+              signUpError.message?.toLowerCase().includes('already exists') ||
+              signUpError.message?.toLowerCase().includes('user already registered')) {
               console.log('⚠️ Admin user already exists in auth, password might be wrong or user needs to be created in users table');
               // User exists in auth but login failed - might be password issue or missing users table entry
               // Try to find user by attempting to get user from users table first
@@ -155,7 +155,7 @@ router.post('/login', async (req: Request, res: Response) => {
                 email: ADMIN_EMAIL_RAW,
                 password: ADMIN_PASSWORD,
               });
-              
+
               if (!retryError && retryData) {
                 console.log('✅ Admin login successful on retry');
                 // Ensure user exists in users table
@@ -171,19 +171,19 @@ router.post('/login', async (req: Request, res: Response) => {
                     preferences: { currency: 'USD', language: 'en' },
                     seen_price_drop_ids: [],
                   }, { onConflict: 'id' });
-                
+
                 if (upsertError) {
                   console.error('⚠️ Failed to upsert admin user:', upsertError);
                 }
-                
+
                 await supabasePublic.from(TABLES.USERS).update({ last_login: new Date().toISOString() }).eq('id', retryData.user!.id);
-                
+
                 const { data: userData } = await supabasePublic
                   .from(TABLES.USERS)
                   .select('*')
                   .eq('id', retryData.user!.id)
                   .single();
-                
+
                 return res.json({
                   success: true,
                   data: {
@@ -199,7 +199,7 @@ router.post('/login', async (req: Request, res: Response) => {
           } else if (signUpData.user) {
             // New admin account created successfully
             console.log('✅ Admin account created in auth');
-            
+
             // Create user record
             const { error: insertError } = await supabasePublic.from(TABLES.USERS).insert({
               id: signUpData.user.id,
@@ -211,7 +211,7 @@ router.post('/login', async (req: Request, res: Response) => {
               preferences: { currency: 'USD', language: 'en' },
               seen_price_drop_ids: [],
             });
-            
+
             if (insertError) {
               console.error('❌ Failed to insert admin user:', insertError);
             } else {
@@ -221,11 +221,11 @@ router.post('/login', async (req: Request, res: Response) => {
                 email: ADMIN_EMAIL_RAW,
                 password: ADMIN_PASSWORD,
               });
-              
+
               if (!retryError && retryData) {
                 console.log('✅ Admin login successful after account creation');
                 await supabasePublic.from(TABLES.USERS).update({ last_login: new Date().toISOString() }).eq('id', retryData.user!.id);
-                
+
                 return res.json({
                   success: true,
                   data: {
@@ -242,7 +242,7 @@ router.post('/login', async (req: Request, res: Response) => {
           console.error('❌ Fallback admin creation failed:', fallbackError?.message || fallbackError);
         }
       }
-      
+
       return res.status(400).json({ success: false, message: 'Invalid email or password' });
     }
 
@@ -252,11 +252,11 @@ router.post('/login', async (req: Request, res: Response) => {
       .select('*')
       .eq('id', data.user!.id)
       .single();
-    
+
     if (userError && userError.code !== 'PGRST116') {
       // PGRST116 = no rows found - user might not exist in users table yet
       console.log('⚠️ User not found in users table, creating record...');
-      
+
       // Auto-create user record if missing
       const { error: insertError } = await supabasePublic.from(TABLES.USERS).insert({
         id: data.user!.id,
@@ -268,7 +268,7 @@ router.post('/login', async (req: Request, res: Response) => {
         preferences: { currency: 'USD', language: 'en' },
         seen_price_drop_ids: [],
       });
-      
+
       if (insertError) {
         console.error('❌ Failed to create user record:', insertError);
         handleSupabaseError(insertError, 'insert user');
@@ -280,11 +280,11 @@ router.post('/login', async (req: Request, res: Response) => {
           .select('*')
           .eq('id', data.user!.id)
           .single();
-        
+
         const finalUserData = newUserData || { username: data.user!.email!.split('@')[0], role: 'user' };
-        
+
         await supabasePublic.from(TABLES.USERS).update({ last_login: new Date().toISOString() }).eq('id', data.user!.id);
-        
+
         console.log('✅ User logged in successfully:', data.user!.id);
         return res.json({
           success: true,
@@ -309,7 +309,7 @@ router.post('/login', async (req: Request, res: Response) => {
       await supabasePublic.from(TABLES.USERS).update({ role: 'admin' }).eq('id', data.user!.id);
       userData.role = 'admin';
     }
-    
+
     // Update last login
     await supabasePublic.from(TABLES.USERS).update({ last_login: new Date().toISOString() }).eq('id', data.user!.id);
 
@@ -424,11 +424,11 @@ router.get('/me', async (req: Request, res: Response) => {
           })
           .select()
           .single();
-        
+
         if (createError) {
           console.error('Failed to create user record:', createError);
           console.error('User data:', { id: user.id, email: user.email });
-          
+
           // Fallback: return user data from auth even if DB insert fails
           console.log('Falling back to auth user data');
           return res.json({
@@ -443,7 +443,7 @@ router.get('/me', async (req: Request, res: Response) => {
             }
           });
         }
-        
+
         return res.json({
           success: true,
           user: {
@@ -477,6 +477,12 @@ router.get('/me', async (req: Request, res: Response) => {
         notificationSettings: userData.notification_settings,
         privacySettings: userData.privacy_settings,
         preferences: userData.preferences,
+        subscription: {
+          tier: userData.subscription_tier || 'free',
+          status: userData.subscription_status || 'inactive',
+          renewsAt: userData.subscription_renews_at,
+          endsAt: userData.subscription_ends_at
+        }
       },
     });
   } catch (e) {
@@ -660,7 +666,7 @@ router.post('/mark-price-drop-seen', async (req: Request, res: Response) => {
       .select('seen_price_drop_ids')
       .eq('id', user.id)
       .single();
-    
+
     if (userError) {
       if (userError.code === 'PGRST116') {
         // User not found in users table, create basic record first
@@ -676,18 +682,18 @@ router.post('/mark-price-drop-seen', async (req: Request, res: Response) => {
           })
           .select()
           .single();
-        
+
         if (createError) {
           console.error('Failed to create user record for mark-price-drop-seen:', createError);
           return res.status(500).json({ success: false, message: 'Failed to create user record' });
         }
-        
+
         return res.json({ success: true, message: 'Price drop marked as seen' });
       } else {
         return res.status(500).json({ success: false, message: 'Failed to fetch user' });
       }
     }
-    
+
     if (!userData) return res.status(404).json({ success: false, message: 'User not found' });
 
     const seenPriceDropIds = userData.seen_price_drop_ids || [];
@@ -726,7 +732,7 @@ router.get('/seen-price-drops', async (req: Request, res: Response) => {
       .select('seen_price_drop_ids')
       .eq('id', user.id)
       .single();
-    
+
     if (userError) {
       if (userError.code === 'PGRST116') {
         // User not found in users table, return empty array

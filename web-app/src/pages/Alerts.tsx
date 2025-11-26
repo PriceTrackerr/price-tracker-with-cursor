@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Bell, 
-  BellRing, 
-  Filter, 
+import {
+  Bell,
+  BellRing,
+  Filter,
   ArrowUpDown,
   Plus,
   Trash2,
@@ -10,8 +10,10 @@ import {
   TrendingUp,
   TrendingDown,
   Package,
-  X
+  X,
+  AlertTriangle
 } from 'lucide-react';
+import { User } from '../components/AuthContext';
 import toast from 'react-hot-toast';
 import { useAuth } from '../components/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -68,15 +70,14 @@ function AlertCard({
 }) {
   const priceDifference = currentPrice - targetPrice;
   const isAboveTarget = currentPrice > targetPrice;
-  
+
   return (
-    <div className={`transition-all duration-300 border rounded-[0.625rem] p-4 ${
-      isTargetReached 
-        ? 'border-green-200 bg-green-50/50' 
-        : isActive 
-          ? 'border-gray-300 hover:border-blue-500 bg-white hover:shadow-md' 
+    <div className={`transition-all duration-300 border rounded-[0.625rem] p-4 ${isTargetReached
+        ? 'border-green-200 bg-green-50/50'
+        : isActive
+          ? 'border-gray-300 hover:border-blue-500 bg-white hover:shadow-md'
           : 'border-gray-200 bg-gray-50'
-    }`}>
+      }`}>
       <div className="space-y-4">
         {/* Header with Product Info and Controls */}
         <div className="flex items-start justify-between">
@@ -91,7 +92,7 @@ function AlertCard({
             </div>
             <p className="text-sm text-[#717182]">{platform}</p>
           </div>
-          
+
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-2">
               <span className="text-xs text-[#717182]">
@@ -99,16 +100,14 @@ function AlertCard({
               </span>
               <button
                 onClick={() => onToggleActive(id)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  isActive ? 'bg-blue-600' : 'bg-gray-300'
-                }`}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isActive ? 'bg-blue-600' : 'bg-gray-300'
+                  }`}
               >
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  isActive ? 'translate-x-6' : 'translate-x-1'
-                }`} />
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isActive ? 'translate-x-6' : 'translate-x-1'
+                  }`} />
               </button>
             </div>
-            <button 
+            <button
               onClick={() => onDelete(id)}
               className="p-2 hover:bg-[#d4183d]/10 hover:text-[#d4183d] rounded transition-colors"
             >
@@ -148,30 +147,28 @@ function AlertCard({
                 <span className="text-sm text-[#717182]">
                   {isAboveTarget ? 'Above target by' : 'Below target by'}
                 </span>
-                <div className={`flex items-center gap-1 text-sm font-medium ${
-                  isAboveTarget ? 'text-red-600' : 'text-green-600'
-                }`}>
+                <div className={`flex items-center gap-1 text-sm font-medium ${isAboveTarget ? 'text-red-600' : 'text-green-600'
+                  }`}>
                   {isAboveTarget ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
                   <PriceDisplay priceUSD={Math.abs(priceDifference)} selectedCurrency="USD" />
                 </div>
               </div>
-              
+
               {/* Progress Bar */}
               <div className="relative">
                 <div className="w-full bg-[#ececf0] rounded-full h-2">
-                  <div 
-                    className={`h-2 rounded-full transition-all duration-300 ${
-                      isAboveTarget ? 'bg-red-500' : 'bg-green-500'
-                    }`}
-                    style={{ 
-                      width: `${Math.min(Math.abs(priceDifference / targetPrice) * 100, 100)}%` 
+                  <div
+                    className={`h-2 rounded-full transition-all duration-300 ${isAboveTarget ? 'bg-red-500' : 'bg-green-500'
+                      }`}
+                    style={{
+                      width: `${Math.min(Math.abs(priceDifference / targetPrice) * 100, 100)}%`
                     }}
                   />
                 </div>
               </div>
             </div>
           )}
-          
+
           {notifyOnRestock && (
             <div className="flex items-center gap-2 text-xs text-[#717182]">
               <Package size={12} />
@@ -185,16 +182,18 @@ function AlertCard({
 }
 
 // Create Alert Dialog Component matching Figma design
-function CreateAlertDialog({ 
-  products, 
-  onCreateAlert 
-}: { 
+function CreateAlertDialog({
+  products,
+  onCreateAlert,
+  user
+}: {
   products: Product[];
   onCreateAlert: (alert: {
     productId: string;
     targetPrice: number;
     notifyOnRestock: boolean;
   }) => void;
+  user: User | null;
 }) {
   const [open, setOpen] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState("");
@@ -205,7 +204,7 @@ function CreateAlertDialog({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!selectedProductId || !targetPrice) {
       return;
     }
@@ -232,20 +231,20 @@ function CreateAlertDialog({
 
   return (
     <>
-      <button 
+      <button
         onClick={() => setOpen(true)}
         className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-[0.625rem] hover:bg-blue-700 transition-colors font-medium shadow-sm"
       >
         <Plus size={16} />
         Create Alert
       </button>
-      
+
       {open && (
         <div className="fixed inset-0 bg-[#030213] bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-[0.625rem] p-6 w-full max-w-md mx-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-medium text-gray-900">Create Price Alert</h3>
-                              <button onClick={handleCancel} className="text-gray-500 hover:text-gray-700">
+              <button onClick={handleCancel} className="text-gray-500 hover:text-gray-700">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -302,6 +301,17 @@ function CreateAlertDialog({
                 )}
               </div>
 
+              {/* Notification Limit Warning */}
+              {(user?.subscription?.tier || 'free') === 'free' && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-yellow-600 mt-0.5" />
+                  <div className="text-sm text-yellow-700">
+                    <p className="font-medium">Free Plan Limit</p>
+                    <p>You will only receive 1 notification per day. <a href="/subscription" className="underline hover:text-yellow-800">Upgrade to Pro</a> for unlimited alerts.</p>
+                  </div>
+                </div>
+              )}
+
               {/* Restock Notification */}
               <div className="flex items-center space-x-2">
                 <input
@@ -311,22 +321,22 @@ function CreateAlertDialog({
                   onChange={(e) => setNotifyOnRestock(e.target.checked)}
                   className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
-                                  <label htmlFor="restock" className="text-sm text-gray-700 font-normal">
+                <label htmlFor="restock" className="text-sm text-gray-700 font-normal">
                   Notify me when restocked
                 </label>
               </div>
 
               {/* Actions */}
               <div className="flex items-center gap-2 pt-4">
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   disabled={!selectedProductId || !targetPrice}
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-[0.625rem] hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                 >
                   Create Alert
                 </button>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={handleCancel}
                   className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-[0.625rem] hover:bg-gray-200 font-medium"
                 >
@@ -354,8 +364,8 @@ export default function Alerts() {
   useEffect(() => {
     // Wait for auth to be ready before fetching data
     if (!authLoading) {
-    fetchAlerts();
-    fetchProducts();
+      fetchAlerts();
+      fetchProducts();
     }
   }, [authLoading]);
 
@@ -409,9 +419,9 @@ export default function Alerts() {
         headers: getAuthHeaders(),
       });
       const data = await response.json();
-      
+
       if (data.success) {
-        setAlerts(alerts.map(alert => 
+        setAlerts(alerts.map(alert =>
           alert.id === alertId ? { ...alert, isActive: !alert.isActive } : alert
         ));
         toast.success('Alert updated');
@@ -421,7 +431,7 @@ export default function Alerts() {
     } catch (error) {
       console.error('Error updating alert:', error);
       // Fallback to local state update
-      setAlerts(alerts.map(alert => 
+      setAlerts(alerts.map(alert =>
         alert.id === alertId ? { ...alert, isActive: !alert.isActive } : alert
       ));
       toast.success('Alert updated');
@@ -476,9 +486,9 @@ export default function Alerts() {
           notifyOnRestock: newAlert.notifyOnRestock,
         }),
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
         const alert: Alert = {
           id: data.data.id || Date.now().toString(),
@@ -492,7 +502,7 @@ export default function Alerts() {
           notifyOnRestock: newAlert.notifyOnRestock,
           createdAt: new Date().toISOString(),
         };
-        
+
         setAlerts([alert, ...alerts]);
         toast.success('Alert created successfully!');
       } else {
@@ -571,8 +581,8 @@ export default function Alerts() {
               )}
             </div>
           </div>
-          
-          <CreateAlertDialog products={products} onCreateAlert={handleCreateAlert} />
+
+          <CreateAlertDialog products={products} onCreateAlert={handleCreateAlert} user={user} />
         </div>
 
         {/* Controls */}
@@ -612,7 +622,7 @@ export default function Alerts() {
             <Bell className="mx-auto text-[#717182] mb-4" size={48} />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No alerts found</h3>
             <p className="text-[#717182] mb-4">
-              {alerts.length === 0 
+              {alerts.length === 0
                 ? "Create your first price alert to get notified when products reach your target price."
                 : "No alerts match your current filter criteria."
               }

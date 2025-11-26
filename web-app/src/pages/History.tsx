@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  TrendingUp, 
-  TrendingDown, 
+import {
+  TrendingUp,
+  TrendingDown,
   Calendar,
   Filter,
   Download,
@@ -82,7 +82,7 @@ export default function History() {
   const { getAuthHeaders, user } = useAuth();
   const location = useLocation();
   const selectedCurrency = user?.preferences?.currency || 'USD';
-  
+
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<string>('');
   const [timeRange, setTimeRange] = useState<string>('7d');
@@ -101,7 +101,7 @@ export default function History() {
     const params = new URLSearchParams(location.search);
     const highlightParam = params.get('highlight');
     const selectedProductParam = params.get('selectedProduct');
-    
+
     if (selectedProductParam && products.length > 0) {
       // Check if the product exists in our products list
       const productExists = products.find(p => p.id === selectedProductParam);
@@ -109,7 +109,7 @@ export default function History() {
         setSelectedProduct(selectedProductParam);
       }
     }
-    
+
     if (highlightParam) {
       // Highlight products with price drops (excluding seen ones)
       const highlightIds = highlightParam.split(',');
@@ -204,7 +204,7 @@ export default function History() {
 
   //     const allHistoryArrays = await Promise.all(historyPromises);
   //     const allHistory = allHistoryArrays.flat();
-      
+
   //     console.log(`Fetched ${allHistory.length} history entries`);
   //     setPriceHistory(allHistory);
   //     setAllProductsHistory(allHistory); // Store for when no product is selected
@@ -241,7 +241,7 @@ export default function History() {
         },
         body: JSON.stringify({ productId })
       });
-      
+
       // Update local state
       setSeenPriceDropIds((prev: string[]) => [...prev, productId]);
       setCheckedProducts((prev: Set<string>) => {
@@ -251,8 +251,8 @@ export default function History() {
       });
 
       // Trigger a custom event to notify other components
-      window.dispatchEvent(new CustomEvent('priceDropMarkedAsSeen', { 
-        detail: { productId } 
+      window.dispatchEvent(new CustomEvent('priceDropMarkedAsSeen', {
+        detail: { productId }
       }));
     } catch (error) {
       console.error('Error marking price drop as seen:', error);
@@ -261,9 +261,9 @@ export default function History() {
 
   const handleProductSelection = (productId: string) => {
     setSelectedProduct(productId);
-    
-    // If this product has a price drop and is highlighted, mark it as seen
-    if (productHasPriceDrop(productId) && checkedProducts.has(productId)) {
+
+    // If this product has a price drop and hasn't been seen yet, mark it as seen
+    if (productHasPriceDrop(productId) && !seenPriceDropIds.includes(productId)) {
       markPriceDropAsSeen(productId);
     }
   };
@@ -275,17 +275,17 @@ export default function History() {
 
   const getPriceMetrics = () => {
     if (priceHistory.length === 0) return { currentPrice: 0, totalChange: 0, changePercent: 0 };
-    
+
     // Sort by timestamp to get chronological order
-    const sortedHistory = [...priceHistory].sort((a, b) => 
+    const sortedHistory = [...priceHistory].sort((a, b) =>
       new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
     );
-    
+
     const currentPrice = sortedHistory[sortedHistory.length - 1]?.price || 0;
     const firstPrice = sortedHistory[0]?.price || currentPrice;
     const totalChange = currentPrice - firstPrice;
     const changePercent = firstPrice !== 0 ? (totalChange / firstPrice) * 100 : 0;
-    
+
     return { currentPrice, totalChange, changePercent };
   };
 
@@ -294,18 +294,18 @@ export default function History() {
   // Simplified price drop detection - only for selected product
   const getCurrentProductDropInfo = () => {
     if (!currentProduct || currentProductHistory.length < 2) return null;
-    
-    const sortedHistory = [...currentProductHistory].sort((a, b) => 
+
+    const sortedHistory = [...currentProductHistory].sort((a, b) =>
       new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
     );
     const last = sortedHistory[sortedHistory.length - 1];
     const prev = sortedHistory[sortedHistory.length - 2];
-    
+
     if (!last || !prev || last.price >= prev.price) return null;
-    
+
     const dropAmount = prev.price - last.price;
     const dropPercentage = (dropAmount / prev.price) * 100;
-    
+
     return {
       dropAmount,
       dropPercentage,
@@ -318,13 +318,13 @@ export default function History() {
   // Get current product data
   const currentProduct = selectedProduct ? products.find(p => p.id === selectedProduct) : null;
   const currentProductHistory = priceHistory.filter(h => h.productId === selectedProduct);
-  
+
   // Prepare chart data
   const chartData = priceHistory.map((entry, index) => {
     const prevEntry = index > 0 ? priceHistory[index - 1] : null;
     const change = prevEntry ? entry.price - prevEntry.price : 0;
     const changePercent = prevEntry && prevEntry.price !== 0 ? (change / prevEntry.price) * 100 : 0;
-    
+
     return {
       date: new Date(entry.timestamp).toLocaleDateString(),
       price: entry.price,
@@ -368,24 +368,24 @@ export default function History() {
           <AreaChart {...commonProps}>
             <defs>
               <linearGradient id="priceGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.01}/>
+                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.01} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-            <XAxis 
-              dataKey="date" 
+            <XAxis
+              dataKey="date"
               axisLine={false}
               tickLine={false}
               tick={{ fontSize: 12, fill: '#64748b' }}
             />
-            <YAxis 
+            <YAxis
               axisLine={false}
               tickLine={false}
               tick={{ fontSize: 12, fill: '#64748b' }}
               domain={['dataMin - 10', 'dataMax + 10']}
             />
-            <Tooltip 
+            <Tooltip
               contentStyle={{
                 backgroundColor: 'white',
                 border: 'none',
@@ -393,10 +393,10 @@ export default function History() {
                 boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)'
               }}
             />
-            <Area 
-              type="monotone" 
-              dataKey="price" 
-              stroke="#3b82f6" 
+            <Area
+              type="monotone"
+              dataKey="price"
+              stroke="#3b82f6"
               strokeWidth={3}
               fill="url(#priceGradient)"
               dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
@@ -408,19 +408,19 @@ export default function History() {
         return (
           <BarChart {...commonProps}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-            <XAxis 
-              dataKey="date" 
+            <XAxis
+              dataKey="date"
               axisLine={false}
               tickLine={false}
               tick={{ fontSize: 12, fill: '#64748b' }}
             />
-            <YAxis 
+            <YAxis
               axisLine={false}
               tickLine={false}
               tick={{ fontSize: 12, fill: '#64748b' }}
               domain={['dataMin - 10', 'dataMax + 10']}
             />
-            <Tooltip 
+            <Tooltip
               contentStyle={{
                 backgroundColor: 'white',
                 border: 'none',
@@ -428,8 +428,8 @@ export default function History() {
                 boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)'
               }}
             />
-            <Bar 
-              dataKey="price" 
+            <Bar
+              dataKey="price"
               fill="#3b82f6"
               radius={[4, 4, 0, 0]}
             />
@@ -439,19 +439,19 @@ export default function History() {
         return (
           <LineChart {...commonProps}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-            <XAxis 
-              dataKey="date" 
+            <XAxis
+              dataKey="date"
               axisLine={false}
               tickLine={false}
               tick={{ fontSize: 12, fill: '#64748b' }}
             />
-            <YAxis 
+            <YAxis
               axisLine={false}
               tickLine={false}
               tick={{ fontSize: 12, fill: '#64748b' }}
               domain={['dataMin - 10', 'dataMax + 10']}
             />
-            <Tooltip 
+            <Tooltip
               contentStyle={{
                 backgroundColor: 'white',
                 border: 'none',
@@ -459,10 +459,10 @@ export default function History() {
                 boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)'
               }}
             />
-            <Line 
-              type="monotone" 
-              dataKey="price" 
-              stroke="#3b82f6" 
+            <Line
+              type="monotone"
+              dataKey="price"
+              stroke="#3b82f6"
               strokeWidth={3}
               dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
               activeDot={{ r: 6, fill: '#3b82f6' }}
@@ -487,13 +487,13 @@ export default function History() {
   // Check if current product has a price drop
   const currentProductHasDrop = () => {
     if (!currentProduct || currentProductHistory.length < 2) return false;
-    
-    const sortedHistory = [...currentProductHistory].sort((a, b) => 
+
+    const sortedHistory = [...currentProductHistory].sort((a, b) =>
       new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
     );
     const last = sortedHistory[sortedHistory.length - 1];
     const prev = sortedHistory[sortedHistory.length - 2];
-    
+
     return last && prev && last.price < prev.price;
   };
 
@@ -502,21 +502,21 @@ export default function History() {
     // Get price history from the global data instead of local state
     const product = products.find(p => p.id === productId);
     const productHistory = product?.priceHistory || [];
-    
+
     if (productHistory.length < 2) return false;
-    
-    const sortedHistory = productHistory.sort((a, b) => 
+
+    const sortedHistory = productHistory.sort((a, b) =>
       new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
     );
     const last = sortedHistory[sortedHistory.length - 1];
     const prev = sortedHistory[sortedHistory.length - 2];
-    
+
     return last && prev && last.price < prev.price;
   };
 
   // Get products with price drops that haven't been seen
   const getUnseenProductsWithDrops = () => {
-    return products.filter(product => 
+    return products.filter(product =>
       productHasPriceDrop(product.id) && !seenPriceDropIds.includes(product.id)
     );
   };
@@ -574,22 +574,22 @@ export default function History() {
                           </span>
                         </div>
                         <p className="text-emerald-700 mb-4">Don't miss these amazing deals! Products with significant price reductions.</p>
-                        
+
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-64 overflow-y-auto">
                           {unseenProductsWithDrops.map((product) => {
                             const productHistory = product.priceHistory || [];
-                            const sortedHistory = productHistory.sort((a, b) => 
+                            const sortedHistory = productHistory.sort((a, b) =>
                               new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
                             );
                             const last = sortedHistory[sortedHistory.length - 1];
                             const prev = sortedHistory[sortedHistory.length - 2];
                             const dropAmount = prev.price - last.price;
                             const dropPercent = ((dropAmount / prev.price) * 100).toFixed(1);
-                            
+
                             return (
-                              <div key={product.id} 
-                                   className="flex items-center gap-3 p-3 bg-white/60 backdrop-blur-sm rounded-xl border border-emerald-200/50 hover:bg-white/80 transition-all cursor-pointer group"
-                                   onClick={() => handleProductSelection(product.id)}
+                              <div key={product.id}
+                                className="flex items-center gap-3 p-3 bg-white/60 backdrop-blur-sm rounded-xl border border-emerald-200/50 hover:bg-white/80 transition-all cursor-pointer group"
+                                onClick={() => handleProductSelection(product.id)}
                               >
                                 <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
                                   <TrendingDown className="w-4 h-4 text-emerald-600" />
@@ -620,7 +620,7 @@ export default function History() {
                             );
                           })}
                         </div>
-                        
+
                         {/* Show more indicator if there are more than 6 products */}
                         {unseenProductsWithDrops.length > 6 && (
                           <div className="text-center mt-3">
@@ -631,7 +631,7 @@ export default function History() {
                         )}
                       </div>
                     </div>
-                    <button 
+                    <button
                       onClick={() => setShowPriceDropAlert(false)}
                       className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-100 p-2 rounded-lg transition-colors"
                     >
@@ -666,7 +666,7 @@ export default function History() {
                 <Filter className="w-4 h-4 text-gray-500" />
                 <span className="text-sm text-gray-600">Filters:</span>
               </div>
-              
+
               <div className="relative">
                 <select
                   value={selectedProduct}
@@ -679,29 +679,28 @@ export default function History() {
                     .sort((a, b) => {
                       const aHasDrop = productHasPriceDrop(a.id) && !seenPriceDropIds.includes(a.id);
                       const bHasDrop = productHasPriceDrop(b.id) && !seenPriceDropIds.includes(b.id);
-                      
+
                       // Sort: price drops first, then alphabetically
                       if (aHasDrop && !bHasDrop) return -1;
                       if (!aHasDrop && bHasDrop) return 1;
                       return a.title.localeCompare(b.title);
                     })
                     .map((product) => (
-                    <option 
-                      key={product.id} 
-                      value={product.id} 
-                      className={`truncate ${
-                        checkedProducts.has(product.id) 
-                          ? 'text-green-600 font-semibold bg-green-50' 
-                          : productHasPriceDrop(product.id) && !seenPriceDropIds.includes(product.id)
-                            ? 'text-orange-600 font-semibold' 
-                            : ''
-                      }`}
-                    >
-                      {product.title.length > 30 ? product.title.substring(0, 30) + '...' : product.title}
-                      {checkedProducts.has(product.id) && ' 🎯'}
-                      {productHasPriceDrop(product.id) && !checkedProducts.has(product.id) && !seenPriceDropIds.includes(product.id) && ' 🔥'}
-                    </option>
-                  ))}
+                      <option
+                        key={product.id}
+                        value={product.id}
+                        className={`truncate ${checkedProducts.has(product.id)
+                            ? 'text-green-600 font-semibold bg-green-50'
+                            : productHasPriceDrop(product.id) && !seenPriceDropIds.includes(product.id)
+                              ? 'text-orange-600 font-semibold'
+                              : ''
+                          }`}
+                      >
+                        {product.title.length > 30 ? product.title.substring(0, 30) + '...' : product.title}
+                        {checkedProducts.has(product.id) && ' 🎯'}
+                        {productHasPriceDrop(product.id) && !checkedProducts.has(product.id) && !seenPriceDropIds.includes(product.id) && ' 🔥'}
+                      </option>
+                    ))}
                 </select>
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
                   <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

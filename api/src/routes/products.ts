@@ -86,40 +86,40 @@ router.get('/search', authMiddleware, async (req: AuthRequest, res: Response) =>
   try {
     const { q, limit = 10 } = req.query;
     const userId = req.user!.uid;
-    
+
     if (!q || typeof q !== 'string') {
-      return res.status(400).json({ 
-        success: false, 
+      return res.status(400).json({
+        success: false,
         error: 'Search query is required'
       });
     }
-    
+
     const allProducts = await db.getProducts();
     const userProducts = allProducts.filter((p: any) => p.userId === userId);
-    
+
     const query = q.toLowerCase().trim();
-    
+
     // Find products that start with the query (priority)
-    const startsWithMatches = userProducts.filter((product: any) => 
+    const startsWithMatches = userProducts.filter((product: any) =>
       product.title.toLowerCase().startsWith(query) ||
       product.platform.toLowerCase().startsWith(query)
     );
-    
+
     // Find products that contain the query
-    const containsMatches = userProducts.filter((product: any) => 
+    const containsMatches = userProducts.filter((product: any) =>
       product.title.toLowerCase().includes(query) ||
       product.platform.toLowerCase().includes(query)
     );
-    
+
     // Combine and deduplicate results
     const allMatches = [...startsWithMatches, ...containsMatches];
-    const uniqueMatches = allMatches.filter((product, index, self) => 
+    const uniqueMatches = allMatches.filter((product, index, self) =>
       index === self.findIndex(p => p.id === product.id)
     );
-    
+
     // Limit results
     const limitedMatches = uniqueMatches.slice(0, parseInt(limit as string));
-    
+
     return res.json({
       success: true,
       data: {
@@ -132,7 +132,7 @@ router.get('/search', authMiddleware, async (req: AuthRequest, res: Response) =>
   } catch (error) {
     console.error('Error searching products:', error);
     return res.status(500).json({
-        success: false,
+      success: false,
       error: 'Internal server error'
     });
   }
@@ -154,12 +154,12 @@ router.get('/search', authMiddleware, async (req: AuthRequest, res: Response) =>
 
 
 
-function canonicalizeUrl(url: string, platform: 'amazon'|'aliexpress'|'ebay'|'walmart'|'shein'|'bestbuy'|'target'): string {
+function canonicalizeUrl(url: string, platform: 'amazon' | 'aliexpress' | 'ebay' | 'walmart' | 'shein' | 'bestbuy' | 'target'): string {
   try {
     const u = new URL(url);
     u.hash = '';
     // Remove common tracking params
-    const dropParams = new Set(['utm_source','utm_medium','utm_campaign','utm_term','utm_content','tag','aff_platform','aff_short_key','spm','source','adsRedirect','athbdg','classType','ref']);
+    const dropParams = new Set(['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'tag', 'aff_platform', 'aff_short_key', 'spm', 'source', 'adsRedirect', 'athbdg', 'classType', 'ref']);
     [...u.searchParams.keys()].forEach(k => { if (dropParams.has(k)) u.searchParams.delete(k); });
     const host = u.hostname.toLowerCase();
     if (platform === 'amazon') {
@@ -192,22 +192,35 @@ router.post('/track', authMiddleware, validateProduct, async (req: AuthRequest, 
     if (!errors.isEmpty()) {
       return res.status(400).json({
         success: false,
-        errors: errors.array() 
+        errors: errors.array()
       });
     }
 
     const { url, title, price, currency, platform, imageUrl, stockStatus, discountInfo } = req.body;
-    
+
     const userId = req.user!.uid;
-    
-    // Prevent duplicate products for the same user and url
+
+    // Check subscription limits before adding product
+    const user = await db.getUserById(userId);
+    const subscriptionTier = user?.subscription_tier || 'free';
+    const productLimit = subscriptionTier === 'free' ? 5 : 999;
+
     const products = await db.getProducts(userId);
+
+    if (products.length >= productLimit) {
+      return res.status(403).json({
+        success: false,
+        error: `Product limit reached. ${subscriptionTier === 'free' ? 'Upgrade to Pro to track more products.' : 'You have reached your product limit.'}`,
+        limit: productLimit,
+        current: products.length
+      });
+    }
     console.log(`[DEBUG] Checking for duplicates - User: ${userId}, URL: ${url}`);
     console.log(`[DEBUG] User has ${products.length} products`);
-    
+
     const incomingCanonical = canonicalizeUrl(url, platform);
     const existing = products.find((p: any) => canonicalizeUrl(p.url, p.platform) === incomingCanonical);
-    
+
     if (existing) {
       console.log(`[DEBUG] Found existing product: ${existing.title}`);
       // Return success with existing product to avoid showing an error in the extension
@@ -217,7 +230,7 @@ router.post('/track', authMiddleware, validateProduct, async (req: AuthRequest, 
         message: 'Product already tracked'
       });
     }
-    
+
     // Lock key to prevent multi-click duplicates (auto-release after 15s)
     const lockKey = `${userId}:${incomingCanonical}`;
     const now = Date.now();
@@ -227,72 +240,72 @@ router.post('/track', authMiddleware, validateProduct, async (req: AuthRequest, 
       return res.status(200).json({ success: true, data: null, message: 'Already tracking in progress' });
     }
     trackLocks.set(lockKey, now + 15000);
-    
+
     console.log(`[DEBUG] No existing product found, proceeding to add new product`);
 
     // Add the new product
-    const id = await db.addProduct({ 
-      url: incomingCanonical, 
-      title, 
-      price: typeof price === 'string' ? parseFloat(price) : price, 
-      currency: currency || '$', 
-      platform, 
-      imageUrl: imageUrl || '', 
-      userId, 
-      stockStatus: stockStatus || 'unknown', 
+    const id = await db.addProduct({
+      url: incomingCanonical,
+      title,
+      price: typeof price === 'string' ? parseFloat(price) : price,
+      currency: currency || '$',
+      platform,
+      imageUrl: imageUrl || '',
+      userId,
+      stockStatus: stockStatus || 'unknown',
       discountInfo,
       totalMatches: 0 // Initialize with 0 matches
     });
-    
-    await db.addPriceHistory({ 
-      productId: id, 
-      price: typeof price === 'string' ? parseFloat(price) : price, 
-      currency: currency || '$' 
+
+    await db.addPriceHistory({
+      productId: id,
+      price: typeof price === 'string' ? parseFloat(price) : price,
+      currency: currency || '$'
     });
 
     // Pre-scrape and store matches for the new product (BuyHatke approach)
     const { productMatchScraper } = require('../services/productMatchScraper');
     const newProduct = await db.getProductById(id);
-    
+
     if (newProduct) {
       // Legacy pre-scrape disabled; external matches are fetched on-demand and cached in product_matches
     }
-    
+
     // Release lock
     trackLocks.delete(lockKey);
 
-  // Best-effort duplicate cleanup: if race inserted more than once, keep newest
-  try {
-    const allUserProducts = await db.getProducts(userId);
-    const dupeGroup = allUserProducts.filter((p: any) => canonicalizeUrl(p.url, p.platform) === incomingCanonical);
-    if (dupeGroup.length > 1) {
-      // sort by createdAt desc, keep first
-      const sorted = [...dupeGroup].sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
-      const keep = sorted[0].id;
-      for (const d of sorted.slice(1)) {
-        if (d.id !== keep) {
-          await db.deleteProduct(d.id);
+    // Best-effort duplicate cleanup: if race inserted more than once, keep newest
+    try {
+      const allUserProducts = await db.getProducts(userId);
+      const dupeGroup = allUserProducts.filter((p: any) => canonicalizeUrl(p.url, p.platform) === incomingCanonical);
+      if (dupeGroup.length > 1) {
+        // sort by createdAt desc, keep first
+        const sorted = [...dupeGroup].sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+        const keep = sorted[0].id;
+        for (const d of sorted.slice(1)) {
+          if (d.id !== keep) {
+            await db.deleteProduct(d.id);
+          }
         }
       }
+    } catch (cleanupErr) {
+      console.warn('Duplicate cleanup failed:', cleanupErr);
     }
-  } catch (cleanupErr) {
-    console.warn('Duplicate cleanup failed:', cleanupErr);
-    }
-    
-    return res.status(201).json({ 
+
+    return res.status(201).json({
       success: true,
-      data: { 
-        id, 
-        url, 
-        title, 
-        price, 
-        currency, 
-        platform, 
-        imageUrl, 
-        userId, 
-        stockStatus: stockStatus || 'unknown', 
-        discountInfo 
-      } 
+      data: {
+        id,
+        url,
+        title,
+        price,
+        currency,
+        platform,
+        imageUrl,
+        userId,
+        stockStatus: stockStatus || 'unknown',
+        discountInfo
+      }
     });
   } catch (error: unknown) {
     // Release all expired locks periodically
@@ -311,11 +324,11 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.uid;
     let products = await db.getProducts(userId);
-    
+
     // Get seen price drop IDs for this user
     const user = await db.getUserById(userId);
     const seenPriceDropIds = user?.seenPriceDropIds || [];
-    
+
     // Extract query parameters for filtering and sorting
     const {
       search,
@@ -329,18 +342,18 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
       limit,
       offset = 0
     } = req.query;
-    
+
     // Add price history and calculate price drops
     let productsWithHistory = await Promise.all(products.map(async (product: Product) => {
       const history = await db.getPriceHistory(product.id);
       const priceHistory = history || [];
-      
+
       // Calculate price drop information
       let priceDrop = 0;
       let priceDropPercent = 0;
       let previousPrice = product.price;
       let hasPriceDrop = false;
-      
+
       if (priceHistory.length > 1) {
         const previousEntry = priceHistory[priceHistory.length - 2];
         if (previousEntry && previousEntry.price && previousEntry.price > product.price) {
@@ -351,7 +364,7 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
           hasPriceDrop = priceDrop > 0 && !seenPriceDropIds.includes(product.id);
         }
       }
-      
+
       return {
         ...product,
         url: addAffiliateTag(product.url, product.platform as any),
@@ -362,7 +375,7 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
         hasPriceDrop
       };
     }));
-    
+
     // Apply filters
     if (search && typeof search === 'string') {
       const searchLower = search.toLowerCase();
@@ -371,13 +384,13 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
         product.platform.toLowerCase().includes(searchLower)
       );
     }
-    
+
     if (platform && typeof platform === 'string') {
       productsWithHistory = productsWithHistory.filter(product =>
         product.platform === platform
       );
     }
-    
+
     if (minPrice && typeof minPrice === 'string') {
       const min = parseFloat(minPrice);
       if (!isNaN(min)) {
@@ -386,7 +399,7 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
         );
       }
     }
-    
+
     if (maxPrice && typeof maxPrice === 'string') {
       const max = parseFloat(maxPrice);
       if (!isNaN(max)) {
@@ -395,26 +408,26 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
         );
       }
     }
-    
+
     if (stockStatus && typeof stockStatus === 'string') {
       productsWithHistory = productsWithHistory.filter(product =>
         product.stockStatus === stockStatus
       );
     }
-    
+
     if (hasPriceDrop === 'true') {
       productsWithHistory = productsWithHistory.filter(product =>
         product.hasPriceDrop
       );
     }
-    
+
     // Apply sorting
     const sortOrderMultiplier = sortOrder === 'desc' ? -1 : 1;
-    
+
     productsWithHistory.sort((a, b) => {
       let aValue: any;
       let bValue: any;
-      
+
       switch (sortBy) {
         case 'price':
           aValue = a.price;
@@ -442,25 +455,25 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
           bValue = new Date(b.createdAt).getTime();
           break;
       }
-      
+
       if (aValue < bValue) return -1 * sortOrderMultiplier;
       if (aValue > bValue) return 1 * sortOrderMultiplier;
       return 0;
     });
-    
+
     // Apply pagination
     const totalCount = productsWithHistory.length;
     const offsetNum = parseInt(offset as string) || 0;
     const limitNum = limit ? parseInt(limit as string) : totalCount;
-    
+
     const paginatedProducts = productsWithHistory.slice(offsetNum, offsetNum + limitNum);
-    
+
     // Calculate summary statistics
     const totalValue = productsWithHistory.reduce((sum, product) => sum + product.price, 0);
     const totalSavings = productsWithHistory.reduce((sum, product) => sum + product.priceDrop, 0);
     const productsWithPriceDrops = productsWithHistory.filter(product => product.hasPriceDrop).length;
     const outOfStockCount = productsWithHistory.filter(product => product.stockStatus === 'out_of_stock').length;
-    
+
     return res.json({
       success: true,
       data: paginatedProducts,
@@ -498,19 +511,19 @@ router.delete('/:productId', authMiddleware, async (req: AuthRequest, res: Respo
         error: 'Product ID is required'
       });
     }
-    
+
     const product = await db.getProductById(productId);
     const user = await db.getUserById(userId) as UserWithRole | undefined;
-    
+
     if (!product) {
       return res.status(404).json({ success: false, error: 'Product not found' });
     }
-    
+
     // Check if user is admin or owns the product
     if (!user || (user.role !== 'admin' && product.userId !== userId)) {
       return res.status(403).json({ success: false, error: 'Not authorized' });
     }
-    
+
     await db.deleteProduct(productId);
     return res.json({ success: true, message: 'Product removed from tracking' });
   } catch (error: unknown) {
@@ -533,16 +546,16 @@ router.get('/:productId/history', authMiddleware, async (req: AuthRequest, res: 
         error: 'Product ID is required'
       });
     }
-    
+
     const product = await db.getProductById(productId);
     if (!product) {
       return res.status(404).json({ success: false, error: 'Product not found' });
     }
-    
+
     if (product.userId !== userId) {
       return res.status(403).json({ success: false, error: 'Not authorized' });
     }
-    
+
     const history = await db.getPriceHistory(productId);
     return res.json({ success: true, data: history });
   } catch (error) {
@@ -559,11 +572,11 @@ router.get('/filters', authMiddleware, async (req: AuthRequest, res: Response) =
   try {
     const userId = req.user!.uid;
     const products = await db.getProducts(userId);
-    
+
     // Get seen price drop IDs for this user
     const user = await db.getUserById(userId);
     const seenPriceDropIds = user?.seenPriceDropIds || [];
-    
+
     // Calculate price ranges
     const prices = products.map((p: Product) => p.price).filter((p: number) => p > 0);
     const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
@@ -578,7 +591,7 @@ router.get('/filters', authMiddleware, async (req: AuthRequest, res: Response) =
       acc[status] = (acc[status] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
-    
+
     // Calculate price drop statistics (only unseen drops)
     const productsWithHistory = await Promise.all(products.map(async (product: Product) => {
       const history = await db.getPriceHistory(product.id);
@@ -588,8 +601,8 @@ router.get('/filters', authMiddleware, async (req: AuthRequest, res: Response) =
           const priceDrop = previousEntry.price - product.price;
           const hasDrop = priceDrop > 0;
           const isSeen = seenPriceDropIds.includes(product.id);
-          return { 
-            priceDrop, 
+          return {
+            priceDrop,
             priceDropPercent: Math.round((priceDrop / previousEntry.price) * 100),
             hasDrop,
             isSeen
@@ -598,12 +611,12 @@ router.get('/filters', authMiddleware, async (req: AuthRequest, res: Response) =
       }
       return { priceDrop: 0, priceDropPercent: 0, hasDrop: false, isSeen: false };
     }));
-    
+
     // Only count unseen price drops
     const productsWithPriceDrops = productsWithHistory.filter(p => p.hasDrop && !p.isSeen).length;
     const maxPriceDrop = productsWithHistory.length > 0 ? Math.max(...productsWithHistory.map(p => p.priceDrop)) : 0;
     const maxPriceDropPercent = productsWithHistory.length > 0 ? Math.max(...productsWithHistory.map(p => p.priceDropPercent)) : 0;
-    
+
     return res.json({
       success: true,
       data: {
@@ -633,27 +646,27 @@ router.get('/all', authMiddleware, async (req: AuthRequest, res: Response) => {
     if (!req.user?.isAdmin) {
       return res.status(403).json({ success: false, message: 'Forbidden: Admins only' });
     }
-    
+
     // Get all products from Supabase
     const { data: products, error: productsError } = await supabase
       .from(TABLES.PRODUCTS)
       .select('*')
       .order('created_at', { ascending: false });
-    
+
     if (productsError) {
       console.error('Error fetching products:', productsError);
       return res.status(500).json({ success: false, message: 'Failed to fetch products' });
     }
-    
+
     // Get all users to map user info
     const { data: users, error: usersError } = await supabase
       .from(TABLES.USERS)
       .select('id, email, username');
-    
+
     if (usersError) {
       console.warn('Error fetching users for product mapping:', usersError);
     }
-    
+
     // Map products and include user information
     const productsWithUsers = (products || []).map((p: any) => {
       const productUser = users?.find((u: any) => u.id === p.user_id);
@@ -676,7 +689,7 @@ router.get('/all', authMiddleware, async (req: AuthRequest, res: Response) => {
         } : undefined
       };
     });
-    
+
     return res.json({ success: true, data: productsWithUsers });
   } catch (error) {
     console.error('Error in /all endpoint:', error);
@@ -722,26 +735,26 @@ router.post('/:productId/link/:targetProductId', authMiddleware, async (req: Aut
   try {
     const { productId, targetProductId } = req.params;
     const userId = req.user!.uid;
-    
+
     if (!productId || !targetProductId) {
       return res.status(400).json({
         success: false,
         error: 'Both product IDs are required'
       });
     }
-    
+
     // Get both products
     const allProducts = await db.getProducts();
     const product = allProducts.find((p: any) => p.id === productId);
     const targetProduct = allProducts.find((p: any) => p.id === targetProductId);
-    
+
     if (!product || !targetProduct) {
       return res.status(404).json({
         success: false,
         error: 'One or both products not found'
       });
     }
-    
+
     // Verify user owns both products
     if (product.userId !== userId || targetProduct.userId !== userId) {
       return res.status(403).json({
@@ -749,21 +762,21 @@ router.post('/:productId/link/:targetProductId', authMiddleware, async (req: Aut
         error: 'Not authorized to link these products'
       });
     }
-    
+
     // Update both products' matchedProducts arrays
     const productMatchedProducts = product.matchedProducts || [];
     const targetMatchedProducts = targetProduct.matchedProducts || [];
-    
+
     if (!productMatchedProducts.includes(targetProductId)) {
       productMatchedProducts.push(targetProductId);
       await db.updateProduct(productId, { matchedProducts: productMatchedProducts });
     }
-    
+
     if (!targetMatchedProducts.includes(productId)) {
       targetMatchedProducts.push(productId);
       await db.updateProduct(targetProductId, { matchedProducts: targetMatchedProducts });
     }
-    
+
     return res.json({
       success: true,
       message: 'Products linked successfully'
@@ -782,26 +795,26 @@ router.delete('/:productId/unlink/:targetProductId', authMiddleware, async (req:
   try {
     const { productId, targetProductId } = req.params;
     const userId = req.user!.uid;
-    
+
     if (!productId || !targetProductId) {
       return res.status(400).json({
         success: false,
         error: 'Both product IDs are required'
       });
     }
-    
+
     // Get both products
     const allProducts = await db.getProducts();
     const product = allProducts.find((p: any) => p.id === productId);
     const targetProduct = allProducts.find((p: any) => p.id === targetProductId);
-    
+
     if (!product || !targetProduct) {
       return res.status(404).json({
         success: false,
         error: 'One or both products not found'
       });
     }
-    
+
     // Verify user owns both products
     if (product.userId !== userId || targetProduct.userId !== userId) {
       return res.status(403).json({
@@ -809,17 +822,17 @@ router.delete('/:productId/unlink/:targetProductId', authMiddleware, async (req:
         error: 'Not authorized to unlink these products'
       });
     }
-    
+
     // Remove from both products' matchedProducts arrays
     const productMatchedProducts = product.matchedProducts || [];
     const targetMatchedProducts = targetProduct.matchedProducts || [];
-    
+
     const updatedProductMatches = productMatchedProducts.filter((id: string) => id !== targetProductId);
     const updatedTargetMatches = targetMatchedProducts.filter((id: string) => id !== productId);
-    
+
     await db.updateProduct(productId, { matchedProducts: updatedProductMatches });
     await db.updateProduct(targetProductId, { matchedProducts: updatedTargetMatches });
-    
+
     return res.json({
       success: true,
       message: 'Products unlinked successfully'
@@ -839,17 +852,17 @@ router.get('/export/csv', authMiddleware, async (req, res) => {
     const userId = (req as any).user.uid;
     const allProducts = await db.getProducts();
     const userProducts = allProducts.filter((p: any) => p.userId === userId);
-    
+
     // Create CSV header
     const csvHeader = 'ID,Title,Price,Currency,Platform,URL,Stock Status,Discount Info,Created At,Updated At\n';
-    
+
     // Create CSV rows
     const csvRows = userProducts.map((product: any) => {
       return `"${product.id}","${product.title.replace(/"/g, '""')}","${product.price}","${product.currency}","${product.platform}","${product.url}","${product.stockStatus || ''}","${product.discountInfo || ''}","${product.createdAt}","${product.updatedAt}"`;
     }).join('\n');
-    
+
     const csvContent = csvHeader + csvRows;
-    
+
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', 'attachment; filename="products.csv"');
     return res.send(csvContent);
@@ -865,7 +878,7 @@ router.get('/export/json', authMiddleware, async (req, res) => {
     const userId = (req as any).user.uid;
     const allProducts = await db.getProducts();
     const userProducts = allProducts.filter((p: any) => p.userId === userId);
-    
+
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Content-Disposition', 'attachment; filename="products.json"');
     return res.json({
@@ -886,10 +899,10 @@ router.get('/export/json', authMiddleware, async (req, res) => {
 router.get('/api-key', authMiddleware, async (req, res) => {
   try {
     const userId = (req as any).user.uid;
-    
+
     // Generate a simple API key (in production, use proper JWT or UUID)
     const apiKey = `pt_${userId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     return res.json({
       success: true,
       data: {
@@ -908,21 +921,21 @@ router.get('/api-key', authMiddleware, async (req, res) => {
 router.get('/external/products', async (req, res) => {
   try {
     const apiKey = req.headers['x-api-key'] as string;
-    
+
     if (!apiKey) {
       return res.status(401).json({ success: false, message: 'API key required' });
     }
-    
+
     // Extract userId from API key (simple implementation)
     const userId = apiKey.split('_')[1];
-    
+
     if (!userId) {
       return res.status(401).json({ success: false, message: 'Invalid API key' });
     }
-    
+
     const allProducts = await db.getProducts();
     const userProducts = allProducts.filter((p: any) => p.userId === userId);
-    
+
     return res.json({
       success: true,
       data: {
@@ -941,14 +954,14 @@ router.get('/external/products', async (req, res) => {
 router.post('/debug/match', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const { title1, title2 } = req.body;
-    
+
     if (!title1 || !title2) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Both title1 and title2 are required' 
+      return res.status(400).json({
+        success: false,
+        error: 'Both title1 and title2 are required'
       });
     }
-    
+
     // Use simple string similarity for debugging
     const stringSimilarity = require('string-similarity');
     const titleSimilarity = stringSimilarity.compareTwoStrings(title1.toLowerCase(), title2.toLowerCase());
@@ -968,9 +981,9 @@ router.post('/debug/match', authMiddleware, async (req: AuthRequest, res: Respon
     });
   } catch (error) {
     console.error('Debug match error:', error);
-    return res.status(500).json({ 
-      success: false, 
-      error: 'Internal server error' 
+    return res.status(500).json({
+      success: false,
+      error: 'Internal server error'
     });
   }
 });
@@ -982,7 +995,7 @@ router.get('/:productId/predict', authMiddleware, async (req: AuthRequest, res: 
     const history = await db.getPriceHistory(String(productId));
     const allProducts = await db.getProducts();
     const targetProduct = allProducts.find((p: any) => p.id === productId);
-    
+
     if (!targetProduct) {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
@@ -1000,9 +1013,9 @@ router.get('/:productId/predict', authMiddleware, async (req: AuthRequest, res: 
     const avgAlternativePrice = alternatives.length > 0
       ? alternatives.reduce((sum: number, a: any) => sum + a.price, 0) / alternatives.length
       : targetPrice;
-    
+
     // Price positioning score (0 = overpriced, 1 = underpriced)
-    const pricePositioning = alternatives.length > 0 
+    const pricePositioning = alternatives.length > 0
       ? Math.max(0, Math.min(1, (avgAlternativePrice - targetPrice) / Math.max(1, avgAlternativePrice)))
       : 0.5;
 
@@ -1010,18 +1023,18 @@ router.get('/:productId/predict', authMiddleware, async (req: AuthRequest, res: 
     let trendScore = 0.5;
     let volatility = 0;
     let reason = 'Limited price history';
-    
+
     if (history && history.length >= 2) {
       const sorted = history.sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
       const n = sorted.length;
-      
+
       if (n > 0) {
         // Calculate price trend (weighted recent prices more heavily)
         let recentWeight = 0;
         let olderWeight = 0;
         let recentSum = 0;
         let olderSum = 0;
-        
+
         const midPoint = Math.floor(n / 2);
         for (let i = 0; i < n; i++) {
           const historyItem = sorted[i];
@@ -1034,19 +1047,19 @@ router.get('/:productId/predict', authMiddleware, async (req: AuthRequest, res: 
             olderWeight++;
           }
         }
-        
+
         const recentAvg = recentWeight > 0 ? recentSum / recentWeight : targetPrice;
         const olderAvg = olderWeight > 0 ? olderSum / olderWeight : targetPrice;
         const trend = recentAvg - olderAvg;
-        
+
         // Trend score: -1 (falling) to 1 (rising)
         trendScore = Math.max(-1, Math.min(1, trend / Math.max(1, olderAvg)));
-        
+
         // Volatility calculation
         const avg = sorted.reduce((sum: number, p: any) => sum + Number(p.price || 0), 0) / n;
         const variance = sorted.reduce((acc: number, p: any) => acc + Math.pow((Number(p.price || 0) - avg), 2), 0) / n;
         volatility = Math.sqrt(variance) / Math.max(1, avg);
-        
+
         if (Math.abs(trend) > 0.05) {
           reason = trend > 0 ? 'Prices trending upward' : 'Prices trending downward';
         } else {
@@ -1101,21 +1114,21 @@ router.get('/:productId/predict', authMiddleware, async (req: AuthRequest, res: 
     // Ensure confidence is reasonable
     confidence = Math.max(0.1, Math.min(0.95, confidence));
 
-    return res.json({ 
-      success: true, 
-      data: { 
-        recommendation, 
+    return res.json({
+      success: true,
+      data: {
+        recommendation,
         confidence: Math.round(confidence * 100) / 100,
         reason: finalReason,
-        details: { 
-          pricePositioning, 
-          trendScore, 
-          volatility, 
+        details: {
+          pricePositioning,
+          trendScore,
+          volatility,
           alternativesCount: alternatives.length,
           cheaperAlternativesCount: cheaperAlternatives.length,
           avgAlternativePrice: Math.round(avgAlternativePrice * 100) / 100
-        } 
-      } 
+        }
+      }
     });
   } catch (e) {
     return res.status(500).json({ success: false, message: 'Failed to predict price' });
@@ -1208,7 +1221,7 @@ async function generateRealProductMatches(sourceProduct: any, existingMatches: a
   const title = sourceProduct.title.toLowerCase();
   const price = sourceProduct.price;
   const platform = sourceProduct.platform;
-  
+
   // Popular product patterns and their likely matches across platforms
   const popularProducts = [
     // iPhone models
@@ -1277,10 +1290,10 @@ async function generateRealProductMatches(sourceProduct: any, existingMatches: a
         matchReason: `Similar product found on ${match.platform}`,
         priceDifference: Math.abs(price - match.price),
         priceDifferencePercent: Math.abs((price - match.price) / price) * 100,
-        savings: match.price < price ? `Save ${Math.round(((price - match.price) / price) * 100)}%` : 
-                 match.price > price ? `${Math.round(((match.price - price) / price) * 100)}% more expensive` : 'Same price'
+        savings: match.price < price ? `Save ${Math.round(((price - match.price) / price) * 100)}%` :
+          match.price > price ? `${Math.round(((match.price - price) / price) * 100)}% more expensive` : 'Same price'
       }));
-      
+
       return [...existingMatches, ...enhancedMatches];
     }
   }
@@ -1316,7 +1329,7 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
     const q = String((req.query as any)?.q || '').trim();
     let widen = String((req.query as any)?.widen || '').toLowerCase() === '1' || String((req.query as any)?.widen || '').toLowerCase() === 'true';
     const userId = req.user!.uid;
-    
+
     if (!productId) {
       return res.status(400).json({
         success: false,
@@ -1345,11 +1358,11 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
         console.warn('getProductById failed:', e);
         sourceProduct = undefined;
       }
-    if (!sourceProduct) {
-      return res.status(404).json({
-        success: false,
-        error: 'Product not found'
-      });
+      if (!sourceProduct) {
+        return res.status(404).json({
+          success: false,
+          error: 'Product not found'
+        });
       }
     }
 
@@ -1409,7 +1422,7 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
           }));
           matches = [...matches, ...cachedAsMatches].slice(0, 21);
         }
-      } catch {}
+      } catch { }
     }
 
     // Extra guard: if DB already has any external rows for this user+product, don't use Serper unless widen=true
@@ -1422,7 +1435,7 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
           .eq('user_id', userId)
           .eq('product_id', productId);
         if (typeof count === 'number' && count > 0) hadCachedExternal = true;
-      } catch {}
+      } catch { }
     }
 
     // Only hit Serper when explicitly widened, or when there is no cached external data at all
@@ -1466,8 +1479,8 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
           for (const m of [...matches, ...externalMatches]) {
             const urlKey = ((m as any).url || (m as any).product?.url || '').split('#')[0];
             if (!urlKey) continue;
-              byUrl[urlKey] = m;
-            }
+            byUrl[urlKey] = m;
+          }
           matches = Object.values(byUrl).slice(0, 21);
           usedExternal = true;
           console.log(`🌐 External search stored ${externalRows.length} and merged to ${matches.length} matches`);
@@ -1483,7 +1496,7 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
             if (typeof newCount === 'number') {
               matchCountCache.set(`${userId}:${productId}`, { count: newCount, expiresAt: Date.now() + 10 * 60 * 1000 });
             }
-          } catch {}
+          } catch { }
         } else {
           console.log('🌐 External search returned no candidates');
         }
@@ -1495,9 +1508,9 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
     // Opportunistic enrichment for cached/just-fetched zero-priced matches without Serper usage
     try {
       const { productMatchScraper } = require('../services/productMatchScraper');
-      productMatchScraper.enrichStoredZeroPriceMatches(userId, productId, 8).catch(() => {});
-    } catch {}
-    
+      productMatchScraper.enrichStoredZeroPriceMatches(userId, productId, 8).catch(() => { });
+    } catch { }
+
     if (matches.length === 0) {
       console.warn(`⚠️ No matches found for "${sourceProduct.title}". This could indicate:`);
       console.warn(`   - High accuracy threshold (75%+) - only very similar products match`);
@@ -1569,7 +1582,7 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
 
   } catch (error) {
     console.error('🚨 Product matching error:', error);
-    
+
     // Try to provide a graceful fallback with enhanced matches
     try {
       const { productId: fallbackProductId } = req.params;
@@ -1577,7 +1590,7 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
       if (sourceProduct) {
         console.log('🔄 Attempting fallback with real product matches...');
         const fallbackMatches = await generateRealProductMatches(sourceProduct, [], db);
-        
+
         return res.json({
           success: true,
           data: {
@@ -1629,7 +1642,7 @@ router.get('/:productId/matches', authMiddleware, async (req: AuthRequest, res: 
     } catch (fallbackError) {
       console.error('🚨 Fallback also failed:', fallbackError);
     }
-    
+
     return res.status(500).json({
       success: false,
       error: 'Failed to find product matches. Please try again later.'
@@ -1779,11 +1792,11 @@ async function widenSearchAcrossPlatforms(sourceProduct: any): Promise<any[]> {
       const data: any = await resp.json();
       const items: any[] = data?.shopping || [];
       console.log('🔎 SERPER global results:', items.length);
-  for (const it of items) {
-    const link: string = it?.link || '';
-    const title: string = it?.title || '';
+      for (const it of items) {
+        const link: string = it?.link || '';
+        const title: string = it?.title || '';
         const price = typeof it?.price === 'number' ? it.price : parseFloat(String(it?.price || '').replace(/[^0-9.]/g, ''));
-    const platform = urlToPlatform(link);
+        const platform = urlToPlatform(link);
         if (!link || !title || platform === 'unknown') continue;
         const safePrice = Number.isFinite(price) ? price : 0;
         candidates.push({ id: `${platform}_${Date.now()}`, title, price: safePrice, currency: 'USD', platform, url: link, imageUrl: it?.image || '' });
@@ -1853,7 +1866,7 @@ router.get('/:productId', authMiddleware, async (req: AuthRequest, res: Response
 router.get('/debug/test-matching', async (req: Request, res: Response) => {
   try {
     const { matchProducts } = require('../services/productMatchingService');
-    
+
     // Create test products
     const testSource = {
       id: 'test1',
@@ -1864,7 +1877,7 @@ router.get('/debug/test-matching', async (req: Request, res: Response) => {
       imageUrl: '',
       currency: 'USD'
     };
-    
+
     const testCandidates = [
       {
         id: 'test2',
@@ -1885,9 +1898,9 @@ router.get('/debug/test-matching', async (req: Request, res: Response) => {
         currency: 'USD'
       }
     ];
-    
+
     const matches = matchProducts(testSource, testCandidates);
-    
+
     return res.json({
       success: true,
       data: {
@@ -1910,10 +1923,10 @@ router.get('/debug/all', async (req: Request, res: Response) => {
     const data = (db as any).readData();
     const products = data.products || [];
     const users = data.users || [];
-    
+
     console.log(`[DEBUG] Total products in database: ${products.length}`);
     console.log(`[DEBUG] Total users in database: ${users.length}`);
-    
+
     // Group products by user
     const productsByUser = products.reduce((acc: any, product: any) => {
       const userId = product.userId;
@@ -1921,15 +1934,15 @@ router.get('/debug/all', async (req: Request, res: Response) => {
       acc[userId].push(product);
       return acc;
     }, {});
-    
+
     console.log('[DEBUG] Products by user:', Object.keys(productsByUser).map(userId => ({
       userId,
       count: productsByUser[userId].length,
       userEmail: users.find((u: any) => u.id === userId)?.email || 'Unknown'
     })));
-    
-    return res.json({ 
-      success: true, 
+
+    return res.json({
+      success: true,
       data: {
         totalProducts: products.length,
         totalUsers: users.length,
@@ -1980,7 +1993,7 @@ router.get('/debug/search-provider', async (req: Request, res: Response) => {
             counts.global = (data?.shopping || []).length;
           }
         }
-      } catch {}
+      } catch { }
       // Platforms
       for (const p of platforms) {
         try {
@@ -1995,15 +2008,17 @@ router.get('/debug/search-provider', async (req: Request, res: Response) => {
               counts[p.name] = (data?.shopping || []).length;
             }
           }
-        } catch {}
+        } catch { }
       }
       return candidates;
     })();
 
-    return res.json({ success: true, provider, counts, env: {
-      has_SERPER_API_KEY: serper,
-      has_SERPAPI_KEY: serpapi
-    }});
+    return res.json({
+      success: true, provider, counts, env: {
+        has_SERPER_API_KEY: serper,
+        has_SERPAPI_KEY: serpapi
+      }
+    });
   } catch (e) {
     return res.status(500).json({ success: false, error: (e as any)?.message || 'unknown' });
   }

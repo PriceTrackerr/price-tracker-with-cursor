@@ -1,10 +1,10 @@
 import React, { ReactNode, useState, useCallback, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { 
-  BarChart3, 
-  Package, 
-  Bell, 
-  Settings, 
+import {
+  BarChart3,
+  Package,
+  Bell,
+  Settings,
   TrendingDown,
   Menu,
   X,
@@ -99,7 +99,7 @@ export default function Layout({ children }: LayoutProps) {
     try {
       console.log('Fetching notifications...');
       console.log('Token for notifications:', token ? 'Present' : 'Missing');
-      
+
       const res = await fetch('/api/notifications', {
         headers: { ...((token) ? { Authorization: `Bearer ${token}` } : {}) },
       });
@@ -142,6 +142,42 @@ export default function Layout({ children }: LayoutProps) {
     }
   }, [window.location.search, window.location.pathname]);
 
+  // Listen for price drop marked as seen events from other components
+  useEffect(() => {
+    const handlePriceDropMarkedAsSeen = (event: CustomEvent) => {
+      const { productId } = event.detail;
+      if (productId) {
+        // Mark notification as read locally
+        setNotifications(prev =>
+          prev.map(n =>
+            (n.type === 'price_drop' && n.productId === productId)
+              ? { ...n, isRead: true }
+              : n
+          )
+        );
+
+        // Add to notified/seen list so it doesn't reappear
+        setPriceDropNotifiedIds(prev => {
+          if (!prev.includes(productId)) {
+            return [...prev, productId];
+          }
+          return prev;
+        });
+
+        // Also try to fetch fresh notifications to sync with server
+        if (token) {
+          fetchNotifications();
+        }
+      }
+    };
+
+    window.addEventListener('priceDropMarkedAsSeen', handlePriceDropMarkedAsSeen as EventListener);
+
+    return () => {
+      window.removeEventListener('priceDropMarkedAsSeen', handlePriceDropMarkedAsSeen as EventListener);
+    };
+  }, [token]);
+
   // Show all unread notifications, not just price drop ones
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
@@ -167,7 +203,7 @@ export default function Layout({ children }: LayoutProps) {
       });
       // Update local state
       setNotifications(notifications.map(n => ({ ...n, isRead: true })));
-    } catch (e) {}
+    } catch (e) { }
   };
 
   // Add clear notifications handler
@@ -187,13 +223,13 @@ export default function Layout({ children }: LayoutProps) {
           });
         }
       }
-      
+
       // Clear all notifications
       await fetch('/api/notifications/clear', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      
+
       setNotifications([]);
       setNotifPopupOpen(false);
       toast.success('All notifications cleared');
@@ -339,9 +375,8 @@ export default function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Sidebar (Desktop) */}
-      <aside className={`fixed left-0 top-0 h-full bg-white border-r border-gray-200 transition-all duration-300 z-50 hidden md:block ${
-        sidebarCollapsed ? "w-16" : "w-64"
-      }`}>
+      <aside className={`fixed left-0 top-0 h-full bg-white border-r border-gray-200 transition-all duration-300 z-50 hidden md:block ${sidebarCollapsed ? "w-16" : "w-64"
+        }`}>
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className={`border-b border-gray-200 ${sidebarCollapsed ? 'p-2' : 'p-4'}`}>
@@ -349,9 +384,9 @@ export default function Layout({ children }: LayoutProps) {
               <div className="flex flex-col items-center gap-3">
                 <div className="w-16 h-16 bg-[#2563EB] rounded-lg flex items-center justify-center shadow-sm">
                   <svg width="40" height="40" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="0" y="0" width="100" height="100" rx="20" fill="#2563EB"/>
-                    <path d="M25 70 C35 50, 65 50, 75 30" stroke="white" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round"/>
-                    <circle cx="75" cy="30" r="6" fill="white"/>
+                    <rect x="0" y="0" width="100" height="100" rx="20" fill="#2563EB" />
+                    <path d="M25 70 C35 50, 65 50, 75 30" stroke="white" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
+                    <circle cx="75" cy="30" r="6" fill="white" />
                   </svg>
                 </div>
                 <span className="font-bold text-lg text-gray-900 text-center">Price Tracker</span>
@@ -368,9 +403,9 @@ export default function Layout({ children }: LayoutProps) {
               <div className="flex flex-col items-center gap-3">
                 <div className="w-12 h-12 bg-[#2563EB] rounded-lg flex items-center justify-center shadow-sm">
                   <svg width="28" height="28" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="0" y="0" width="100" height="100" rx="20" fill="#2563EB"/>
-                    <path d="M25 70 C35 50, 65 50, 75 30" stroke="white" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round"/>
-                    <circle cx="75" cy="30" r="6" fill="white"/>
+                    <rect x="0" y="0" width="100" height="100" rx="20" fill="#2563EB" />
+                    <path d="M25 70 C35 50, 65 50, 75 30" stroke="white" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
+                    <circle cx="75" cy="30" r="6" fill="white" />
                   </svg>
                 </div>
                 <button
@@ -390,16 +425,15 @@ export default function Layout({ children }: LayoutProps) {
               {navigation.map((item) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.href;
-                
+
                 return (
                   <Link
                     key={item.id}
                     to={item.href}
-                    className={`w-full flex items-center rounded-lg transition-all duration-200 ${
-                      isActive 
-                        ? "bg-blue-600 text-white shadow-lg shadow-blue-600/25" 
+                    className={`w-full flex items-center rounded-lg transition-all duration-200 ${isActive
+                        ? "bg-blue-600 text-white shadow-lg shadow-blue-600/25"
                         : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                    } ${sidebarCollapsed ? "justify-center h-12 px-2" : "gap-3 h-12 px-3"}`}
+                      } ${sidebarCollapsed ? "justify-center h-12 px-2" : "gap-3 h-12 px-3"}`}
                     title={sidebarCollapsed ? item.label : undefined}
                   >
                     <Icon className={`${sidebarCollapsed ? "w-6 h-6" : "w-5 h-5"}`} />
@@ -441,9 +475,9 @@ export default function Layout({ children }: LayoutProps) {
                 <div className="flex items-center gap-2">
                   <div className="w-10 h-10 bg-[#2563EB] rounded-lg flex items-center justify-center shadow-sm">
                     <svg width="24" height="24" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <rect x="0" y="0" width="100" height="100" rx="20" fill="#2563EB"/>
-                      <path d="M25 70 C35 50, 65 50, 75 30" stroke="white" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round"/>
-                      <circle cx="75" cy="30" r="6" fill="white"/>
+                      <rect x="0" y="0" width="100" height="100" rx="20" fill="#2563EB" />
+                      <path d="M25 70 C35 50, 65 50, 75 30" stroke="white" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
+                      <circle cx="75" cy="30" r="6" fill="white" />
                     </svg>
                   </div>
                   <span className="font-bold text-lg text-gray-900">Price Tracker</span>
@@ -461,11 +495,10 @@ export default function Layout({ children }: LayoutProps) {
                       <Link
                         key={item.id}
                         to={item.href}
-                        className={`w-full flex items-center gap-3 h-12 px-3 rounded-lg transition-all duration-200 ${
-                          isActive 
-                            ? "bg-blue-600 text-white shadow-lg shadow-blue-600/25" 
+                        className={`w-full flex items-center gap-3 h-12 px-3 rounded-lg transition-all duration-200 ${isActive
+                            ? "bg-blue-600 text-white shadow-lg shadow-blue-600/25"
                             : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                        }`}
+                          }`}
                         onClick={() => setMobileMenuOpen(false)}
                       >
                         <Icon className="w-5 h-5" />
@@ -481,9 +514,8 @@ export default function Layout({ children }: LayoutProps) {
       )}
 
       {/* Main Content Area */}
-      <div className={`transition-all duration-300 min-h-screen ${
-        sidebarCollapsed ? "md:ml-16" : "md:ml-64"
-      } ml-0`}>
+      <div className={`transition-all duration-300 min-h-screen ${sidebarCollapsed ? "md:ml-16" : "md:ml-64"
+        } ml-0`}>
         {/* Top Header */}
         <header className="sticky top-0 z-40 w-full border-b border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
           <div className="flex h-16 items-center justify-between px-4 sm:px-6">
@@ -512,9 +544,8 @@ export default function Layout({ children }: LayoutProps) {
                   placeholder="Search products..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className={`w-64 pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                    searchTerm.length >= 2 ? 'border-blue-300 bg-blue-50' : 'border-gray-200'
-                  }`}
+                  className={`w-64 pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${searchTerm.length >= 2 ? 'border-blue-300 bg-blue-50' : 'border-gray-200'
+                    }`}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       if (searchTerm.trim()) {
@@ -530,7 +561,7 @@ export default function Layout({ children }: LayoutProps) {
                     }
                   }}
                 />
-                
+
                 {/* Search Suggestions Dropdown */}
                 {showSuggestions && searchSuggestions.length > 0 && (
                   <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
@@ -562,7 +593,7 @@ export default function Layout({ children }: LayoutProps) {
                     ))}
                   </div>
                 )}
-                
+
                 {/* Search Status Indicator */}
                 {searchTerm.length >= 2 && !showSuggestions && (
                   <div className="absolute top-full left-0 right-0 mt-1 bg-blue-50 border border-blue-200 rounded-lg p-2 text-xs text-blue-600">
@@ -584,7 +615,7 @@ export default function Layout({ children }: LayoutProps) {
                     </span>
                   )}
                 </button>
-                
+
                 {/* Notification Popup */}
                 {notifPopupOpen && (
                   <div ref={notifPopupRef} className="absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
@@ -605,22 +636,21 @@ export default function Layout({ children }: LayoutProps) {
                         notifications.map((notification) => (
                           <div
                             key={notification.id}
-                            className={`p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors ${
-                              !notification.isRead ? "bg-blue-50/50" : ""
-                            }`}
+                            className={`p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors ${!notification.isRead ? "bg-blue-50/50" : ""
+                              }`}
                             onClick={() => {
                               // Mark notification as read
-                              setNotifications(prev => 
-                                prev.map(n => 
+                              setNotifications(prev =>
+                                prev.map(n =>
                                   n.id === notification.id ? { ...n, isRead: true } : n
                                 )
                               );
-                              
+
                               // Navigate to price history with the specific product highlighted
                               if (notification.productId) {
                                 navigate(`/history?highlight=${notification.productId}&selectedProduct=${notification.productId}`);
                               }
-                              
+
                               // Close the popup
                               setNotifPopupOpen(false);
                             }}
@@ -634,7 +664,7 @@ export default function Layout({ children }: LayoutProps) {
                                   {notification.productTitle || 'Product Update'}
                                 </p>
                                 <p className="text-sm text-gray-600 mt-1">
-                                  {notification.type === 'price_drop' 
+                                  {notification.type === 'price_drop'
                                     ? `Price dropped by $${notification.priceDrop?.toFixed(2) || 0}`
                                     : notification.message || 'Price update available'
                                   }
@@ -650,7 +680,7 @@ export default function Layout({ children }: LayoutProps) {
                     </div>
                     <div className="p-3 border-t border-gray-200">
                       <div className="flex gap-2">
-                        <button 
+                        <button
                           onClick={() => {
                             setNotifPopupOpen(false);
                             navigate('/notifications');
@@ -660,7 +690,7 @@ export default function Layout({ children }: LayoutProps) {
                           View all notifications
                         </button>
                         {notifications.length > 0 && (
-                          <button 
+                          <button
                             onClick={handleClearNotifications}
                             className="px-3 py-2 text-red-600 hover:text-red-700 text-sm border border-red-200 hover:bg-red-50 rounded"
                           >
@@ -685,7 +715,7 @@ export default function Layout({ children }: LayoutProps) {
                     </div>
                     <ChevronDown className="w-4 h-4 text-gray-500" />
                   </button>
-                  
+
                   {/* Profile Menu Popup */}
                   {profileMenuOpen && (
                     <div ref={profileMenuRef} className="absolute right-0 top-full mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
@@ -725,13 +755,13 @@ export default function Layout({ children }: LayoutProps) {
                 </div>
               ) : (
                 <div className="flex space-x-2">
-                  <Link 
+                  <Link
                     to="/auth"
                     className="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors"
                   >
                     Login
                   </Link>
-                  <Link 
+                  <Link
                     to="/auth"
                     className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
                   >
@@ -742,14 +772,14 @@ export default function Layout({ children }: LayoutProps) {
             </div>
           </div>
         </header>
-        
+
         {/* Page Content */}
         <main className="p-6 lg:p-8">
           {children}
         </main>
       </div>
 
-      
+
     </div>
   );
 } 
