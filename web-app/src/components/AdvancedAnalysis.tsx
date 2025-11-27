@@ -374,7 +374,7 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
                     <>
                       <div className="flex items-center gap-2 mb-3">
                         <span className="text-2xl">🤖</span>
-                        <span className="font-bold text-white text-lg">DeepSeek AI Recommendation</span>
+                        <span className="font-bold text-white text-lg">AI Recommendation</span>
                       </div>
                       <div className="mb-3">
                         <span className={`text-2xl font-bold ${aiRecommendation.verdict === 'STRONG BUY' || aiRecommendation.verdict === 'BUY'
@@ -406,7 +406,7 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
               <div className="relative overflow-hidden rounded-xl p-6 shadow-lg bg-gradient-to-br from-gray-900 via-gray-800 to-slate-900">
                 <div className="flex items-center gap-2 mb-3">
                   <span className="text-2xl">🔒</span>
-                  <span className="font-bold text-white text-lg">DeepSeek AI Analysis</span>
+                  <span className="font-bold text-white text-lg">AI Analysis</span>
                 </div>
                 <p className="text-white/90 text-sm mb-4 leading-relaxed">
                   Unlock AI-powered price predictions, buy/wait recommendations, and sentiment analysis with Pro.

@@ -38,7 +38,9 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5173', // Vite dev server
   'https://price-tracker-with-cursor-web-app.vercel.app', // Web app
+  'https://price-tracker-with-cursor-web-app-s.vercel.app', // Web app (alternative)
   'https://price-tracker-with-cursor.vercel.app', // Admin dashboard
+  'https://price-tracker-with-cursor-2am4ntk8x.vercel.app', // Admin dashboard (new deployment)
   ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
   ...(process.env.ADMIN_DASHBOARD_URL ? [process.env.ADMIN_DASHBOARD_URL] : []),
 ];
