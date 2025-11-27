@@ -114,13 +114,18 @@ app.use(
   })
 );
 
-// Rate limiting
+// Rate limiting - more permissive to avoid blocking legitimate users
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.NODE_ENV === 'production' ? 100 : 1000, // 100 in prod, 1000 in dev
+  max: process.env.NODE_ENV === 'production' ? 500 : 1000, // 500 in prod, 1000 in dev
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
+  // Skip rate limiting for some IPs if needed
+  skip: (req) => {
+    // Skip rate limiting for health checks
+    return req.path === '/health' || req.path === '/health/database';
+  }
 });
 app.use('/api/', limiter);
 
