@@ -37,14 +37,14 @@ export default function ProductDetails() {
   const [alertPrice, setAlertPrice] = useState('');
   const [alertEmail, setAlertEmail] = useState('');
   const [creatingAlert, setCreatingAlert] = useState(false);
-  const [prediction, setPrediction] = useState<{ recommendation: 'buy'|'wait'; confidence: number } | null>(null);
+  const [prediction, setPrediction] = useState<{ recommendation: 'buy' | 'wait'; confidence: number } | null>(null);
   const [alternatives, setAlternatives] = useState<Array<{ id: string; title: string; price: number; platform: string; url: string }>>([]);
   const [bundles, setBundles] = useState<Array<{ id: string; title: string; price: number; platform: string; url: string; estimatedAccessoryValue: number; priceDifference: number; netValue: number }>>([]);
 
   useEffect(() => {
     async function fetchProduct() {
       if (!productId) return;
-      
+
       setLoading(true);
       try {
         // Try API first
@@ -53,7 +53,7 @@ export default function ProductDetails() {
             const res = await fetch(`/api/products/${productId}`, {
               headers: getAuthHeaders(),
             });
-            
+
             if (res.ok) {
               const data = await res.json();
               if (data.success && data.data) {
@@ -66,7 +66,7 @@ export default function ProductDetails() {
             console.warn('API fetch failed, trying Supabase:', apiError);
           }
         }
-        
+
         // Fallback to Supabase
         try {
           const supabase = getSupabaseClient();
@@ -75,11 +75,11 @@ export default function ProductDetails() {
             .select('*')
             .eq('id', productId)
             .single();
-          
+
           if (supabaseError) {
             throw supabaseError;
           }
-          
+
           if (productData) {
             setProduct({
               id: productData.id,
@@ -110,13 +110,13 @@ export default function ProductDetails() {
         setLoading(false);
       }
     }
-    
+
     fetchProduct();
   }, [productId, token, getAuthHeaders]);
 
   useEffect(() => {
     if (!productId || !token) return;
-    
+
     // Fetch prediction, alternatives, and bundle info
     (async () => {
       try {
@@ -125,7 +125,7 @@ export default function ProductDetails() {
           fetch(`/api/products/${productId}/alternatives`, { headers: getAuthHeaders() }),
           fetch(`/api/products/${productId}/bundle`, { headers: getAuthHeaders() }),
         ]);
-        
+
         // Handle prediction response
         if (predRes.status === 'fulfilled' && predRes.value.ok) {
           const pred = await predRes.value.json().catch(() => null);
@@ -133,34 +133,34 @@ export default function ProductDetails() {
             setPrediction({ recommendation: pred.data.recommendation, confidence: pred.data.confidence });
           }
         }
-        
+
         // Handle alternatives response
         if (altRes.status === 'fulfilled' && altRes.value.ok) {
           const alts = await altRes.value.json().catch(() => null);
           if (alts && alts.success && alts.data?.alternatives) {
-            setAlternatives(alts.data.alternatives.map((a: any) => ({ 
-              id: a.product?.id || '', 
-              title: a.product?.title || '', 
-              price: typeof a.product?.price === 'number' && !isNaN(a.product.price) ? a.product.price : 0, 
-              platform: a.product?.platform || '', 
-              url: a.product?.url || '' 
+            setAlternatives(alts.data.alternatives.map((a: any) => ({
+              id: a.product?.id || '',
+              title: a.product?.title || '',
+              price: typeof a.product?.price === 'number' && !isNaN(a.product.price) ? a.product.price : 0,
+              platform: a.product?.platform || '',
+              url: a.product?.url || ''
             })));
           }
         }
-        
+
         // Handle bundles response
         if (bunRes.status === 'fulfilled' && bunRes.value.ok) {
           const buns = await bunRes.value.json().catch(() => null);
           if (buns && buns.success && buns.data?.bundles) {
-            setBundles(buns.data.bundles.map((b: any) => ({ 
-              id: b.product?.id || '', 
-              title: b.product?.title || '', 
-              price: typeof b.product?.price === 'number' && !isNaN(b.product.price) ? b.product.price : 0, 
-              platform: b.product?.platform || '', 
-              url: b.product?.url || '', 
-              estimatedAccessoryValue: typeof b.estimatedAccessoryValue === 'number' && !isNaN(b.estimatedAccessoryValue) ? b.estimatedAccessoryValue : 0, 
-              priceDifference: typeof b.priceDifference === 'number' && !isNaN(b.priceDifference) ? b.priceDifference : 0, 
-              netValue: typeof b.netValue === 'number' && !isNaN(b.netValue) ? b.netValue : 0 
+            setBundles(buns.data.bundles.map((b: any) => ({
+              id: b.product?.id || '',
+              title: b.product?.title || '',
+              price: typeof b.product?.price === 'number' && !isNaN(b.product.price) ? b.product.price : 0,
+              platform: b.product?.platform || '',
+              url: b.product?.url || '',
+              estimatedAccessoryValue: typeof b.estimatedAccessoryValue === 'number' && !isNaN(b.estimatedAccessoryValue) ? b.estimatedAccessoryValue : 0,
+              priceDifference: typeof b.priceDifference === 'number' && !isNaN(b.priceDifference) ? b.priceDifference : 0,
+              netValue: typeof b.netValue === 'number' && !isNaN(b.netValue) ? b.netValue : 0
             })));
           }
         }
@@ -185,7 +185,7 @@ export default function ProductDetails() {
     try {
       const res = await fetch('/api/alerts', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           ...getAuthHeaders(),
         },
@@ -229,8 +229,8 @@ export default function ProductDetails() {
       <div className="max-w-2xl mx-auto p-6 text-center">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">Product Not Found</h2>
         <p className="text-gray-600 mb-6">The product you're looking for could not be found.</p>
-        <button 
-          onClick={() => navigate(-1)} 
+        <button
+          onClick={() => navigate(-1)}
           className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
         >
           Go Back
@@ -261,7 +261,7 @@ export default function ProductDetails() {
       <button className="mb-4 text-blue-600 hover:underline" onClick={() => navigate(-1)}>
         ← {t('back')}
       </button>
-      
+
       <div className="flex items-center space-x-6 mb-6">
         {safeProduct.imageUrl && (
           <img src={safeProduct.imageUrl} alt={safeProduct.title} className="h-24 w-24 rounded-lg object-cover" />
@@ -272,7 +272,7 @@ export default function ProductDetails() {
           <p className="text-lg font-semibold">
             <PriceDisplay priceUSD={safeProduct.price} selectedCurrency={selectedCurrency} />
           </p>
-          
+
           {/* Price Drop Information */}
           {safeProduct.hasPriceDrop && safeProduct.priceDrop && (
             <div className="mt-2 p-2 bg-green-50 rounded-lg">
@@ -284,7 +284,7 @@ export default function ProductDetails() {
               </p>
             </div>
           )}
-          
+
           {/* Matches Information */}
           {safeProduct.totalMatches && safeProduct.totalMatches > 0 && (
             <div className="mt-2 p-2 bg-blue-50 rounded-lg">
@@ -293,13 +293,13 @@ export default function ProductDetails() {
               </p>
             </div>
           )}
-          
+
           <a href={safeProduct.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline text-sm">
             {t('viewOnSite')}
           </a>
         </div>
       </div>
-      
+
       <div className="mb-6">
         <ProductPriceHistory productId={safeProduct.id} />
       </div>
@@ -327,24 +327,24 @@ export default function ProductDetails() {
             {alternatives.filter(alt => alt != null).map((alt) => {
               const safePrice = typeof alt?.price === 'number' && !isNaN(alt.price) ? alt.price : 0;
               return (
-              <div key={alt?.id || Math.random()} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex-1">
-                  <p className="font-medium text-sm">{alt?.title || 'Unknown'}</p>
-                  <p className="text-xs text-gray-600">{alt?.platform || 'Unknown'}</p>
+                <div key={alt?.id || Math.random()} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex-1">
+                    <p className="font-medium text-sm">{alt?.title || 'Unknown'}</p>
+                    <p className="text-xs text-gray-600">{alt?.platform || 'Unknown'}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold text-sm">${safePrice.toFixed(2)}</p>
+                    <a
+                      href={alt.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-blue-600 hover:underline"
+                    >
+                      View
+                    </a>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-semibold text-sm">${safePrice.toFixed(2)}</p>
-                  <a 
-                    href={alt.url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-xs text-blue-600 hover:underline"
-                  >
-                    View
-                  </a>
-                </div>
-              </div>
-            );
+              );
             })}
           </div>
         </div>
@@ -355,40 +355,40 @@ export default function ProductDetails() {
         <div className="mb-6">
           <h3 className="text-lg font-semibold mb-3">Bundle Recommendations</h3>
           <div className="space-y-3">
-            {bundles.filter(bundle => bundle != null).map((bundle) => {
+            {bundles.filter(bundle => bundle != null && bundle.title && bundle.title !== 'Unknown').map((bundle) => {
               const safePrice = typeof bundle?.price === 'number' && !isNaN(bundle.price) ? bundle.price : 0;
               const safeAccessoryValue = typeof bundle?.estimatedAccessoryValue === 'number' && !isNaN(bundle.estimatedAccessoryValue) ? bundle.estimatedAccessoryValue : 0;
               const safeNetValue = typeof bundle?.netValue === 'number' && !isNaN(bundle.netValue) ? bundle.netValue : 0;
               return (
-              <div key={bundle?.id || Math.random()} className="p-4 bg-blue-50 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium">{bundle?.title || 'Unknown'}</h4>
-                  <span className="text-sm text-blue-600">{bundle?.platform || 'Unknown'}</span>
+                <div key={bundle?.id || Math.random()} className="p-4 bg-blue-50 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium">{bundle?.title || 'Unknown'}</h4>
+                    <span className="text-sm text-blue-600">{bundle?.platform || 'Unknown'}</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <p className="text-gray-600">Price</p>
+                      <p className="font-semibold">${safePrice.toFixed(2)}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">Accessory Value</p>
+                      <p className="font-semibold">${safeAccessoryValue.toFixed(2)}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">Net Value</p>
+                      <p className="font-semibold text-green-600">${safeNetValue.toFixed(2)}</p>
+                    </div>
+                  </div>
+                  <a
+                    href={bundle?.url || '#'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block mt-2 text-sm text-blue-600 hover:underline"
+                  >
+                    View Bundle →
+                  </a>
                 </div>
-                <div className="grid grid-cols-3 gap-4 text-sm">
-                  <div>
-                    <p className="text-gray-600">Price</p>
-                    <p className="font-semibold">${safePrice.toFixed(2)}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">Accessory Value</p>
-                    <p className="font-semibold">${safeAccessoryValue.toFixed(2)}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">Net Value</p>
-                    <p className="font-semibold text-green-600">${safeNetValue.toFixed(2)}</p>
-                  </div>
-                </div>
-                <a
-                  href={bundle?.url || '#'}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block mt-2 text-sm text-blue-600 hover:underline"
-                >
-                  View Bundle →
-                </a>
-              </div>
-            );
+              );
             })}
           </div>
         </div>

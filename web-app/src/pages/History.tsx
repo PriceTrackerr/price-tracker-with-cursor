@@ -690,10 +690,10 @@ export default function History() {
                         key={product.id}
                         value={product.id}
                         className={`truncate ${checkedProducts.has(product.id)
-                            ? 'text-green-600 font-semibold bg-green-50'
-                            : productHasPriceDrop(product.id) && !seenPriceDropIds.includes(product.id)
-                              ? 'text-orange-600 font-semibold'
-                              : ''
+                          ? 'text-green-600 font-semibold bg-green-50'
+                          : productHasPriceDrop(product.id) && !seenPriceDropIds.includes(product.id)
+                            ? 'text-orange-600 font-semibold'
+                            : ''
                           }`}
                       >
                         {product.title.length > 30 ? product.title.substring(0, 30) + '...' : product.title}
