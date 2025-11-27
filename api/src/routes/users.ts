@@ -910,4 +910,88 @@ router.post('/:userId/delete', authMiddleware, async (req: AuthRequest, res: Res
   }
 });
 
+// Get seen price drops
+router.get('/seen-price-drops', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.uid;
+    console.log('[USERS] Fetching seen price drops for user:', req.user?.email);
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+
+    const { data: user, error } = await supabase
+      .from(TABLES.USERS)
+      .select('seen_price_drop_ids')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      console.error('[USERS] Error fetching seen price drops:', error);
+      return res.status(500).json({ success: false, message: 'Failed to fetch seen price drops' });
+    }
+
+    console.log('[USERS] Seen price drops:', user?.seen_price_drop_ids || []);
+    return res.json({ success: true, data: user?.seen_price_drop_ids || [] });
+  } catch (error) {
+    console.error('[USERS] Error in seen-price-drops endpoint:', error);
+    return res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+// Mark price drop as seen
+router.post('/mark-price-drop-seen', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.uid;
+    const { productId } = req.body;
+    console.log('[USERS] Marking price drop as seen for user:', req.user?.email, ', productId:', productId);
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+
+    if (!productId) {
+      return res.status(400).json({ success: false, message: 'Product ID is required' });
+    }
+
+    // Get current seen price drops
+    const { data: user, error: fetchError } = await supabase
+      .from(TABLES.USERS)
+      .select('seen_price_drop_ids')
+      .eq('id', userId)
+      .single();
+
+    if (fetchError) {
+      console.error('[USERS] Error fetching user:', fetchError);
+      return res.status(500).json({ success: false, message: 'Failed to fetch user' });
+    }
+
+    const currentSeenIds = user?.seen_price_drop_ids || [];
+
+    // Add productId if not already present
+    if (!currentSeenIds.includes(productId)) {
+      const updatedSeenIds = [...currentSeenIds, productId];
+
+      const { error: updateError } = await supabase
+        .from(TABLES.USERS)
+        .update({ seen_price_drop_ids: updatedSeenIds })
+        .eq('id', userId);
+
+      if (updateError) {
+        console.error('[USERS] Error updating seen price drops:', updateError);
+        return res.status(500).json({ success: false, message: 'Failed to update seen price drops' });
+      }
+
+      console.log('[USERS] Successfully marked price drop as seen');
+    } else {
+      console.log('[USERS] Price drop already marked as seen');
+    }
+
+    return res.json({ success: true, message: 'Price drop marked as seen' });
+  } catch (error) {
+    console.error('[USERS] Error in mark-price-drop-seen endpoint:', error);
+    return res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
 export default router;
