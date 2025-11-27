@@ -982,7 +982,7 @@ router.post('/mark-price-drop-seen', authMiddleware, async (req: AuthRequest, re
         return res.status(500).json({ success: false, message: 'Failed to update seen price drops' });
       }
 
-      console.log('[USERS] Successfully marked price drop as seen');
+      console.log('[USERS] Successfully marked price drop as seen. Updated array:', updatedSeenIds);
     } else {
       console.log('[USERS] Price drop already marked as seen');
     }
