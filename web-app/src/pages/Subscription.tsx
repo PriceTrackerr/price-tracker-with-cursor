@@ -136,7 +136,7 @@ const Subscription: React.FC = () => {
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {/* Free Plan */}
           {freePlan && (
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden border-2 border-gray-200 dark:border-gray-700">
+            <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl shadow-xl overflow-hidden border-2 border-gray-700">
               <div className="p-8">
                 {/* Plan Header */}
                 <div className="mb-6">
@@ -210,9 +210,9 @@ const Subscription: React.FC = () => {
             return (
               <div
                 key={plan.id}
-                className={`relative rounded-2xl shadow-xl overflow-hidden transition-transform hover:scale-105 ${isMonthly
-                  ? 'bg-gradient-to-br from-blue-600 to-purple-600 text-white'
-                  : 'bg-gradient-to-br from-purple-600 to-pink-600 text-white'
+                className={`relative rounded-2xl shadow-xl overflow-hidden transition-transform hover:scale-105 border-2 ${isMonthly
+                  ? 'bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 border-blue-700 text-white'
+                  : 'bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 border-purple-700 text-white'
                   }`}
               >
                 {isMonthly && (

@@ -57,8 +57,8 @@ router.post('/recommendation', authMiddleware, async (req: AuthRequest, res: Res
       });
     }
 
-    // Get DeepSeek API key
-    const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
+    // Get DeepSeek API key (check both possible env var names)
+    const deepseekApiKey = process.env.DEEPSEEK_API_KEY || process.env.DEEPSEEK;
     if (!deepseekApiKey) {
       console.warn('⚠️ DEEPSEEK_API_KEY not configured, returning fallback recommendation');
       return res.json({
@@ -154,7 +154,7 @@ Reason: One short sentence.`;
 
   } catch (error: any) {
     console.error('❌ Error getting AI recommendation:', error?.message || error);
-    
+
     // Return fallback on error
     return res.json({
       success: true,
