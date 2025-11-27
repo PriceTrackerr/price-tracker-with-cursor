@@ -697,13 +697,24 @@ router.post('/mark-price-drop-seen', async (req: Request, res: Response) => {
     if (!userData) return res.status(404).json({ success: false, message: 'User not found' });
 
     const seenPriceDropIds = userData.seen_price_drop_ids || [];
+    console.log(`[PriceDrop] Current seen IDs for user ${user.id}:`, seenPriceDropIds);
+
     if (!seenPriceDropIds.includes(productId)) {
       seenPriceDropIds.push(productId);
+      console.log(`[PriceDrop] Updating seen IDs to:`, seenPriceDropIds);
+
       const { error: updErr } = await supabasePublic
         .from(TABLES.USERS)
         .update({ seen_price_drop_ids: seenPriceDropIds })
         .eq('id', user.id);
-      if (updErr) return res.status(500).json({ success: false, message: 'Failed to update user' });
+
+      if (updErr) {
+        console.error('[PriceDrop] Update failed:', updErr);
+        return res.status(500).json({ success: false, message: 'Failed to update user' });
+      }
+      console.log('[PriceDrop] Update successful');
+    } else {
+      console.log(`[PriceDrop] Product ${productId} already seen`);
     }
 
     return res.json({ success: true, message: 'Price drop marked as seen' });
@@ -745,6 +756,9 @@ router.get('/seen-price-drops', async (req: Request, res: Response) => {
         handleSupabaseError(userError, 'fetch user');
       }
     }
+
+    console.log(`[PriceDrop] Fetching seen IDs for user ${user.id}`);
+    console.log(`[PriceDrop] Found IDs:`, userData?.seen_price_drop_ids);
 
     return res.json({
       success: true,

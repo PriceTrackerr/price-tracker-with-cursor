@@ -223,7 +223,7 @@ export default function History() {
       });
       const data = await response.json();
       if (data.success) {
-        setSeenPriceDropIds(data.data);
+        console.log('[History] Fetched seen price drops:', data.data);
       }
     } catch (error) {
       console.error('Error fetching seen price drops:', error);
@@ -241,6 +241,7 @@ export default function History() {
         },
         body: JSON.stringify({ productId })
       });
+      console.log('[PriceDrop] Marking price drop as seen:', productId);
 
       // Update local state
       setSeenPriceDropIds((prev: string[]) => [...prev, productId]);
