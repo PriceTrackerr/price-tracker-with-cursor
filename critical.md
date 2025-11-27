@@ -1,0 +1,8 @@
+after build the extension is working now but its kinda slow, when i click the extension new tab loads for 2 or 3 seconds and close then the popup loads with the data. but this is my least problem we'll comeback after we finish our main problems
+
+now here are 2 options about price history page
+1. we can recreate the price history page from scratch with exactly the same design, style and functionality
+2. we can use the same price history page and hunt the bugs and make it work, because i still see the same 2 price drops in dashboard price drop card and also in price history page the 2 products are always there even if i click them to clear. i dont know what you did there sometimes they are gone and when i refresh the page the price drop card on dashbaord shows 2 then immediately it shows 0. there are some bugs im sure of it
+
+about deepseek ai analysis
+it says "AI analysis temporarily unavailable. Please try again later." can you visit my website https://price-tracker-with-cursor-web-app.vercel.app/ login then click products (if there are no products logout and login again) then click any random product card from products page then you will find product detail page and you can check the ai analysis section and also check the relevance of bundle recommendation, why is it there and what recommendations should it display, if you're thinking of removing it then remove it or if you think it should be there then make it work and make it display something but not dummy data i want real data
