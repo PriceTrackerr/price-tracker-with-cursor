@@ -954,16 +954,16 @@ router.post('/mark-price-drop-seen', authMiddleware, async (req: AuthRequest, re
       return res.status(400).json({ success: false, message: 'Product ID is required' });
     }
 
-    // Get current seen price drops
+    // Get current seen price drops (use service role to bypass RLS)
     const { data: user, error: fetchError } = await supabase
       .from(TABLES.USERS)
       .select('seen_price_drop_ids')
       .eq('id', userId)
       .single();
 
-    if (fetchError) {
+    if (fetchError || !user) {
       console.error('[USERS] Error fetching user:', fetchError);
-      return res.status(500).json({ success: false, message: 'Failed to fetch user' });
+      return res.status(404).json({ success: false, message: 'User not found' });
     }
 
     const currentSeenIds = user?.seen_price_drop_ids || [];
