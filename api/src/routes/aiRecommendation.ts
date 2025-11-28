@@ -1,14 +1,11 @@
 import express, { Response } from 'express';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { getDb } from '../config/database';
+import { supabase, TABLES } from '../config/supabase';
 import axios from 'axios';
 
 const router = express.Router();
 const db = getDb();
-
-// In-memory cache for AI recommendations (24 hours)
-const recommendationCache = new Map<string, { data: any; timestamp: number }>();
-const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
 interface RecommendationRequest {
   productId: string;
@@ -24,6 +21,7 @@ interface RecommendationRequest {
 /**
  * POST /api/ai/recommendation
  * Get AI recommendation from Groq (Llama 3) for a product
+ * Caches results in Supabase for 7 days
  */
 router.post('/recommendation', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
@@ -45,16 +43,34 @@ router.post('/recommendation', authMiddleware, async (req: AuthRequest, res: Res
       });
     }
 
-    // Check cache first
-    const cacheKey = `recommendation_${productId}`;
-    const cached = recommendationCache.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-      console.log(`✅ Returning cached recommendation for product ${productId}`);
-      return res.json({
-        success: true,
-        data: cached.data,
-        cached: true
-      });
+    // 1. Check Database Cache
+    try {
+      const { data: cachedData, error: cacheError } = await supabase
+        .from(TABLES.AI_RECOMMENDATIONS)
+        .select('recommendation_text, expires_at')
+        .eq('product_id', productId)
+        .single();
+
+      if (!cacheError && cachedData) {
+        const now = new Date();
+        const expiresAt = new Date(cachedData.expires_at);
+
+        if (expiresAt > now) {
+          console.log(`✅ Returning DB cached recommendation for product ${productId}`);
+          return res.json({
+            success: true,
+            data: {
+              ...cachedData.recommendation_text,
+              cached: true
+            }
+          });
+        } else {
+          console.log(`⚠️ Cache expired for product ${productId}, refreshing...`);
+        }
+      }
+    } catch (err) {
+      console.warn('⚠️ Error checking AI cache:', err);
+      // Continue to fetch fresh data on cache error
     }
 
     // Get Groq API key (fallback to DeepSeek for backward compatibility)
@@ -277,18 +293,29 @@ Be honest and data-driven. Users trust you to save them money.`;
       cached: false
     };
 
-    // Cache the result
-    recommendationCache.set(cacheKey, {
-      data: recommendation,
-      timestamp: Date.now()
-    });
+    // Save to Database Cache (7 days expiry)
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
 
-    // Clean old cache entries (older than 24 hours)
-    const now = Date.now();
-    for (const [key, value] of recommendationCache.entries()) {
-      if (now - value.timestamp > CACHE_DURATION) {
-        recommendationCache.delete(key);
+    try {
+      const { error: upsertError } = await supabase
+        .from(TABLES.AI_RECOMMENDATIONS)
+        .upsert({
+          product_id: productId,
+          recommendation_text: recommendation,
+          expires_at: expiresAt.toISOString(),
+          created_at: new Date().toISOString()
+        }, {
+          onConflict: 'product_id'
+        });
+
+      if (upsertError) {
+        console.error('❌ Error caching AI recommendation:', upsertError);
+      } else {
+        console.log(`💾 Cached AI recommendation for product ${productId}`);
       }
+    } catch (err) {
+      console.error('❌ Error saving to AI cache:', err);
     }
 
     return res.json({

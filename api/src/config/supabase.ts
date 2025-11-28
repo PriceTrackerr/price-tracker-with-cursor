@@ -11,11 +11,11 @@ const configuredPublic = !!(supabaseUrl && supabaseAnonKey);
 // Create Supabase client with service role key for admin operations
 export const supabase = configuredService
   ? createClient(supabaseUrl!, supabaseServiceKey!, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    })
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  })
   : (null as any);
 
 // Create public client for user operations
@@ -44,6 +44,7 @@ export const TABLES = {
   DEAL_COMMENTS: 'deal_comments',
   GLOBAL_MARKET_DATA: 'global_market_data',
   AUTOMATION_RULES: 'automation_rules',
+  AI_RECOMMENDATIONS: 'ai_recommendations',
 } as const;
 
 // Helper function to handle Supabase errors
