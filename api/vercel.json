@@ -4,10 +4,21 @@
     {
       "src": "src/index.ts",
       "use": "@vercel/node",
-      "config": { "runtime": "nodejs18.x" }
+      "config": {
+        "runtime": "nodejs18.x"
+      }
     }
   ],
   "routes": [
-    { "src": "/(.*)", "dest": "src/index.ts" }
+    {
+      "src": "/(.*)",
+      "dest": "src/index.ts"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/update-prices",
+      "schedule": "0 */12 * * *"
+    }
   ]
 }

@@ -23,7 +23,7 @@ interface RecommendationRequest {
 
 /**
  * POST /api/ai/recommendation
- * Get AI recommendation from DeepSeek for a product
+ * Get AI recommendation from Groq (Llama 3) for a product
  */
 router.post('/recommendation', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
@@ -82,9 +82,9 @@ router.post('/recommendation', authMiddleware, async (req: AuthRequest, res: Res
     const safeGlobalCheapest = globalCheapest || safeCurrentPrice;
     const safePriceHistory = (priceHistory && Array.isArray(priceHistory)) ? priceHistory : [];
 
-    // 1. Calculate price volatility
+    // 1. Calculate price volatility and trends
     const calculateVolatility = (history: Array<{ price: number; timestamp: string }>) => {
-      if (history.length < 2) return { volatility: 0, trend: 'flat', highestPrice: safeCurrentPrice, daysSinceLastDrop: 0, avgPrice: safeCurrentPrice };
+      if (history.length < 2) return { volatility: 0, trend: 'flat', highestPrice: safeCurrentPrice, daysSinceLastDrop: 0, avgPrice: safeCurrentPrice, predictedDrop: 'Unknown' };
 
       const sorted = [...history].sort((a, b) =>
         new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
@@ -100,14 +100,14 @@ router.post('/recommendation', authMiddleware, async (req: AuthRequest, res: Res
       const recentPrices = sorted.slice(-7);
       const firstRecent = recentPrices[0]?.price || safeCurrentPrice;
       const lastRecent = recentPrices[recentPrices.length - 1]?.price || safeCurrentPrice;
-      const trendChange = ((lastRecent - firstRecent) / firstRecent) * 100;
 
       let trend = 'flat';
-      if (trendChange > 5) trend = 'rising';
-      else if (trendChange < -5) trend = 'falling';
+      const trendChange = ((lastRecent - firstRecent) / firstRecent) * 100;
+      if (trendChange > 2) trend = 'rising';
+      else if (trendChange < -2) trend = 'falling';
 
       // Find highest price and days since last drop
-      const highestPrice = Math.max(...prices);
+      const highestPrice = Math.max(...prices, safeCurrentPrice);
       const lastDropIndex = sorted.findIndex((h, i) =>
         i > 0 && h.price < sorted[i - 1].price
       );
@@ -115,12 +115,23 @@ router.post('/recommendation', authMiddleware, async (req: AuthRequest, res: Res
         ? Math.floor((Date.now() - new Date(sorted[lastDropIndex].timestamp).getTime()) / (1000 * 60 * 60 * 24))
         : 999;
 
+      // Analyze monthly patterns (simple heuristic)
+      const currentDay = new Date().getDate();
+      const isEndMonth = currentDay > 25;
+      const isMidMonth = currentDay > 14 && currentDay < 16;
+      let predictedDrop = 'Unknown';
+
+      if (trend === 'falling') predictedDrop = 'Price is currently dropping';
+      else if (daysSinceLastDrop > 14) predictedDrop = 'Due for a drop soon (based on 2-week cycle)';
+      else if (isEndMonth) predictedDrop = 'Likely to drop start of next month';
+
       return {
         volatility: volatilityPercent,
         trend,
         highestPrice,
         daysSinceLastDrop,
-        avgPrice: mean
+        avgPrice: mean,
+        predictedDrop
       };
     };
 
@@ -145,7 +156,7 @@ router.post('/recommendation', authMiddleware, async (req: AuthRequest, res: Res
       if (lowerTitle.includes('3rd party') || lowerTitle.includes('third party')) clues.push('3rd party seller');
 
       // Scarcity signals
-      if (lowerTitle.includes('only') && lowerTitle.includes('left')) clues.push('⏰ Low stock');
+      if (lowerTitle.includes('only') && lowerTitle.includes('left')) clues.push('⏰ Low stock - Urgency High');
       if (lowerTitle.includes('limited')) clues.push('⏰ Limited offer');
 
       return clues;
@@ -179,6 +190,7 @@ Price Analysis:
 - Recent trend (7 days): ${priceAnalysis.trend === 'rising' ? '📈 Rising' : priceAnalysis.trend === 'falling' ? '📉 Falling' : '➡️ Flat'}
 - Price volatility: ${priceAnalysis.volatility.toFixed(1)}% (${risk} risk)
 - Days since last price drop: ${priceAnalysis.daysSinceLastDrop}
+- Predicted drop: ${priceAnalysis.predictedDrop}
 
 Additional Context:
 - Working coupon: ${hasCoupon ? 'Yes ✅' : 'No'}
@@ -259,7 +271,8 @@ Be honest and data-driven. Users trust you to save them money.`;
       priceAnalysis: {
         savingsVsAverage: Math.round(savingsVsAvg),
         trend: priceAnalysis.trend,
-        volatility: Math.round(priceAnalysis.volatility)
+        volatility: Math.round(priceAnalysis.volatility),
+        predictedDrop: priceAnalysis.predictedDrop
       },
       cached: false
     };
@@ -285,7 +298,7 @@ Be honest and data-driven. Users trust you to save them money.`;
 
   } catch (error: any) {
     if (axios.isAxiosError(error)) {
-      console.error('❌ DeepSeek API Error:', {
+      console.error('❌ Groq API Error:', {
         status: error.response?.status,
         statusText: error.response?.statusText,
         data: error.response?.data,
@@ -309,4 +322,3 @@ Be honest and data-driven. Users trust you to save them money.`;
 });
 
 export default router;
-

@@ -40,3 +40,19 @@ Vary verdicts: 40% STRONG BUY, 30% BUY, 20% WAIT, 10% AVOID. Be optimistic but r
 ******
 
 but this is grok ask idea so what do u think? and what is your recommendation
+
+
+
+
+tested ai recommendation on 3 products and here are the results
+
+1. 80% Confidence: WAIT
+The price is near its average price of $799.97, and the recent trend has been flat with no price drops in the last 30 days.
+2. 70% Confidence: BUY
+The price is $1.01 below average, and there's a working coupon.
+3. 40% Confidence: WAIT
+The price is flat over the past 7 days, and there's a low risk of a price drop, but it's also only $0.89 below the 30-day average, suggesting it's not a strong deal.
+
+
+i tested 2 products with image of ... taken from mobile (actual status of the product) and it was not able to detect the condition of the product.
+and 1 product with image of airpod taken from internet that looks new and it was able to detect the condition of the product either
