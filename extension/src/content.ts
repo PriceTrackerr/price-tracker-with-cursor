@@ -35,29 +35,27 @@ interface ProductInfo {
   discountInfo?: string;
 }
 
-// Extension only tracks products - no comparison overlay
-
-// Listen for messages from popup
+// Listen for messages from popup/background
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log('🔍 Content script received message:', message);
-  
+
   // Handle test connection
   if (message.type === 'TEST_CONNECTION') {
     console.log('🔍 Content script responding to test connection');
     sendResponse({ success: true, message: 'Content script is ready' });
     return false; // Synchronous response
   }
-  
+
   if (message.action === 'getProductInfo') {
     window.postMessage({ type: 'GET_PRODUCT_INFO' }, '*');
-    
+
     function handleResponse(event: MessageEvent) {
       if (event.source === window && event.data?.type === 'PRODUCT_INFO_RESPONSE') {
         window.removeEventListener('message', handleResponse);
         sendResponse({ success: event.data.success, data: event.data.data });
       }
     }
-    
+
     window.addEventListener('message', handleResponse);
     setTimeout(() => {
       window.removeEventListener('message', handleResponse);
@@ -65,27 +63,26 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }, 5000);
     return true; // Keep connection alive for async response
   }
-  
+
   if (message.action === 'trackProduct') {
     console.log('🔍 Content script handling trackProduct request');
-    
+
     // Wait a bit for injected script to be ready
     setTimeout(() => {
       console.log('🔍 Content script sending trackProduct message to injected script');
       window.postMessage({ action: 'trackProduct' }, '*');
     }, 100);
-    
+
     function handleTrackResponse(event: MessageEvent) {
       console.log('🔍 Content script received message:', event.data);
       if (event.source === window && event.data?.type === 'TRACK_PRODUCT_RESPONSE') {
         window.removeEventListener('message', handleTrackResponse);
         console.log('🔍 Content script processing TRACK_PRODUCT_RESPONSE');
-        
+
         if (event.data.success && event.data.data) {
           console.log('🔍 Content script calling trackProductToBackend');
           trackProductToBackend(event.data.data).then(result => {
             console.log('🔍 Content script backend result:', result);
-            // Ensure consistent response structure
             const response = {
               success: result.success,
               data: result.data,
@@ -96,74 +93,139 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             sendResponse(response);
           }).catch(error => {
             console.log('🔍 Content script backend error:', error);
-            // Don't show notification here - let popup handle it
-            sendResponse({ 
-              success: false, 
+            sendResponse({
+              success: false,
               error: error.message,
               message: 'Failed to track product'
             });
           });
         } else {
           console.log('🔍 Content script extraction failed');
-          // Don't show notification here - let popup handle it
-          sendResponse({ 
-            success: false, 
+          sendResponse({
+            success: false,
             error: 'Failed to extract product info',
             message: 'Failed to extract product info'
           });
         }
       }
     }
-    
+
     window.addEventListener('message', handleTrackResponse);
     setTimeout(() => {
       console.log('🔍 Content script trackProduct timeout');
       window.removeEventListener('message', handleTrackResponse);
-      // Don't show notification here - let popup handle it
-      sendResponse({ 
-        success: false, 
+      sendResponse({
+        success: false,
         error: 'Timeout',
         message: 'Request timed out'
       });
     }, 10000);
     return true; // Keep connection alive for async response
   }
-  
+
+  // Handle coupon application (from Background)
+  if (message.action === 'APPLY_COUPON') {
+    console.log('🔍 Content script applying coupon:', message.code);
+    applyCoupon(message.code).then(success => {
+      showTrackingNotification(success ? 'Coupon applied! 🎉' : 'Could not find coupon field', success);
+      sendResponse({ success });
+    });
+    return true;
+  }
+
   // Default response for unknown messages
-  sendResponse({ 
-    success: false, 
+  sendResponse({
+    success: false,
     error: 'Unknown message type',
     message: 'Unknown message type'
   });
   return false; // Synchronous response
 });
 
+// Listen for messages from the web page (for auto-apply without Extension ID)
+window.addEventListener('message', (event) => {
+  if (event.source !== window) return;
+
+  if (event.data?.type === 'APPLY_COUPON_FROM_WEB') {
+    console.log('🔍 Content script received web message:', event.data.code);
+    applyCoupon(event.data.code).then(success => {
+      showTrackingNotification(success ? 'Coupon applied! 🎉' : 'Could not find coupon field', success);
+    });
+  }
+});
+
+// Auto-apply coupon logic
+async function applyCoupon(code: string): Promise<boolean> {
+  const inputs = document.querySelectorAll('input[type="text"], input[type="search"]');
+  let couponInput: HTMLInputElement | null = null;
+
+  // Heuristic to find coupon input
+  for (const input of Array.from(inputs) as HTMLInputElement[]) {
+    const name = (input.name || '').toLowerCase();
+    const id = (input.id || '').toLowerCase();
+    const placeholder = (input.placeholder || '').toLowerCase();
+    const label = input.getAttribute('aria-label')?.toLowerCase() || '';
+
+    if (
+      name.includes('coupon') || name.includes('promo') || name.includes('discount') ||
+      id.includes('coupon') || id.includes('promo') || id.includes('discount') ||
+      placeholder.includes('coupon') || placeholder.includes('promo') || placeholder.includes('code') ||
+      label.includes('coupon') || label.includes('promo')
+    ) {
+      couponInput = input;
+      break;
+    }
+  }
+
+  if (!couponInput) {
+    console.log('❌ No coupon input found');
+    return false;
+  }
+
+  // Focus and fill
+  couponInput.focus();
+  couponInput.value = code;
+  couponInput.dispatchEvent(new Event('input', { bubbles: true }));
+  couponInput.dispatchEvent(new Event('change', { bubbles: true }));
+
+  // Try to find apply button near the input
+  const parent = couponInput.parentElement;
+  if (parent) {
+    const button = parent.querySelector('button, input[type="submit"]');
+    if (button instanceof HTMLElement) {
+      button.click();
+      return true;
+    }
+  }
+
+  // Fallback: search for any "Apply" button
+  const buttons = document.querySelectorAll('button, input[type="submit"], a');
+  for (const btn of Array.from(buttons) as HTMLElement[]) {
+    const text = (btn.innerText || btn.getAttribute('value') || '').toLowerCase();
+    if (text.includes('apply') || text.includes('redeem')) {
+      btn.click();
+      return true;
+    }
+  }
+
+  return true; // Input filled, but button not clicked
+}
+
 // Track product to backend - ONLY track, no popup
 async function trackProductToBackend(productInfo: ProductInfo): Promise<any> {
   try {
     console.log('🔍 [Content Script] Starting trackProductToBackend');
-    console.log('🔍 [Content Script] Product info:', productInfo);
-    
     const result = await chrome.storage.local.get(['authToken']);
     const token = result.authToken;
-    
-    console.log('🔍 [Content Script] Token found:', !!token);
-    
+
     if (!token) {
-      console.log('🔍 [Content Script] No authentication token found');
       return { success: false, error: 'No authentication token found. Please log in to the web app first.' };
     }
 
-    console.log('🔍 [Content Script] Sending track request to background...');
     const response = await chrome.runtime.sendMessage({
       type: 'TRACK_PRODUCT',
-      payload: {
-        token,
-        productInfo
-      }
+      payload: { token, productInfo }
     });
-
-    console.log('🔍 [Content Script] Background response:', response);
 
     if (response && response.success) {
       return { success: true, data: response.data };
@@ -178,13 +240,9 @@ async function trackProductToBackend(productInfo: ProductInfo): Promise<any> {
 
 // Simple notification for successful tracking
 function showTrackingNotification(message: string, isSuccess: boolean = true) {
-  // Remove existing notification
   const existing = document.querySelector('#price-tracker-notification');
-  if (existing) {
-    existing.remove();
-  }
+  if (existing) existing.remove();
 
-  // Create notification
   const notification = document.createElement('div');
   notification.id = 'price-tracker-notification';
   notification.style.cssText = `
@@ -214,19 +272,10 @@ function showTrackingNotification(message: string, isSuccess: boolean = true) {
 
   document.body.appendChild(notification);
 
-  // Slide in
-  setTimeout(() => {
-    notification.style.transform = 'translateX(0)';
-  }, 100);
-
-  // Auto-hide after 4 seconds
+  setTimeout(() => { notification.style.transform = 'translateX(0)'; }, 100);
   setTimeout(() => {
     notification.style.transform = 'translateX(100%)';
-    setTimeout(() => {
-      if (notification.parentNode) {
-        notification.remove();
-      }
-    }, 300);
+    setTimeout(() => { if (notification.parentNode) notification.remove(); }, 300);
   }, 4000);
 }
 

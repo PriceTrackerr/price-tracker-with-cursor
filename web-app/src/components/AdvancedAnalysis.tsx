@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
+import toast from 'react-hot-toast';
 
 interface AdvancedAnalysisProps {
   product: {
@@ -34,6 +35,12 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
   const { getAuthHeaders, token, user } = useAuth();
   const [activeTab, setActiveTab] = useState('condition');
   const [loading, setLoading] = useState(true);
+
+  // Coupon State
+  const [coupons, setCoupons] = useState<Array<{ code: string; description: string; discount?: string; successRate?: number; source: string }>>([]);
+  const [loadingCoupons, setLoadingCoupons] = useState(false);
+  const [couponError, setCouponError] = useState('');
+
   const [aiRecommendation, setAiRecommendation] = useState<{
     verdict: string;
     confidence: number;
@@ -293,6 +300,64 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
     loadAnalysisData();
   }, [product.id, product.title, product.price, token, getAuthHeaders]);
 
+  // Fetch coupons when tab is active
+  useEffect(() => {
+    if (activeTab === 'coupons' && coupons.length === 0 && !loadingCoupons) {
+      fetchCoupons();
+    }
+  }, [activeTab]);
+
+  const fetchCoupons = async () => {
+    setLoadingCoupons(true);
+    setCouponError('');
+    try {
+      const res = await fetch(`/api/coupons/find?query=${encodeURIComponent(product.title)}`, {
+        headers: getAuthHeaders()
+      });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.data)) {
+        setCoupons(data.data);
+      } else {
+        setCoupons([]);
+      }
+    } catch (err) {
+      console.error('Error fetching coupons:', err);
+      setCouponError('Failed to load coupons');
+    } finally {
+      setLoadingCoupons(false);
+    }
+  };
+
+  const handleCopy = (code: string) => {
+    navigator.clipboard.writeText(code);
+    toast.success('Code copied to clipboard!');
+  };
+
+  const handleApply = (code: string) => {
+    // Try to send message to extension
+    try {
+      // Method 1: Chrome Runtime (if in extension context)
+      if (window.chrome && window.chrome.runtime && window.chrome.runtime.sendMessage) {
+        window.chrome.runtime.sendMessage({ type: 'APPLY_COUPON', code }, (response) => {
+          if (window.chrome.runtime.lastError) {
+            console.log('Extension message failed, trying postMessage');
+            // Fallback to postMessage
+            window.postMessage({ type: 'APPLY_COUPON_FROM_WEB', code }, '*');
+          } else {
+            toast.success('Applying coupon...');
+          }
+        });
+      } else {
+        // Method 2: postMessage (for web app to content script)
+        window.postMessage({ type: 'APPLY_COUPON_FROM_WEB', code }, '*');
+        toast.success('Applying coupon...');
+      }
+    } catch (e) {
+      console.error('Failed to apply coupon:', e);
+      toast.error('Could not apply coupon automatically');
+    }
+  };
+
   const tabs = [
     { id: 'condition', label: '🧠 Condition', color: 'blue' },
     { id: 'coupons', label: '🎟️ Coupons', color: 'green' },
@@ -353,7 +418,6 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
       <div className="min-h-[200px]">
         {activeTab === 'condition' && (
           <div className="space-y-4">
-            {/* AI Recommendation Card - At the TOP */}
             {/* AI Recommendation Card - At the TOP */}
             {(user?.subscription?.tier === 'pro') ? (
               aiRecommendation && (
@@ -432,12 +496,65 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
         )}
 
         {activeTab === 'coupons' && (
-          <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-100">
-            <div className="text-4xl mb-3">🎟️</div>
-            <h4 className="text-lg font-semibold text-gray-900 mb-2">Coupon Finder Coming Soon</h4>
-            <p className="text-gray-600 max-w-md mx-auto">
-              We're integrating with major coupon providers to automatically find the best deals for you.
-            </p>
+          <div className="space-y-4">
+            {loadingCoupons ? (
+              <div className="text-center py-12">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mb-2"></div>
+                <p className="text-gray-600">Finding best coupons...</p>
+              </div>
+            ) : couponError ? (
+              <div className="text-center py-8 text-red-600">
+                <p>{couponError}</p>
+                <button onClick={fetchCoupons} className="mt-2 text-sm underline">Try Again</button>
+              </div>
+            ) : coupons.length === 0 ? (
+              <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-100">
+                <div className="text-4xl mb-3">🎟️</div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-2">No Coupons Found</h4>
+                <p className="text-gray-600 max-w-md mx-auto">
+                  We couldn't find any active coupons for this product right now.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-semibold text-gray-900">Available Coupons ({coupons.length})</h4>
+                  <span className="text-xs text-green-600 font-medium bg-green-50 px-2 py-1 rounded">
+                    Up to {coupons[0].discount || '15%'} Off
+                  </span>
+                </div>
+                {coupons.map((coupon, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-3 border border-green-100 bg-green-50/30 rounded-lg hover:bg-green-50 transition-colors">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold text-green-700 text-lg">{coupon.code}</span>
+                        {coupon.successRate && (
+                          <span className="text-xs bg-green-100 text-green-800 px-1.5 py-0.5 rounded">
+                            {coupon.successRate}% Success
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600 mt-0.5">{coupon.description}</p>
+                      <p className="text-xs text-gray-400 mt-1">Source: {coupon.source}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleCopy(coupon.code)}
+                        className="px-3 py-1.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded hover:bg-gray-50"
+                      >
+                        Copy
+                      </button>
+                      <button
+                        onClick={() => handleApply(coupon.code)}
+                        className="px-3 py-1.5 text-sm font-medium text-white bg-green-600 rounded hover:bg-green-700 shadow-sm"
+                      >
+                        Apply
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -464,4 +581,4 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
 
     </div>
   );
-} 
+}

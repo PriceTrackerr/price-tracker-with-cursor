@@ -10,6 +10,7 @@ interface ProductInfo {
     stockStatus: 'in_stock' | 'out_of_stock' | 'unknown';
     discountInfo?: string;
 }
+declare function applyCoupon(code: string): Promise<boolean>;
 declare function trackProductToBackend(productInfo: ProductInfo): Promise<any>;
 declare function showTrackingNotification(message: string, isSuccess?: boolean): void;
 //# sourceMappingURL=content.d.ts.map
