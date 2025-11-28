@@ -76,9 +76,15 @@ router.post('/recommendation', authMiddleware, async (req: AuthRequest, res: Res
 
     // ===== Enhanced Data Analysis =====
 
+    // Ensure all price values have safe defaults to prevent undefined errors
+    const safeCurrentPrice = currentPrice || 0;
+    const safeLowestPrice = lowestPrice || safeCurrentPrice;
+    const safeGlobalCheapest = globalCheapest || safeCurrentPrice;
+    const safePriceHistory = (priceHistory && Array.isArray(priceHistory)) ? priceHistory : [];
+
     // 1. Calculate price volatility
     const calculateVolatility = (history: Array<{ price: number; timestamp: string }>) => {
-      if (history.length < 2) return { volatility: 0, trend: 'flat', highestPrice: currentPrice, daysSinceLastDrop: 0 };
+      if (history.length < 2) return { volatility: 0, trend: 'flat', highestPrice: safeCurrentPrice, daysSinceLastDrop: 0, avgPrice: safeCurrentPrice };
 
       const sorted = [...history].sort((a, b) =>
         new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
@@ -92,8 +98,8 @@ router.post('/recommendation', authMiddleware, async (req: AuthRequest, res: Res
 
       // Determine trend (last 7 days)
       const recentPrices = sorted.slice(-7);
-      const firstRecent = recentPrices[0]?.price || currentPrice;
-      const lastRecent = recentPrices[recentPrices.length - 1]?.price || currentPrice;
+      const firstRecent = recentPrices[0]?.price || safeCurrentPrice;
+      const lastRecent = recentPrices[recentPrices.length - 1]?.price || safeCurrentPrice;
       const trendChange = ((lastRecent - firstRecent) / firstRecent) * 100;
 
       let trend = 'flat';
@@ -118,7 +124,7 @@ router.post('/recommendation', authMiddleware, async (req: AuthRequest, res: Res
       };
     };
 
-    const priceAnalysis = calculateVolatility(priceHistory);
+    const priceAnalysis = calculateVolatility(safePriceHistory);
 
     // 2. Detect condition/seller clues from title
     const detectConditionClues = (title: string) => {
@@ -147,10 +153,9 @@ router.post('/recommendation', authMiddleware, async (req: AuthRequest, res: Res
 
     const conditionClues = detectConditionClues(title);
 
-    // 3. Calculate savings percentage
-    const savingsVsHigh = ((priceAnalysis.highestPrice - currentPrice) / priceAnalysis.highestPrice) * 100;
-    const savingsVsAvg = ((priceAnalysis.avgPrice - currentPrice) / priceAnalysis.avgPrice) * 100;
-    const savingsVsLowest = ((currentPrice - lowestPrice) / lowestPrice) * 100;
+    const savingsVsHigh = ((priceAnalysis.highestPrice - safeCurrentPrice) / priceAnalysis.highestPrice) * 100;
+    const savingsVsAvg = ((priceAnalysis.avgPrice - safeCurrentPrice) / priceAnalysis.avgPrice) * 100;
+    const savingsVsLowest = safeLowestPrice !== 0 ? ((safeCurrentPrice - safeLowestPrice) / safeLowestPrice) * 100 : 0;
 
     // 4. Determine risk level
     let risk = 'Low';
@@ -161,11 +166,11 @@ router.post('/recommendation', authMiddleware, async (req: AuthRequest, res: Res
     const prompt = `You are a brutally honest shopping expert who helps people save money by analyzing data.
 
 Product: ${title}
-Current price: $${currentPrice.toFixed(2)}
-30-day lowest: $${lowestPrice.toFixed(2)}
+Current price: $${safeCurrentPrice.toFixed(2)}
+30-day lowest: $${safeLowestPrice.toFixed(2)}
 30-day highest: $${priceAnalysis.highestPrice.toFixed(2)}
 Average price (30d): $${priceAnalysis.avgPrice.toFixed(2)}
-Global cheapest (with shipping): $${globalCheapest.toFixed(2)}
+Global cheapest (with shipping): $${safeGlobalCheapest.toFixed(2)}
 
 Price Analysis:
 - Savings vs highest: ${savingsVsHigh.toFixed(1)}%
