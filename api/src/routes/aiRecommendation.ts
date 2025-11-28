@@ -57,10 +57,10 @@ router.post('/recommendation', authMiddleware, async (req: AuthRequest, res: Res
       });
     }
 
-    // Get DeepSeek API key (check both possible env var names)
-    const deepseekApiKey = process.env.DEEPSEEK_API_KEY || process.env.DEEPSEEK;
-    if (!deepseekApiKey) {
-      console.warn('⚠️ DEEPSEEK_API_KEY not configured, returning fallback recommendation');
+    // Get Groq API key (fallback to DeepSeek for backward compatibility)
+    const groqApiKey = process.env.GROQ_API_KEY || process.env.DEEPSEEK_API_KEY || process.env.DEEPSEEK;
+    if (!groqApiKey) {
+      console.warn('⚠️ GROQ_API_KEY not configured, returning fallback recommendation');
       return res.json({
         success: true,
         data: {
@@ -85,13 +85,13 @@ VERDICT: STRONG BUY / BUY / WAIT / AVOID
 Confidence: XX%
 Reason: One short sentence.`;
 
-    console.log(`🤖 Calling DeepSeek AI for product: ${title}`);
+    console.log(`🤖 Calling Groq AI for product: ${title}`);
 
-    // Call DeepSeek API
-    const deepseekResponse = await axios.post(
-      'https://api.deepseek.com/v1/chat/completions',
+    // Call Groq API (OpenAI-compatible endpoint)
+    const groqResponse = await axios.post(
+      'https://api.groq.com/openai/v1/chat/completions',
       {
-        model: 'deepseek-chat',
+        model: 'llama-3.1-8b-instant', // Fast, free Groq model
         messages: [
           {
             role: 'system',
@@ -107,15 +107,15 @@ Reason: One short sentence.`;
       },
       {
         headers: {
-          'Authorization': `Bearer ${deepseekApiKey}`,
+          'Authorization': `Bearer ${groqApiKey}`,
           'Content-Type': 'application/json'
         },
         timeout: 30000
       }
     );
 
-    const aiResponse = deepseekResponse.data?.choices?.[0]?.message?.content || '';
-    console.log(`📝 DeepSeek response: ${aiResponse}`);
+    const aiResponse = groqResponse.data?.choices?.[0]?.message?.content || '';
+    console.log(`📝 Groq response: ${aiResponse}`);
 
     // Parse the response
     const verdictMatch = aiResponse.match(/VERDICT:\s*(STRONG BUY|BUY|WAIT|AVOID)/i);
