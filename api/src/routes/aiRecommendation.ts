@@ -153,7 +153,16 @@ Reason: One short sentence.`;
     });
 
   } catch (error: any) {
-    console.error('❌ Error getting AI recommendation:', error?.message || error);
+    if (axios.isAxiosError(error)) {
+      console.error('❌ DeepSeek API Error:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message
+      });
+    } else {
+      console.error('❌ Error getting AI recommendation:', error?.message || error);
+    }
 
     // Return fallback on error
     return res.json({
