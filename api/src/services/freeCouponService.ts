@@ -146,6 +146,19 @@ export class FreeCouponService {
       return [];
     }
   }
+
+  // Additional methods for backward compatibility with advancedFeatures.ts
+  async getStackableCoupons(store: string, title: string): Promise<any[]> {
+    // Stub method - returns empty array for now
+    console.log(`🎟️ getStackableCoupons called for ${store} - ${title}`);
+    return [];
+  }
+
+  async validateCoupon(coupon: any, productUrl: string): Promise<{ isValid: boolean; errorMessage?: string }> {
+    // Stub method - always returns valid for now
+    console.log(`🔍 validateCoupon called for ${coupon.code}`);
+    return { isValid: true };
+  }
 }
 
 export default new FreeCouponService();
