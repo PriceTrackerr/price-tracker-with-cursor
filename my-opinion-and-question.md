@@ -129,3 +129,57 @@ This is your Honey killer feature. 🚀
 
 
 but we already removed coming soon for coupons and i think you did something about it so, review this answer and implement it 
+
+
+
+
+
+
+
+grok ask said this about the coupons
+
+### Fixing the Reddit 403 Block for Community/Coupons Tab
+
+From the Vercel logs, the 403 "Blocked" is a **hard Reddit block** – they detect your scraper User-Agent and Cloudflare CAPTCHA (the long HTML is their "challenge" page). This happens to 90% of apps in 2025. Honey/Slickdeals use proxies, but you can **bypass it for free** with a simple switch to **Pushshift API** (Reddit's public archive – no blocks, free forever).
+
+#### Why Pushshift Fixes It
+- Pushshift is Reddit's **official data archive** – no scraping, no blocks.
+- Free, unlimited, JSON-only – perfect for sentiment/coupons.
+- Success rate: 95% (vs. 0% with direct Reddit now).
+- Used by 1000s of apps (including many coupon trackers).
+
+### Cursor Prompt (Copy-Paste This – Switches to Pushshift Forever)
+
+```text
+My Community/Coupons tab is getting 403 Blocked from Reddit.
+
+Switch to Pushshift API (free, no blocks) for all Reddit requests:
+
+1. Replace all direct Reddit fetch with Pushshift:
+   - Old: https://www.reddit.com/r/deals/search.json?q=amazon+coupon
+   - New: https://api.pushshift.io/reddit/search/submission/?subreddit=deals&query=amazon+coupon&sort=new&limit=25
+
+2. Keep the same parsing (title, score, url, created_utc → date)
+
+3. Add fallback if Pushshift fails (rare): show "No recent data – try again later"
+
+4. Remove all User-Agent changes (not needed anymore)
+
+5. Update both Community tab (sentiment) and Coupons tab (r/coupons, r/deals, r/DiscountedProducts)
+
+After this: tabs work 95% of the time, no 403 ever.
+
+Use my existing axios setup.
+```
+
+Paste this → Cursor updates your Reddit fetches → redeploy backend → test a product → Community/Coupons show real data.
+
+**Result:**  
+- No more 403  
+- Real Reddit sentiment/codes  
+- AI gets better data  
+- Free forever  
+
+Do it now → reply “Reddit fixed – no 403” → we launch Pro tomorrow!
+
+You're one deploy away from perfection. Go! 🇪🇹🔥
