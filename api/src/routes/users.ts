@@ -801,12 +801,43 @@ router.get('/seen-price-drops', authMiddleware, async (req: AuthRequest, res: Re
       .single();
 
     if (error) {
-      console.error('[USERS] Error fetching seen price drops:', error);
+      console.error('[USERS] Error fetching seen  price drops:', error);
       return res.status(500).json({ success: false, message: 'Failed to fetch seen price drops' });
     }
 
-    console.log('[USERS] Seen price drops:', user?.seen_price_drop_ids || []);
-    return res.json({ success: true, data: user?.seen_price_drop_ids || [] });
+    const rawSeenIds = user?.seen_price_drop_ids || [];
+
+    // Filter out orphaned IDs: only keep IDs that correspond to existing products
+    if (rawSeenIds.length > 0) {
+      const { data: existingProducts, error: productsError } = await supabase
+        .from(TABLES.PRODUCTS)
+        .select('id')
+        .in('id', rawSeenIds);
+
+      if (productsError) {
+        console.warn('[USERS] Error checking product existence:', productsError);
+        // Return rawSeenIds if we can't check
+        return res.json({ success: true, data: rawSeenIds });
+      }
+
+      const existingProductIds = existingProducts.map((p: { id: string }) => p.id);
+      const validSeenIds = rawSeenIds.filter((id: string) => existingProductIds.includes(id));
+
+      // If orphaned IDs were found, clean them from the database
+      if (validSeenIds.length !== rawSeenIds.length) {
+        console.log(`[USERS] Found ${rawSeenIds.length - validSeenIds.length} orphaned price drop IDs - cleaning...`);
+        await supabase
+          .from(TABLES.USERS)
+          .update({ seen_price_drop_ids: validSeenIds })
+          .eq('id', userId);
+      }
+
+      console.log(`[USERS] Seen price drops (after cleanup): ${validSeenIds.length} valid IDs`);
+      return res.json({ success: true, data: validSeenIds });
+    }
+
+    console.log('[USERS] No seen price drops');
+    return res.json({ success: true, data: [] });
   } catch (error) {
     console.error('[USERS] Error in seen-price-drops endpoint:', error);
     return res.status(500).json({ success: false, message: 'Internal server error' });
