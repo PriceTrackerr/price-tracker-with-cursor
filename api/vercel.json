@@ -3,28 +3,13 @@
   "builds": [
     {
       "src": "src/index.ts",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": [
-          "src/**",
-          "data/**"
-        ]
-      }
+      "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
       "dest": "src/index.ts"
-    }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  },
-  "crons": [
-    {
-      "path": "/api/cron/update-prices",
-      "schedule": "0 */12 * * *"
     }
   ]
 }
