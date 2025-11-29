@@ -1,12 +1,27 @@
 {
   "version": 2,
-  "functions": {
-    "api/**/*.ts": {
-      "runtime": "nodejs18.x",
-      "maxDuration": 10
+  "builds": [
+    {
+      "src": "api/cron/update-prices.ts",
+      "use": "@vercel/node"
     },
+    {
+      "src": "src/index.ts",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/cron/update-prices",
+      "dest": "api/cron/update-prices.ts"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "src/index.ts"
+    }
+  ],
+  "functions": {
     "api/cron/update-prices.ts": {
-      "runtime": "nodejs18.x",
       "maxDuration": 60
     }
   },
