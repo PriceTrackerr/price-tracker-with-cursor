@@ -16,7 +16,7 @@ router.get('/update-prices', async (req: Request, res: Response) => {
 
         const { data: productsToUpdate, error: fetchError } = await supabase
             .from('products')
-            .select('id, title, url, platform, current_price, last_checked')
+            .select('id, title, url, platform, price, last_checked')
             .or(`last_checked.is.null,last_checked.lt.${tenHoursAgo}`)
             .order('last_checked', { ascending: true, nullsFirst: true })
             .limit(20);
@@ -59,11 +59,11 @@ router.get('/update-prices', async (req: Request, res: Response) => {
                 }
 
                 const newPrice = results[0].price;
-                const oldPrice = product.current_price || 0;
+                const oldPrice = product.price || 0;
                 const updateData: any = { last_checked: new Date().toISOString() };
 
                 if (newPrice !== oldPrice && newPrice > 0) {
-                    updateData.current_price = newPrice;
+                    updateData.price = newPrice;
                     await db.updateProduct(product.id, updateData);
                     await db.addPriceHistory({
                         productId: product.id,
