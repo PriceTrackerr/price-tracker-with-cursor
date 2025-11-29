@@ -49,9 +49,19 @@ router.get('/update-prices', async (req: Request, res: Response) => {
                 }
 
                 console.log(`[CRON] 🔍 Checking: ${product.title.substring(0, 50)}...`);
-                const results = await realProductSearch.searchProducts(searchQuery, 1);
 
-                if (results.length === 0) {
+                let results;
+                try {
+                    results = await realProductSearch.searchProducts(searchQuery, 1);
+                } catch (searchError: any) {
+                    // If search fails (e.g., "All providers failed"), still update last_checked
+                    console.log(`[CRON] ⚠️ Search failed for "${product.title.substring(0, 40)}...": ${searchError.message || 'Provider error'}`);
+                    await db.updateProduct(product.id, { last_checked: new Date().toISOString() });
+                    stats.skipped.push(product.id);
+                    continue;
+                }
+
+                if (!results || results.length === 0) {
                     await db.updateProduct(product.id, { last_checked: new Date().toISOString() });
                     stats.skipped.push(product.id);
                     console.log(`[CRON] ⚠️ No price found for ${product.id}`);
@@ -80,6 +90,7 @@ router.get('/update-prices', async (req: Request, res: Response) => {
                 stats.errors++;
                 console.error(`[CRON] ❌ Error processing ${product.id}:`, productError?.message || productError);
                 try {
+                    // Always update last_checked to prevent infinite retry loop
                     await db.updateProduct(product.id, { last_checked: new Date().toISOString() });
                 } catch (e) {
                     console.error(`[CRON] ❌ Failed to update last_checked for ${product.id}`);
