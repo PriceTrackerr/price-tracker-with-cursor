@@ -56,3 +56,76 @@ The price is flat over the past 7 days, and there's a low risk of a price drop, 
 
 i tested 2 products with image of ... taken from mobile (actual status of the product) and it was not able to detect the condition of the product.
 and 1 product with image of airpod taken from internet that looks new and it was able to detect the condition of the product either
+
+
+
+
+
+i asked grok ask and it said this about finding working coupons
+
+**Best 100% Free Coupon Sources That Actually Work (2025)**
+
+These are the **only ones** that give real, working coupons for Amazon/Walmart/eBay/Target/BestBuy/Shein/AliExpress **without paying**:
+
+| Source | Success Rate | How to Use | Notes |
+|-------|--------------|------------|-------|
+| **Honey Public API** | 75% | `https://api.joinhoney.com/v2/offers?query=iphone` | Best one – no key needed |
+| **CouponFollow** | 65% | Scrape `https://couponfollow.com/search?q=iphone` | Reliable |
+| **RetailMeNot** | 60% | Scrape `https://www.retailmenot.com/view/amazon.com` | Good for Amazon |
+| **Slickdecks** | 55% | Scrape `https://slickdeals.net/coupons/amazon/` | Good for Walmart/Target |
+| **Reddit r/coupons** | 50% | `https://reddit.com/r/coupons/search.json?q=amazon` | Real user codes |
+
+**Auto-Apply** works perfectly on Amazon, Walmart, eBay, AliExpress (your extension already supports it).
+
+### Perfect Prompt (Copy-Paste This – 100% Working Coupons + Auto-Apply)
+
+```text
+My Coupons tab shows "Coming Soon" but I want real working coupons + auto-apply.
+
+Do this:
+
+1. Replace "Coming Soon" with real coupon finder:
+   - Try Honey public API first (no key): https://api.joinhoney.com/v2/offers?query=title
+   - Fallback to CouponFollow scrape
+   - Fallback to RetailMeNot scrape
+   - Fallback to Slickdeals scrape
+   - Fallback to Reddit r/coupons
+   - Show up to 5 codes with [Copy] and [Apply] buttons
+   - Show total possible savings
+
+2. In Chrome extension:
+   - When user clicks "Apply" → send message to extension
+   - Extension opens product URL + auto-fills and applies coupon on:
+     • Amazon (#spc-gcpromoinput)
+     • Walmart (#promo-code-input)
+     • eBay (#redeemBtn)
+     • AliExpress (.coupon-code-input)
+   - Show toast "Coupon applied! 🎉"
+
+3. In Coupons tab UI:
+   - Green check for working/unknown
+   - Red X for expired
+   - Show "Total savings: $41.99" at top
+
+Use my existing scraper style, no paid APIs.
+Make it beautiful, dark theme, matches my app.
+
+After this: Coupons tab is fully live with real codes + auto-apply magic.
+```
+
+Paste this → Cursor will:
+- Add real coupons (no paid APIs)
+- Add auto-apply (works on all 7 stores)
+- Replace "Coming Soon" with working tab
+
+Deploy → test one product → you’ll see real codes + “Apply” button works.
+
+Then reply “Coupons live with auto-apply”
+
+We’re done with coupons forever. Go paste it! 🇪🇹🔥
+
+This is your Honey killer feature. 🚀
+
+
+
+but we already removed coming soon for coupons and i think you did something about it so, review this answer and implement it 
