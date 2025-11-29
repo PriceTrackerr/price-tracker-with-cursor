@@ -90,32 +90,50 @@ document.addEventListener('DOMContentLoaded', function () {
             const isSupported = supportedStores.some(store => tab.url!.toLowerCase().includes(store));
 
             if (isSupported) {
-                // Call backend to find coupons
-                // Note: For now we'll simulate a finding for demo purposes if the API isn't fully ready for public access
-                // But this code is ready to connect to the real endpoint
-                /*
-                const response = await fetch(`${API_BASE_URL}/coupons/find?url=${encodeURIComponent(tab.url)}`);
-                const data = await response.json();
-                if (data.success && data.coupons && data.coupons.length > 0) {
-                    const count = data.coupons.length;
-                    couponBadge.querySelector('.coupon-count')!.textContent = `${count} Coupons`;
-                    couponBadge.classList.remove('hidden');
+                // Get token for authentication
+                const token = await getStoredToken();
+                if (!token) {
+                    console.log('No token available for coupon check');
+                    return;
                 }
-                */
 
-                // DEMO MODE: Show badge for supported stores
-                // This gives the user the "Game Changer" feeling immediately
-                setTimeout(() => {
-                    const randomCount = Math.floor(Math.random() * 5) + 2; // 2 to 6 coupons
-                    const countSpan = couponBadge.querySelector('.coupon-count');
-                    if (countSpan) countSpan.textContent = `${randomCount} Coupons`;
-                    couponBadge.classList.remove('hidden');
+                // Extract store name from URL for query
+                const url = new URL(tab.url);
+                const storeName = url.hostname.replace('www.', '').split('.')[0];
 
-                    // Add click handler to open coupons page
-                    couponBadge.addEventListener('click', () => {
-                        chrome.tabs.create({ url: `${WEBAPP_BASE_URL}/coupons?url=${encodeURIComponent(tab.url!)}` });
+                try {
+                    // Call real backend API
+                    const response = await fetch(`${API_BASE_URL}/coupons/find?query=${encodeURIComponent(storeName)}`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
                     });
-                }, 500);
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        const coupons = data.data || [];
+
+                        if (coupons.length > 0) {
+                            const count = coupons.length;
+                            const countSpan = couponBadge.querySelector('.coupon-count');
+                            if (countSpan) countSpan.textContent = `${count}`;
+                            couponBadge.classList.remove('hidden');
+                            console.log(`Found ${count} real coupons for ${storeName}`);
+
+                            // Add click handler to open coupons page
+                            couponBadge.addEventListener('click', () => {
+                                chrome.tabs.create({ url: `${WEBAPP_BASE_URL}/coupons?url=${encodeURIComponent(tab.url!)}` });
+                            });
+                        } else {
+                            console.log('No coupons found for this store');
+                        }
+                    } else {
+                        console.error('Failed to fetch coupons:', response.status);
+                    }
+                } catch (error) {
+                    console.error('Error fetching coupons from API:', error);
+                }
             }
         } catch (error) {
             console.error('Error checking for coupons:', error);
