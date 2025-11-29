@@ -10,8 +10,6 @@ interface Coupon {
 }
 
 export class FreeCouponService {
-  private readonly HONEY_API = 'https://api.joinhoney.com/v2/offers';
-
   /**
    * Find coupons for a given store or product title
    */
@@ -19,20 +17,15 @@ export class FreeCouponService {
     const cleanQuery = this.extractStoreName(query);
     console.log(`🎟️ Finding coupons for: ${cleanQuery}`);
 
-    // 1. Try Honey (Best source)
-    let coupons = await this.fetchHoney(cleanQuery);
-    if (coupons.length > 0) return coupons.slice(0, 3);
+    // 1. Try CouponFollow (Best working source)
+    let coupons = await this.scrapeCouponFollow(cleanQuery);
+    if (coupons.length > 0) return coupons.slice(0, 5);
 
-    // 2. Try CouponFollow (Fallback)
-    console.log('⚠️ Honey empty, trying CouponFollow...');
-    coupons = await this.scrapeCouponFollow(cleanQuery);
-    if (coupons.length > 0) return coupons.slice(0, 3);
-
-    // 3. Try Reddit via Pushshift (Last resort)
-    console.log('⚠️ CouponFollow empty, trying Reddit/Pushshift...');
+    // 2. Try Reddit via old.reddit.com (Fallback)
+    console.log('⚠️ CouponFollow empty, trying Reddit...');
     coupons = await this.scrapeReddit(cleanQuery);
 
-    return coupons.slice(0, 3);
+    return coupons.slice(0, 5);
   }
 
   /**
@@ -44,32 +37,6 @@ export class FreeCouponService {
     // In a real app, we'd use a domain extractor or more complex logic
     if (query.includes('.')) return query.split('.')[0]; // amazon.com -> amazon
     return query.split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
-  }
-
-  private async fetchHoney(query: string): Promise<Coupon[]> {
-    try {
-      const response = await axios.get(`${this.HONEY_API}?query=${query}`, {
-        timeout: 5000
-      });
-
-      if (!response.data || !response.data.offers) return [];
-
-      // Honey structure varies, simplified mapping
-      // Note: This is a reverse-engineered structure, might need adjustment
-      const offers = response.data.offers || [];
-      return offers
-        .filter((o: any) => o.code)
-        .map((o: any) => ({
-          code: o.code,
-          description: o.description || `${o.value || '?'}% off at ${query}`,
-          discount: o.value ? `${o.value}%` : undefined,
-          successRate: o.rank ? Math.min(o.rank * 10, 100) : undefined,
-          source: 'Honey' as const
-        }));
-    } catch (error) {
-      console.warn('❌ Honey API failed:', error instanceof Error ? error.message : 'Unknown error');
-      return [];
-    }
   }
 
   private async scrapeCouponFollow(store: string): Promise<Coupon[]> {
@@ -112,41 +79,51 @@ export class FreeCouponService {
 
   private async scrapeReddit(query: string): Promise<Coupon[]> {
     try {
-      // Use Pushshift API instead of direct Reddit (bypasses 403 blocks)
-      // Search multiple subreddits for better coupon coverage
+      // Use old.reddit.com with proper browser headers to bypass 403
       const subreddits = ['coupons', 'deals', 'DiscountedProducts'];
       const allCoupons: Coupon[] = [];
 
       for (const subreddit of subreddits) {
         try {
-          const response = await axios.get('https://api.pushshift.io/reddit/search/submission/', {
+          const response = await axios.get(`https://old.reddit.com/r/${subreddit}/search.json`, {
             params: {
-              subreddit,
-              query: `${query} coupon OR promo OR discount`,
+              q: `${query} coupon OR promo OR discount OR code`,
               sort: 'new',
               limit: 10,
-              fields: 'title,score,created_utc'
+              restrict_sr: 'on'
+            },
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
+              'Accept': 'application/json',
+              'Accept-Language': 'en-US,en;q=0.9',
+              'Referer': 'https://old.reddit.com/'
             },
             timeout: 5000
           });
 
-          const posts = response.data?.data || [];
+          const posts = response.data?.data?.children || [];
           const coupons = posts
             .map((p: any) => {
-              const title = p.title || '';
-              // Try to extract a code from title like "[Code]...", "Use code XYZ", "CODE: SAVE20"
+              const title = p.data?.title || '';
+              // Try to extract a code from title like "[Code]...", "Use code XYZ", "CODE: SAVE20", "Promo: DEAL15"
               const codeMatch =
                 title.match(/code\s*:?\s*([A-Z0-9]{4,15})/i) ||
                 title.match(/\[([A-Z0-9]{4,15})\]/) ||
                 title.match(/use\s+([A-Z0-9]{4,15})/i) ||
-                title.match(/promo\s*:?\s*([A-Z0-9]{4,15})/i);
+                title.match(/promo\s*:?\s*([A-Z0-9]{4,15})/i) ||
+                title.match(/coupon\s*:?\s*([A-Z0-9]{4,15})/i);
 
               if (codeMatch) {
+                // Extract discount percentage if mentioned
+                const discountMatch = title.match(/(\d+)%\s*off/i);
+                const discount = discountMatch ? `${discountMatch[1]}% off` : undefined;
+
                 return {
                   code: codeMatch[1].toUpperCase(),
                   description: title.substring(0, 100), // Truncate long titles
+                  discount,
                   source: 'Reddit' as const,
-                  successRate: p.score > 10 ? 75 : p.score > 5 ? 60 : 50 // Estimate based on upvotes
+                  successRate: p.data.score > 10 ? 75 : p.data.score > 5 ? 60 : 50 // Estimate based on upvotes
                 };
               }
               return null;
@@ -158,15 +135,20 @@ export class FreeCouponService {
           // Stop if we found enough coupons
           if (allCoupons.length >= 5) break;
         } catch (subError) {
-          console.warn(`⚠️ Pushshift fetch failed for r/${subreddit}:`, subError instanceof Error ? subError.message : 'Unknown error');
+          console.warn(`⚠️ Reddit fetch failed for r/${subreddit}:`, subError instanceof Error ? subError.message : 'Unknown error');
           continue; // Try next subreddit
         }
       }
 
-      return allCoupons.slice(0, 5); // Return top 5
+      // Remove duplicates by code
+      const uniqueCoupons = Array.from(
+        new Map(allCoupons.map(c => [c.code, c])).values()
+      );
+
+      return uniqueCoupons.slice(0, 5); // Return top 5 unique
 
     } catch (error) {
-      console.warn('❌ Reddit/Pushshift scrape failed:', error instanceof Error ? error.message : 'Unknown error');
+      console.warn('❌ Reddit scrape failed:', error instanceof Error ? error.message : 'Unknown error');
       return [];
     }
   }
