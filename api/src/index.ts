@@ -297,9 +297,9 @@ async function startServer() {
     await db.getProducts(); // Test connection
     console.log('✅ Database connected successfully');
 
-    // Initialize cron jobs (disabled for debugging)
-    // initializeCronJobs();
-    console.log('⚠️ Cron jobs temporarily disabled for debugging');
+    // Initialize cron jobs
+    initializeCronJobs();
+    console.log('✅ Cron jobs initialized (checking prices every 12 hours)');
 
     // Start server
     server.listen(PORT, () => {

@@ -292,6 +292,18 @@ export default function Layout({ children }: LayoutProps) {
 
   // Dark mode toggle state
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
+
+  // Apply dark mode on mount
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+      document.body.style.backgroundColor = '#1e293b';
+    } else {
+      document.documentElement.classList.remove('dark');
+      document.body.style.backgroundColor = '';
+    }
+  }, [darkMode]);
+
   const handleDarkModeToggle = () => {
     setDarkMode((prev) => {
       const newMode = !prev;
@@ -301,7 +313,7 @@ export default function Layout({ children }: LayoutProps) {
         localStorage.setItem('darkMode', 'false');
       } else { // toggled right: dark mode
         document.documentElement.classList.add('dark');
-        document.body.style.backgroundColor = '#2A3440';
+        document.body.style.backgroundColor = '#1e293b';
         localStorage.setItem('darkMode', 'true');
       }
       return newMode;

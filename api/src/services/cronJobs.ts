@@ -39,18 +39,20 @@ async function sendBrowserNotification(product: any, alert: any) {
 export async function checkPriceAlerts() {
   const alerts = await db.getAllAlerts();
   console.log(`[DEBUG] Loaded ${alerts.length} alerts`);
-  
+
   // Group price drops by user email for consolidated emails
-  const priceDropsByUser: { [email: string]: Array<{
-    productTitle: string;
-    currentPrice: number;
-    previousPrice: number;
-    productUrl: string;
-    platform: 'amazon' | 'aliexpress' | 'ebay' | 'walmart' | 'shein' | 'bestbuy' | 'target';
-    alert: any;
-    product: any;
-  }> } = {};
-  
+  const priceDropsByUser: {
+    [email: string]: Array<{
+      productTitle: string;
+      currentPrice: number;
+      previousPrice: number;
+      productUrl: string;
+      platform: 'amazon' | 'aliexpress' | 'ebay' | 'walmart' | 'shein' | 'bestbuy' | 'target';
+      alert: any;
+      product: any;
+    }>
+  } = {};
+
   for (const alert of alerts) {
     console.log(`[DEBUG] Checking alert ${alert.id} for product ${alert.productId}`);
     // Get product details
@@ -61,15 +63,15 @@ export async function checkPriceAlerts() {
     }
     const currentPrice = product.price || 0;
     const targetPrice = alert.targetPrice;
-    
+
     console.log(`[DEBUG] Alert ${alert.id}: currentPrice=${currentPrice}, targetPrice=${targetPrice}, alert.currentPrice=${alert.currentPrice}`);
-    
+
     // Update alert's current price if it has changed
     if (alert.currentPrice !== currentPrice) {
       console.log(`[DEBUG] Updating alert ${alert.id} current price from ${alert.currentPrice} to ${currentPrice}`);
       await db.updateAlert(alert.id, { currentPrice });
     }
-    
+
     // --- Price Drop Alert (existing) ---
     if (currentPrice <= targetPrice) {
       // Get previous price from price history
@@ -77,13 +79,13 @@ export async function checkPriceAlerts() {
       const history = await db.getPriceHistory(alert.productId);
       previousPrice = history.length > 1 ? history[history.length - 2]?.price || currentPrice : currentPrice;
       console.log(`[DEBUG] Alert ${alert.id}: currentPrice=${currentPrice}, targetPrice=${targetPrice}, previousPrice=${previousPrice}`);
-      
+
       // Check if this is a new alert trigger (price reached target) or actual price drop
       const isNewTrigger = alert.currentPrice > targetPrice && currentPrice <= targetPrice;
       const isPriceDrop = currentPrice < previousPrice;
-      
+
       console.log(`[DEBUG] Alert ${alert.id}: isNewTrigger=${isNewTrigger}, isPriceDrop=${isPriceDrop}`);
-      
+
       // Send notification if price reached target OR if price actually dropped
       if (isNewTrigger || isPriceDrop) {
         console.log(`[DEBUG] Price drop detected for alert ${alert.id} (product ${product.title})`);
@@ -145,7 +147,7 @@ export async function checkPriceAlerts() {
           shouldSendRestockAlert = true;
         }
       }
-      
+
       if (shouldSendRestockAlert) {
         if (alert.email) {
           await emailService.sendRestockAlert(
@@ -175,7 +177,7 @@ export async function checkPriceAlerts() {
       await db.updateProduct(product.id, { previousStockStatus: product.stockStatus || 'unknown' });
     }
   }
-  
+
   // Send consolidated emails for each user
   for (const [userEmail, priceDrops] of Object.entries(priceDropsByUser)) {
     if (priceDrops.length > 0) {
@@ -199,11 +201,11 @@ export async function checkPriceAlerts() {
 }
 
 export const initializeCronJobs = () => {
-  // Check for price drops every 30 minutes to avoid rate limiting
-  cron.schedule('*/30 * * * *', async () => {
+  // Check for price drops every 12 hours to avoid rate limiting (runs at 00:00 and 12:00)
+  cron.schedule('0 */12 * * *', async () => {
     console.log('[CRON] Running scheduled price drop check...');
     await checkPriceAlerts();
     console.log('[CRON] Price drop check complete.');
   });
-  console.log('Cron jobs initialized (checking every 30 minutes)');
+  console.log('✅ Cron jobs initialized (checking prices every 12 hours at 00:00 and 12:00)');
 }; 
