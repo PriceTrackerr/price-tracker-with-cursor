@@ -560,7 +560,8 @@ router.post('/preferences', async (req: Request, res: Response) => {
       if (userError.code === 'PGRST116') {
         // User not found in users table, create a basic record
         console.log('⚠️ [PREFERENCES] User not found in users table, creating record for:', user.id);
-        const { data: newUser, error: createError } = await supabasePublic
+        // Use service role client to bypass RLS policies
+        const { data: newUser, error: createError } = await supabase
           .from(TABLES.USERS)
           .insert({
             id: user.id,
@@ -582,13 +583,13 @@ router.post('/preferences', async (req: Request, res: Response) => {
 
         console.log('✅ [PREFERENCES] User record created successfully');
 
-        // Now update with the provided preferences
+        // Now update with the provided preferences (use service role for consistency)
         const update: any = {};
         if (notificationSettings) update.notification_settings = notificationSettings;
         if (privacySettings) update.privacy_settings = privacySettings;
         if (preferences) update.preferences = preferences;
 
-        await supabasePublic.from(TABLES.USERS).update(update).eq('id', user.id);
+        await supabase.from(TABLES.USERS).update(update).eq('id', user.id);
         console.log('✅ [PREFERENCES] Preferences updated for newly created user');
 
         return res.json({ success: true, message: 'Preferences updated' });
@@ -613,7 +614,7 @@ router.post('/preferences', async (req: Request, res: Response) => {
     if (privacySettings) update.privacy_settings = privacySettings;
     if (preferences) update.preferences = preferences;
 
-    await supabasePublic.from(TABLES.USERS).update(update).eq('id', user.id);
+    await supabase.from(TABLES.USERS).update(update).eq('id', user.id);
     console.log('✅ [PREFERENCES] Preferences updated successfully for:', user.email);
 
     return res.json({ success: true, message: 'Preferences updated' });
