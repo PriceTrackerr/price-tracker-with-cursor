@@ -248,7 +248,7 @@ export default function Settings() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-gray-900">
       {/* Background Effects */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
         <div className="absolute top-0 left-1/4 w-[800px] h-[800px] bg-indigo-500/5 rounded-full blur-[120px]" />
@@ -258,39 +258,39 @@ export default function Settings() {
       <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Header */}
         <div className="mb-12">
-          <h1 className="text-4xl font-bold text-slate-900 tracking-tight mb-2">Settings</h1>
-          <p className="text-slate-600">Manage your account and preferences</p>
+          <h1 className="text-4xl font-bold text-slate-900 dark:text-white tracking-tight mb-2">Settings</h1>
+          <p className="text-slate-600 dark:text-slate-400">Manage your account and preferences</p>
         </div>
 
         <div className="space-y-8">
           {/* Account Section */}
-          <div className="bg-white rounded-3xl shadow-sm border border-slate-200/60 overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-slate-200/60 dark:border-gray-700 overflow-hidden">
             <div className="px-8 py-6 border-b border-slate-100 bg-gradient-to-r from-indigo-50/50 to-violet-50/50">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
                   <User className="w-5 h-5 text-indigo-600" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-slate-900">Account</h2>
-                  <p className="text-sm text-slate-600">Manage your account information</p>
+                  <h2 className="text-xl font-bold text-slate-900 dark:text-white">Account</h2>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Manage your account information</p>
                 </div>
               </div>
             </div>
             <div className="p-8 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="text-sm font-medium text-slate-700 mb-2 block">Username</label>
-                  <div className="text-lg font-semibold text-slate-900">{user?.username || '—'}</div>
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">Username</label>
+                  <div className="text-lg font-semibold text-slate-900 dark:text-white">{user?.username || '—'}</div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-700 mb-2 block">Email</label>
-                  <div className="text-lg text-slate-900">{user?.email || '—'}</div>
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">Email</label>
+                  <div className="text-lg text-slate-900 dark:text-white">{user?.email || '—'}</div>
                 </div>
               </div>
               <div className="pt-4">
                 <button
                   onClick={() => setShowPasswordModal(true)}
-                  className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-xl font-medium transition-colors flex items-center gap-2"
+                  className="px-6 py-3 bg-slate-100 dark:bg-gray-700 hover:bg-slate-200 dark:hover:bg-gray-600 text-slate-900 dark:text-white rounded-xl font-medium transition-colors flex items-center gap-2"
                 >
                   <Lock className="w-4 h-4" />
                   Change Password
@@ -300,23 +300,23 @@ export default function Settings() {
           </div>
 
           {/* Notification Settings */}
-          <div className="bg-white rounded-3xl shadow-sm border border-slate-200/60 overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-slate-200/60 dark:border-gray-700 overflow-hidden">
             <div className="px-8 py-6 border-b border-slate-100 bg-gradient-to-r from-blue-50/50 to-indigo-50/50">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
                   <Bell className="w-5 h-5 text-blue-600" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-slate-900">Notifications</h2>
-                  <p className="text-sm text-slate-600">Choose what you want to be notified about</p>
+                  <h2 className="text-xl font-bold text-slate-900 dark:text-white">Notifications</h2>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Choose what you want to be notified about</p>
                 </div>
               </div>
             </div>
             <div className="p-8 space-y-6">
               <div className="flex items-center justify-between py-4 border-b border-slate-100">
                 <div>
-                  <div className="font-medium text-slate-900 mb-1">Price Drop Alerts</div>
-                  <div className="text-sm text-slate-600">Get notified when prices drop</div>
+                  <div className="font-medium text-slate-900 dark:text-white mb-1">Price Drop Alerts</div>
+                  <div className="text-sm text-slate-600 dark:text-slate-400">Get notified when prices drop</div>
                 </div>
                 <Toggle checked={notificationSettings.priceDrops} onChange={() => updateNotificationSetting('priceDrops', !notificationSettings.priceDrops)} />
               </div>
@@ -338,30 +338,30 @@ export default function Settings() {
           </div>
 
           {/* Privacy Settings */}
-          <div className="bg-white rounded-3xl shadow-sm border border-slate-200/60 overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-slate-200/60 dark:border-gray-700 overflow-hidden">
             <div className="px-8 py-6 border-b border-slate-100 bg-gradient-to-r from-green-50/50 to-emerald-50/50">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
                   <Shield className="w-5 h-5 text-green-600" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-slate-900">Privacy & Security</h2>
-                  <p className="text-sm text-slate-600">Control your data and privacy</p>
+                  <h2 className="text-xl font-bold text-slate-900 dark:text-white">Privacy & Security</h2>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Control your data and privacy</p>
                 </div>
               </div>
             </div>
             <div className="p-8 space-y-6">
-              <div className="flex items-center justify-between py-4 border-b border-slate-100">
+              <div className="flex items-center justify-between py-4 border-b border-slate-100 dark:border-gray-700">
                 <div>
-                  <div className="font-medium text-slate-900 mb-1">Share Usage Data</div>
-                  <div className="text-sm text-slate-600">Help us improve our service</div>
+                  <div className="font-medium text-slate-900 dark:text-white mb-1">Share Usage Data</div>
+                  <div className="text-sm text-slate-600 dark:text-slate-400">Help us improve our service</div>
                 </div>
                 <Toggle checked={privacySettings.shareData} onChange={() => updatePrivacySetting('shareData', !privacySettings.shareData)} />
               </div>
               <div className="flex items-center justify-between py-4">
                 <div>
-                  <div className="font-medium text-slate-900 mb-1">Analytics</div>
-                  <div className="text-sm text-slate-600">Allow anonymous analytics</div>
+                  <div className="font-medium text-slate-900 dark:text-white mb-1">Analytics</div>
+                  <div className="text-sm text-slate-600 dark:text-slate-400">Allow anonymous analytics</div>
                 </div>
                 <Toggle checked={privacySettings.analytics} onChange={() => updatePrivacySetting('analytics', !privacySettings.analytics)} />
               </div>
@@ -369,26 +369,26 @@ export default function Settings() {
           </div>
 
           {/* Preferences */}
-          <div className="bg-white rounded-3xl shadow-sm border border-slate-200/60 overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-slate-200/60 dark:border-gray-700 overflow-hidden">
             <div className="px-8 py-6 border-b border-slate-100 bg-gradient-to-r from-violet-50/50 to-purple-50/50">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center">
                   <Globe className="w-5 h-5 text-violet-600" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-slate-900">Preferences</h2>
-                  <p className="text-sm text-slate-600">Customize your experience</p>
+                  <h2 className="text-xl font-bold text-slate-900 dark:text-white">Preferences</h2>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Customize your experience</p>
                 </div>
               </div>
             </div>
             <div className="p-8 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Currency</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Currency</label>
                   <select
                     value={preferences.currency}
                     onChange={(e) => updatePreference('currency', e.target.value)}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    className="w-full px-4 py-3 bg-slate-50 dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   >
                     <option value="USD">USD ($)</option>
                     <option value="EUR">EUR (€)</option>
@@ -397,11 +397,11 @@ export default function Settings() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Language</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Language</label>
                   <select
                     value={preferences.language}
                     onChange={(e) => updatePreference('language', e.target.value)}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    className="w-full px-4 py-3 bg-slate-50 dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   >
                     <option value="en">English</option>
                     <option value="es">Spanish</option>
@@ -412,8 +412,8 @@ export default function Settings() {
               </div>
               <div className="flex items-center justify-between py-4">
                 <div>
-                  <div className="font-medium text-slate-900 mb-1">Dark Mode</div>
-                  <div className="text-sm text-slate-600">Toggle dark mode theme</div>
+                  <div className="font-medium text-slate-900 dark:text-white mb-1">Dark Mode</div>
+                  <div className="text-sm text-slate-600 dark:text-slate-400">Toggle dark mode theme</div>
                 </div>
                 <button
                   className={`relative inline-flex h-6 w-11 items-center toggle-modern ${darkMode ? 'active' : ''}`}
@@ -436,15 +436,15 @@ export default function Settings() {
           </div>
 
           {/* Data Management */}
-          <div className="bg-white rounded-3xl shadow-sm border border-slate-200/60 overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-slate-200/60 dark:border-gray-700 overflow-hidden">
             <div className="px-8 py-6 border-b border-slate-100 bg-gradient-to-r from-slate-50/50 to-zinc-50/50">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center">
                   <Download className="w-5 h-5 text-slate-600" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-slate-900">Data Management</h2>
-                  <p className="text-sm text-slate-600">Export or delete your data</p>
+                  <h2 className="text-xl font-bold text-slate-900 dark:text-white">Data Management</h2>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Export or delete your data</p>
                 </div>
               </div>
             </div>
@@ -452,22 +452,22 @@ export default function Settings() {
               <div>
                 <button
                   onClick={exportData}
-                  className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-xl font-medium transition-colors flex items-center gap-2"
+                  className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white rounded-xl font-medium transition-colors flex items-center gap-2"
                 >
                   <Download className="w-4 h-4" />
                   Export Data
                 </button>
-                <p className="text-sm text-slate-500 mt-2">Download all your tracked products and settings</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">Download all your tracked products and price history</p>
               </div>
               <div className="pt-6 border-t border-slate-100">
                 <button
                   onClick={() => setShowDeleteModal(true)}
-                  className="px-6 py-3 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl font-medium transition-colors flex items-center gap-2"
+                  className="px-6 py-3 bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white rounded-xl font-medium transition-colors flex items-center gap-2"
                 >
                   <Trash2 className="w-4 h-4" />
                   Delete Account
                 </button>
-                <p className="text-sm text-slate-500 mt-2">Permanently delete your account and all data</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">Permanently delete your account and all associated data</p>
               </div>
             </div>
           </div>
@@ -477,41 +477,41 @@ export default function Settings() {
       {/* Change Password Modal */}
       {showPasswordModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden">
-            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-              <h3 className="text-xl font-bold text-slate-900">Change Password</h3>
-              <button onClick={() => setShowPasswordModal(false)} className="text-slate-400 hover:text-slate-600">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden">
+            <div className="px-6 py-5 border-b border-slate-100 dark:border-gray-700 flex items-center justify-between bg-slate-50 dark:bg-gray-700/50">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white">Change Password</h3>
+              <button onClick={() => setShowPasswordModal(false)} className="text-slate-400 hover:text-slate-600 dark:text-gray-400 dark:hover:text-gray-200">
                 <X className="w-6 h-6" />
               </button>
             </div>
             <form onSubmit={handleChangePassword} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Current Password</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Current Password</label>
                 <input
                   type="password"
                   value={currentPassword}
                   onChange={e => setCurrentPassword(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-4 py-3 bg-slate-50 dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">New Password</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">New Password</label>
                 <input
                   type="password"
                   value={newPassword}
                   onChange={e => setNewPassword(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-4 py-3 bg-slate-50 dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Confirm New Password</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Confirm New Password</label>
                 <input
                   type="password"
                   value={confirmPassword}
                   onChange={e => setConfirmPassword(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-4 py-3 bg-slate-50 dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   required
                 />
               </div>
@@ -519,7 +519,7 @@ export default function Settings() {
                 <button
                   type="button"
                   onClick={() => setShowPasswordModal(false)}
-                  className="flex-1 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-xl font-medium transition-colors"
+                  className="flex-1 px-4 py-3 bg-slate-100 dark:bg-gray-700 hover:bg-slate-200 dark:hover:bg-gray-600 text-slate-900 dark:text-white rounded-xl font-medium transition-colors"
                 >
                   Cancel
                 </button>
@@ -539,21 +539,21 @@ export default function Settings() {
       {/* Delete Account Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden">
-            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-rose-50">
-              <h3 className="text-xl font-bold text-rose-900">Delete Account</h3>
-              <button onClick={() => setShowDeleteModal(false)} className="text-rose-400 hover:text-rose-600">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden">
+            <div className="px-6 py-5 border-b border-slate-100 dark:border-gray-700 flex items-center justify-between bg-rose-50 dark:bg-red-900/20">
+              <h3 className="text-xl font-bold text-rose-900 dark:text-red-400">Delete Account</h3>
+              <button onClick={() => setShowDeleteModal(false)} className="text-rose-400 hover:text-rose-600 dark:text-red-400 dark:hover:text-red-300">
                 <X className="w-6 h-6" />
               </button>
             </div>
             <div className="p-6">
-              <p className="text-slate-700 mb-6">
+              <p className="text-slate-700 dark:text-slate-300 mb-6">
                 Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently deleted.
               </p>
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowDeleteModal(false)}
-                  className="flex-1 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-xl font-medium transition-colors"
+                  className="flex-1 px-4 py-3 bg-slate-100 dark:bg-gray-700 hover:bg-slate-200 dark:hover:bg-gray-600 text-slate-900 dark:text-white rounded-xl font-medium transition-colors"
                 >
                   Cancel
                 </button>

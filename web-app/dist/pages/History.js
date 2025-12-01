@@ -149,6 +149,7 @@ export default function History() {
             });
             const data = await response.json();
             if (data.success) {
+                console.log('[History] Fetched seen price drops:', data.data);
                 setSeenPriceDropIds(data.data);
             }
         }

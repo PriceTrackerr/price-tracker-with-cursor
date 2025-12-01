@@ -1,6 +1,7 @@
 import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
 import { useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
+import toast from 'react-hot-toast';
 // Helper function to safely format numbers
 const safeToFixed = (value, decimals = 2) => {
     try {
@@ -18,6 +19,10 @@ export default function AdvancedAnalysis({ product }) {
     const { getAuthHeaders, token, user } = useAuth();
     const [activeTab, setActiveTab] = useState('condition');
     const [loading, setLoading] = useState(true);
+    // Coupon State
+    const [coupons, setCoupons] = useState([]);
+    const [loadingCoupons, setLoadingCoupons] = useState(false);
+    const [couponError, setCouponError] = useState('');
     const [aiRecommendation, setAiRecommendation] = useState(null);
     // Safety check - ensure product has required fields
     if (!product || !product.id) {
@@ -250,6 +255,66 @@ export default function AdvancedAnalysis({ product }) {
         }
         loadAnalysisData();
     }, [product.id, product.title, product.price, token, getAuthHeaders]);
+    // Fetch coupons when tab is active
+    useEffect(() => {
+        if (activeTab === 'coupons' && coupons.length === 0 && !loadingCoupons) {
+            fetchCoupons();
+        }
+    }, [activeTab]);
+    const fetchCoupons = async () => {
+        setLoadingCoupons(true);
+        setCouponError('');
+        try {
+            const res = await fetch(`/api/coupons/find?query=${encodeURIComponent(product.title)}`, {
+                headers: getAuthHeaders()
+            });
+            const data = await res.json();
+            if (data.success && Array.isArray(data.data)) {
+                setCoupons(data.data);
+            }
+            else {
+                setCoupons([]);
+            }
+        }
+        catch (err) {
+            console.error('Error fetching coupons:', err);
+            setCouponError('Failed to load coupons');
+        }
+        finally {
+            setLoadingCoupons(false);
+        }
+    };
+    const handleCopy = (code) => {
+        navigator.clipboard.writeText(code);
+        toast.success('Code copied to clipboard!');
+    };
+    const handleApply = (code) => {
+        // Try to send message to extension
+        try {
+            // Method 1: Chrome Runtime (if in extension context)
+            if (window.chrome && window.chrome.runtime && window.chrome.runtime.sendMessage) {
+                window.chrome.runtime.sendMessage({ type: 'APPLY_COUPON', code }, (response) => {
+                    if (window.chrome.runtime.lastError) {
+                        console.log('Extension message failed, trying postMessage');
+                        // Fallback to postMessage
+                        window.postMessage({ type: 'APPLY_COUPON_FROM_WEB', code }, '*');
+                    }
+                    else {
+                        toast.success('Applying coupon...');
+                    }
+                });
+            }
+            else {
+                // Method 2: postMessage (for web app to content script)
+                window.postMessage({ type: 'APPLY_COUPON_FROM_WEB', code }, '*');
+                toast.success('Applying coupon...');
+            }
+        }
+        catch (e) {
+            console.error('Failed to apply coupon:', e);
+            toast.error('Could not apply coupon automatically');
+        }
+    };
     const tabs = [
         { id: 'condition', label: '🧠 Condition', color: 'blue' },
         { id: 'coupons', label: '🎟️ Coupons', color: 'green' },
@@ -279,10 +344,10 @@ export default function AdvancedAnalysis({ product }) {
                                     ? 'bg-gradient-to-br from-green-900 via-green-800 to-emerald-900'
                                     : aiRecommendation.verdict === 'WAIT'
                                         ? 'bg-gradient-to-br from-yellow-900 via-yellow-800 to-amber-900'
-                                        : 'bg-gradient-to-br from-red-900 via-red-800 to-rose-900'}`, children: aiRecommendation.loading ? (_jsx("div", { className: "flex items-center justify-center py-8", children: _jsxs("div", { className: "text-center", children: [_jsx("div", { className: "inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-white mb-3" }), _jsx("p", { className: "text-white/90 text-sm font-medium", children: "AI thinking\u2026" })] }) })) : (_jsxs(_Fragment, { children: [_jsxs("div", { className: "flex items-center gap-2 mb-3", children: [_jsx("span", { className: "text-2xl", children: "\uD83E\uDD16" }), _jsx("span", { className: "font-bold text-white text-lg", children: "DeepSeek AI Recommendation" })] }), _jsx("div", { className: "mb-3", children: _jsxs("span", { className: `text-2xl font-bold ${aiRecommendation.verdict === 'STRONG BUY' || aiRecommendation.verdict === 'BUY'
+                                        : 'bg-gradient-to-br from-red-900 via-red-800 to-rose-900'}`, children: aiRecommendation.loading ? (_jsx("div", { className: "flex items-center justify-center py-8", children: _jsxs("div", { className: "text-center", children: [_jsx("div", { className: "inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-white mb-3" }), _jsx("p", { className: "text-white/90 text-sm font-medium", children: "AI thinking\u2026" })] }) })) : (_jsxs(_Fragment, { children: [_jsxs("div", { className: "flex items-center gap-2 mb-3", children: [_jsx("span", { className: "text-2xl", children: "\uD83E\uDD16" }), _jsx("span", { className: "font-bold text-white text-lg", children: "AI Recommendation" })] }), _jsx("div", { className: "mb-3", children: _jsxs("span", { className: `text-2xl font-bold ${aiRecommendation.verdict === 'STRONG BUY' || aiRecommendation.verdict === 'BUY'
                                                     ? 'text-green-300'
                                                     : aiRecommendation.verdict === 'WAIT'
                                                         ? 'text-yellow-300'
-                                                        : 'text-red-300'}`, children: [aiRecommendation.confidence, "% Confidence: ", aiRecommendation.verdict] }) }), _jsx("p", { className: "text-white/90 text-sm mb-4 leading-relaxed", children: aiRecommendation.reason || 'AI thinking… try again' }), _jsxs("a", { href: product.url, target: "_blank", rel: "noopener noreferrer", className: "inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white px-5 py-2.5 rounded-lg hover:bg-white/30 transition-all font-medium text-sm border border-white/30", children: [_jsx("span", { children: "\uD83D\uDED2" }), "Buy Now with AI Analysis"] })] })) }))) : (_jsxs("div", { className: "relative overflow-hidden rounded-xl p-6 shadow-lg bg-gradient-to-br from-gray-900 via-gray-800 to-slate-900", children: [_jsxs("div", { className: "flex items-center gap-2 mb-3", children: [_jsx("span", { className: "text-2xl", children: "\uD83D\uDD12" }), _jsx("span", { className: "font-bold text-white text-lg", children: "DeepSeek AI Analysis" })] }), _jsx("p", { className: "text-white/90 text-sm mb-4 leading-relaxed", children: "Unlock AI-powered price predictions, buy/wait recommendations, and sentiment analysis with Pro." }), _jsxs("a", { href: "/subscription", className: "inline-flex items-center gap-2 bg-gradient-to-r from-yellow-500 to-amber-600 text-white px-5 py-2.5 rounded-lg hover:from-yellow-400 hover:to-amber-500 transition-all font-medium text-sm shadow-lg", children: [_jsx("span", { children: "\u2B50" }), "Upgrade to Pro"] })] })), _jsxs("div", { className: "text-center py-8 bg-gray-50 rounded-lg border border-gray-100", children: [_jsx("div", { className: "text-4xl mb-3", children: "\uD83E\uDDE0" }), _jsx("h4", { className: "text-lg font-semibold text-gray-900 mb-2", children: "Condition Analysis Coming Soon" }), _jsx("p", { className: "text-gray-600 max-w-md mx-auto", children: "We're building an AI-powered system to analyze product condition from images and descriptions." })] })] })), activeTab === 'coupons' && (_jsxs("div", { className: "text-center py-12 bg-gray-50 rounded-lg border border-gray-100", children: [_jsx("div", { className: "text-4xl mb-3", children: "\uD83C\uDF9F\uFE0F" }), _jsx("h4", { className: "text-lg font-semibold text-gray-900 mb-2", children: "Coupon Finder Coming Soon" }), _jsx("p", { className: "text-gray-600 max-w-md mx-auto", children: "We're integrating with major coupon providers to automatically find the best deals for you." })] })), activeTab === 'global' && (_jsxs("div", { className: "text-center py-12 bg-gray-50 rounded-lg border border-gray-100", children: [_jsx("div", { className: "text-4xl mb-3", children: "\uD83C\uDF0D" }), _jsx("h4", { className: "text-lg font-semibold text-gray-900 mb-2", children: "Global Comparison Coming Soon" }), _jsx("p", { className: "text-gray-600 max-w-md mx-auto", children: "Compare prices across international markets to find the absolute lowest price worldwide." })] })), activeTab === 'community' && (_jsxs("div", { className: "text-center py-12 bg-gray-50 rounded-lg border border-gray-100", children: [_jsx("div", { className: "text-4xl mb-3", children: "\uD83D\uDC65" }), _jsx("h4", { className: "text-lg font-semibold text-gray-900 mb-2", children: "Community Features Coming Soon" }), _jsx("p", { className: "text-gray-600 max-w-md mx-auto", children: "Join the discussion, share deals, and get verified advice from our expert community." })] }))] })] }));
+                                                        : 'text-red-300'}`, children: [aiRecommendation.confidence, "% Confidence: ", aiRecommendation.verdict] }) }), _jsx("p", { className: "text-white/90 text-sm mb-4 leading-relaxed", children: aiRecommendation.reason || 'AI thinking… try again' }), _jsxs("a", { href: product.url, target: "_blank", rel: "noopener noreferrer", className: "inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white px-5 py-2.5 rounded-lg hover:bg-white/30 transition-all font-medium text-sm border border-white/30", children: [_jsx("span", { children: "\uD83D\uDED2" }), "Buy Now with AI Analysis"] })] })) }))) : (_jsxs("div", { className: "relative overflow-hidden rounded-xl p-6 shadow-lg bg-gradient-to-br from-gray-900 via-gray-800 to-slate-900", children: [_jsxs("div", { className: "flex items-center gap-2 mb-3", children: [_jsx("span", { className: "text-2xl", children: "\uD83D\uDD12" }), _jsx("span", { className: "font-bold text-white text-lg", children: "AI Analysis" })] }), _jsx("p", { className: "text-white/90 text-sm mb-4 leading-relaxed", children: "Unlock AI-powered price predictions, buy/wait recommendations, and sentiment analysis with Pro." }), _jsxs("a", { href: "/subscription", className: "inline-flex items-center gap-2 bg-gradient-to-r from-yellow-500 to-amber-600 text-white px-5 py-2.5 rounded-lg hover:from-yellow-400 hover:to-amber-500 transition-all font-medium text-sm shadow-lg", children: [_jsx("span", { children: "\u2B50" }), "Upgrade to Pro"] })] })), _jsxs("div", { className: "text-center py-8 bg-gray-50 rounded-lg border border-gray-100", children: [_jsx("div", { className: "text-4xl mb-3", children: "\uD83E\uDDE0" }), _jsx("h4", { className: "text-lg font-semibold text-gray-900 mb-2", children: "Condition Analysis Coming Soon" }), _jsx("p", { className: "text-gray-600 max-w-md mx-auto", children: "We're building an AI-powered system to analyze product condition from images and descriptions." })] })] })), activeTab === 'coupons' && (_jsx("div", { className: "space-y-4", children: loadingCoupons ? (_jsxs("div", { className: "text-center py-12", children: [_jsx("div", { className: "inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mb-2" }), _jsx("p", { className: "text-gray-600", children: "Finding best coupons..." })] })) : couponError ? (_jsxs("div", { className: "text-center py-8 text-red-600", children: [_jsx("p", { children: couponError }), _jsx("button", { onClick: fetchCoupons, className: "mt-2 text-sm underline", children: "Try Again" })] })) : coupons.length === 0 ? (_jsxs("div", { className: "text-center py-12 bg-gray-50 rounded-lg border border-gray-100", children: [_jsx("div", { className: "text-4xl mb-3", children: "\uD83C\uDF9F\uFE0F" }), _jsx("h4", { className: "text-lg font-semibold text-gray-900 mb-2", children: "No Coupons Found" }), _jsx("p", { className: "text-gray-600 max-w-md mx-auto", children: "We couldn't find any active coupons for this product right now." })] })) : (_jsxs("div", { className: "space-y-3", children: [_jsxs("div", { className: "flex items-center justify-between mb-2", children: [_jsxs("h4", { className: "font-semibold text-gray-900", children: ["Available Coupons (", coupons.length, ")"] }), _jsxs("span", { className: "text-xs text-green-600 font-medium bg-green-50 px-2 py-1 rounded", children: ["Up to ", coupons[0].discount || '15%', " Off"] })] }), coupons.map((coupon, idx) => (_jsxs("div", { className: "flex items-center justify-between p-3 border border-green-100 bg-green-50/30 rounded-lg hover:bg-green-50 transition-colors", children: [_jsxs("div", { className: "flex-1", children: [_jsxs("div", { className: "flex items-center gap-2", children: [_jsx("span", { className: "font-mono font-bold text-green-700 text-lg", children: coupon.code }), coupon.successRate && (_jsxs("span", { className: "text-xs bg-green-100 text-green-800 px-1.5 py-0.5 rounded", children: [coupon.successRate, "% Success"] }))] }), _jsx("p", { className: "text-sm text-gray-600 mt-0.5", children: coupon.description }), _jsxs("p", { className: "text-xs text-gray-400 mt-1", children: ["Source: ", coupon.source] })] }), _jsxs("div", { className: "flex gap-2", children: [_jsx("button", { onClick: () => handleCopy(coupon.code), className: "px-3 py-1.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded hover:bg-gray-50", children: "Copy" }), _jsx("button", { onClick: () => handleApply(coupon.code), className: "px-3 py-1.5 text-sm font-medium text-white bg-green-600 rounded hover:bg-green-700 shadow-sm", children: "Apply" })] })] }, idx)))] })) })), activeTab === 'global' && (_jsxs("div", { className: "text-center py-12 bg-gray-50 rounded-lg border border-gray-100", children: [_jsx("div", { className: "text-4xl mb-3", children: "\uD83C\uDF0D" }), _jsx("h4", { className: "text-lg font-semibold text-gray-900 mb-2", children: "Global Comparison Coming Soon" }), _jsx("p", { className: "text-gray-600 max-w-md mx-auto", children: "Compare prices across international markets to find the absolute lowest price worldwide." })] })), activeTab === 'community' && (_jsxs("div", { className: "text-center py-12 bg-gray-50 rounded-lg border border-gray-100", children: [_jsx("div", { className: "text-4xl mb-3", children: "\uD83D\uDC65" }), _jsx("h4", { className: "text-lg font-semibold text-gray-900 mb-2", children: "Community Features Coming Soon" }), _jsx("p", { className: "text-gray-600 max-w-md mx-auto", children: "Join the discussion, share deals, and get verified advice from our expert community." })] }))] })] }));
 }
 //# sourceMappingURL=AdvancedAnalysis.js.map

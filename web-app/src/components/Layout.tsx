@@ -365,13 +365,13 @@ export default function Layout({ children }: LayoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Sidebar (Desktop) */}
-      <aside className={`fixed left-0 top-0 h-full bg-white border-r border-gray-200 transition-all duration-300 z-50 hidden md:block ${sidebarCollapsed ? "w-16" : "w-64"
+      <aside className={`fixed left-0 top-0 h-full bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 z-50 hidden md:block ${sidebarCollapsed ? "w-16" : "w-64"
         }`}>
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className={`border-b border-gray-200 ${sidebarCollapsed ? 'p-2' : 'p-4'}`}>
+          <div className={`border-b border-gray-200 dark:border-gray-700 ${sidebarCollapsed ? 'p-2' : 'p-4'}`}>
             {!sidebarCollapsed && (
               <div className="flex flex-col items-center gap-3">
                 <div className="w-16 h-16 bg-[#2563EB] rounded-lg flex items-center justify-center shadow-sm">
@@ -381,10 +381,10 @@ export default function Layout({ children }: LayoutProps) {
                     <circle cx="75" cy="30" r="6" fill="white" />
                   </svg>
                 </div>
-                <span className="font-bold text-lg text-gray-900 text-center">Price Tracker</span>
+                <span className="font-bold text-lg text-gray-900 dark:text-white text-center">Price Tracker</span>
                 <button
                   onClick={() => setSidebarCollapsed(true)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                   title="Collapse sidebar"
                 >
                   <X className="w-4 h-4" />
@@ -402,7 +402,7 @@ export default function Layout({ children }: LayoutProps) {
                 </div>
                 <button
                   onClick={() => setSidebarCollapsed(false)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                   title="Expand sidebar"
                 >
                   <Menu className="w-4 h-4" />
@@ -424,7 +424,7 @@ export default function Layout({ children }: LayoutProps) {
                     to={item.href}
                     className={`w-full flex items-center rounded-lg transition-all duration-200 ${isActive
                       ? "bg-blue-600 text-white shadow-lg shadow-blue-600/25"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                      : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
                       } ${sidebarCollapsed ? "justify-center h-12 px-2" : "gap-3 h-12 px-3"}`}
                     title={sidebarCollapsed ? item.label : undefined}
                   >
@@ -442,9 +442,9 @@ export default function Layout({ children }: LayoutProps) {
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="absolute inset-0 bg-black/40" onClick={() => setMobileMenuOpen(false)} />
-          <aside className="relative h-full w-64 bg-white border-r border-gray-200 shadow-xl">
+          <aside className="relative h-full w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 shadow-xl">
             <div className="flex flex-col h-full">
-              <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-10 h-10 bg-[#2563EB] rounded-lg flex items-center justify-center shadow-sm">
                     <svg width="24" height="24" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -453,9 +453,9 @@ export default function Layout({ children }: LayoutProps) {
                       <circle cx="75" cy="30" r="6" fill="white" />
                     </svg>
                   </div>
-                  <span className="font-bold text-lg text-gray-900">Price Tracker</span>
+                  <span className="font-bold text-lg text-gray-900 dark:text-white">Price Tracker</span>
                 </div>
-                <button onClick={() => setMobileMenuOpen(false)} className="p-2 hover:bg-gray-100 rounded-lg" aria-label="Close menu">
+                <button onClick={() => setMobileMenuOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg" aria-label="Close menu">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -470,7 +470,7 @@ export default function Layout({ children }: LayoutProps) {
                         to={item.href}
                         className={`w-full flex items-center gap-3 h-12 px-3 rounded-lg transition-all duration-200 ${isActive
                           ? "bg-blue-600 text-white shadow-lg shadow-blue-600/25"
-                          : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                          : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
                           }`}
                         onClick={() => setMobileMenuOpen(false)}
                       >
@@ -490,21 +490,21 @@ export default function Layout({ children }: LayoutProps) {
       <div className={`transition-all duration-300 min-h-screen ${sidebarCollapsed ? "md:ml-16" : "md:ml-64"
         } ml-0`}>
         {/* Top Header */}
-        <header className="sticky top-0 z-40 w-full border-b border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+        <header className="sticky top-0 z-40 w-full border-b border-gray-200 dark:border-gray-700 bg-white/95 dark:bg-gray-800/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-gray-800/60">
           <div className="flex h-16 items-center justify-between px-4 sm:px-6">
             {/* Left side - Page title and breadcrumb */}
             <div className="flex items-center space-x-4">
               {/* Mobile menu button */}
               <button
-                className="md:hidden p-2 -ml-2 mr-2 rounded-lg hover:bg-gray-100"
+                className="md:hidden p-2 -ml-2 mr-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
                 onClick={() => setMobileMenuOpen(true)}
                 aria-label="Open menu"
               >
                 <Menu className="w-5 h-5" />
               </button>
               <div>
-                <h1 className="text-xl font-semibold text-gray-900">{getPageTitle(location.pathname)}</h1>
-                <p className="text-sm text-gray-500">{getPageDescription(location.pathname)}</p>
+                <h1 className="text-xl font-semibold text-gray-900 dark:text-white">{getPageTitle(location.pathname)}</h1>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{getPageDescription(location.pathname)}</p>
               </div>
             </div>
 
@@ -517,7 +517,7 @@ export default function Layout({ children }: LayoutProps) {
                   placeholder="Search products..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className={`w-64 pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${searchTerm.length >= 2 ? 'border-blue-300 bg-blue-50' : 'border-gray-200'
+                  className={`w-64 pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400 ${searchTerm.length >= 2 ? 'border-blue-300 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-600' : 'border-gray-200 dark:border-gray-600'
                     }`}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
@@ -537,28 +537,28 @@ export default function Layout({ children }: LayoutProps) {
 
                 {/* Search Suggestions Dropdown */}
                 {showSuggestions && searchSuggestions.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
-                    <div className="p-2 text-xs text-gray-500 border-b border-gray-100 bg-gray-50">
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
+                    <div className="p-2 text-xs text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
                       Found {searchSuggestions.length} results
                     </div>
                     {searchSuggestions.map((product) => (
                       <button
                         key={product.id}
-                        className="w-full px-4 py-2 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0 flex items-center gap-3"
+                        className="w-full px-4 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-b-0 flex items-center gap-3"
                         onClick={() => {
                           navigate('/products', { state: { searchTerm: product.title } });
                           setShowSuggestions(false);
                           setSearchTerm('');
                         }}
                       >
-                        <div className="w-8 h-8 bg-gray-100 rounded flex items-center justify-center flex-shrink-0">
+                        <div className="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded flex items-center justify-center flex-shrink-0">
                           <Package className="w-4 h-4 text-gray-500" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                             {product.title}
                           </p>
-                          <p className="text-xs text-gray-500 truncate">
+                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                             {product.platform} • ${product.price}
                           </p>
                         </div>
@@ -579,7 +579,7 @@ export default function Layout({ children }: LayoutProps) {
               <div className="relative">
                 <button
                   onClick={handleNotifPopupToggle}
-                  className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="relative p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                 >
                   <Bell className="h-5 w-5 text-gray-600" />
                   {unreadCount > 0 && (
@@ -591,12 +591,12 @@ export default function Layout({ children }: LayoutProps) {
 
                 {/* Notification Popup */}
                 {notifPopupOpen && (
-                  <div ref={notifPopupRef} className="absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-                    <div className="p-4 border-b border-gray-200">
+                  <div ref={notifPopupRef} className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
+                    <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                       <div className="flex items-center justify-between">
-                        <h3 className="font-semibold text-gray-900">Notifications</h3>
+                        <h3 className="font-semibold text-gray-900 dark:text-white">Notifications</h3>
                         {unreadCount > 0 && (
-                          <span className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full">
+                          <span className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs px-2 py-1 rounded-full">
                             {unreadCount} new
                           </span>
                         )}
@@ -604,12 +604,12 @@ export default function Layout({ children }: LayoutProps) {
                     </div>
                     <div className="max-h-80 overflow-y-auto">
                       {notifications.length === 0 ? (
-                        <div className="p-4 text-center text-gray-500">No notifications</div>
+                        <div className="p-4 text-center text-gray-500 dark:text-gray-400">No notifications</div>
                       ) : (
                         notifications.map((notification) => (
                           <div
                             key={notification.id}
-                            className={`p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors ${!notification.isRead ? "bg-blue-50/50" : ""
+                            className={`p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors ${!notification.isRead ? "bg-blue-50/50 dark:bg-blue-900/20" : ""
                               }`}
                             onClick={() => {
                               // Mark notification as read
@@ -633,16 +633,16 @@ export default function Layout({ children }: LayoutProps) {
                                 <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0" />
                               )}
                               <div className="flex-1 min-w-0">
-                                <p className="font-medium text-gray-900 text-sm">
+                                <p className="font-medium text-gray-900 dark:text-white text-sm">
                                   {notification.productTitle || 'Product Update'}
                                 </p>
-                                <p className="text-sm text-gray-600 mt-1">
+                                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                                   {notification.type === 'price_drop'
                                     ? `Price dropped by $${notification.priceDrop?.toFixed(2) || 0}`
                                     : notification.message || 'Price update available'
                                   }
                                 </p>
-                                <p className="text-xs text-gray-500 mt-2">
+                                <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
                                   {new Date(notification.timestamp).toLocaleDateString()}
                                 </p>
                               </div>
@@ -651,7 +651,7 @@ export default function Layout({ children }: LayoutProps) {
                         ))
                       )}
                     </div>
-                    <div className="p-3 border-t border-gray-200">
+                    <div className="p-3 border-t border-gray-200 dark:border-gray-700">
                       <div className="flex gap-2">
                         <button
                           onClick={() => {
@@ -681,7 +681,7 @@ export default function Layout({ children }: LayoutProps) {
                 <div className="relative">
                   <button
                     onClick={handleProfileMenuToggle}
-                    className="flex items-center space-x-2 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="flex items-center space-x-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                   >
                     <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center">
                       <UserIcon className="w-4 h-4 text-white" />
@@ -691,33 +691,33 @@ export default function Layout({ children }: LayoutProps) {
 
                   {/* Profile Menu Popup */}
                   {profileMenuOpen && (
-                    <div ref={profileMenuRef} className="absolute right-0 top-full mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-                      <div className="p-4 border-b border-gray-200">
+                    <div ref={profileMenuRef} className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
+                      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                         <div className="flex flex-col space-y-1">
-                          <p className="font-medium">{user.username || user.email}</p>
-                          <p className="text-sm text-gray-500">{user.email}</p>
+                          <p className="font-medium text-gray-900 dark:text-white">{user.username || user.email}</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">{user.email}</p>
                         </div>
                       </div>
                       <div className="py-2">
                         <button
                           onClick={handleAccountClick}
-                          className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center"
+                          className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center text-gray-700 dark:text-gray-200"
                         >
                           <UserIcon className="w-4 h-4 mr-2" />
                           Profile
                         </button>
                         <button
                           onClick={() => navigate('/settings')}
-                          className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center"
+                          className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center text-gray-700 dark:text-gray-200"
                         >
                           <Settings className="w-4 h-4 mr-2" />
                           Settings
                         </button>
                       </div>
-                      <div className="border-t border-gray-200 py-2">
+                      <div className="border-t border-gray-200 dark:border-gray-700 py-2">
                         <button
                           onClick={handleLogoutClick}
-                          className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center text-red-600"
+                          className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center text-red-600 dark:text-red-400"
                         >
                           <LogOut className="w-4 h-4 mr-2" />
                           Sign out

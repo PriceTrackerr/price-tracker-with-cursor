@@ -246,3 +246,15 @@ Do it now → reply “coupons fixed – real codes showing”
 Then we launch Pro and you eat. 🇪🇹🔥
 
 You're one deploy away. Go! 🚀
+
+
+
+*****************************************************************
+
+
+
+as we finilize this project, lets add images, screenshots and the 7 platforms logos that my price tracker works from right? i think it should be on landing page right?
+tell me the resolution of the images and screenshots i should add and where should i add them?
+
+
+and what else should be added to the website? what do u recommend?
