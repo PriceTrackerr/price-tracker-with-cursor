@@ -544,19 +544,67 @@ router.post('/preferences', async (req: Request, res: Response) => {
     const token = auth.replace('Bearer ', '');
     const { data: { user }, error } = await supabasePublic.auth.getUser(token);
     if (error || !user) {
+      console.log('❌ [PREFERENCES] Invalid auth token');
       return res.status(401).json({ success: false, message: 'Invalid token' });
     }
+
+    console.log('✅ [PREFERENCES] Valid auth token for user:', user.email);
 
     const { data: userData, error: userError } = await supabasePublic
       .from(TABLES.USERS)
       .select('*')
       .eq('id', user.id)
       .single();
-    if (userError || !userData) {
-      handleSupabaseError(userError, 'fetch user');
+
+    if (userError) {
+      if (userError.code === 'PGRST116') {
+        // User not found in users table, create a basic record
+        console.log('⚠️ [PREFERENCES] User not found in users table, creating record for:', user.id);
+        const { data: newUser, error: createError } = await supabasePublic
+          .from(TABLES.USERS)
+          .insert({
+            id: user.id,
+            email: user.email,
+            username: user.user_metadata?.username || user.email?.split('@')[0] || 'user',
+            role: 'user',
+            notification_settings: { priceDrops: true, newProducts: true, weeklySummary: true },
+            privacy_settings: { shareData: false, analytics: true },
+            preferences: { currency: 'USD', language: 'en' },
+            seen_price_drop_ids: [],
+          })
+          .select()
+          .single();
+
+        if (createError) {
+          console.error('❌ [PREFERENCES] Failed to create user record:', createError);
+          return res.status(500).json({ success: false, message: 'Failed to create user record' });
+        }
+
+        console.log('✅ [PREFERENCES] User record created successfully');
+
+        // Now update with the provided preferences
+        const update: any = {};
+        if (notificationSettings) update.notification_settings = notificationSettings;
+        if (privacySettings) update.privacy_settings = privacySettings;
+        if (preferences) update.preferences = preferences;
+
+        await supabasePublic.from(TABLES.USERS).update(update).eq('id', user.id);
+        console.log('✅ [PREFERENCES] Preferences updated for newly created user');
+
+        return res.json({ success: true, message: 'Preferences updated' });
+      } else {
+        console.error('❌ [PREFERENCES] Database error:', userError);
+        handleSupabaseError(userError, 'fetch user');
+      }
+    }
+
+    if (!userData) {
+      console.log('❌ [PREFERENCES] User data is null');
+      return res.status(404).json({ success: false, message: 'User not found' });
     }
 
     if (userData.role === 'banned') {
+      console.log('❌ [PREFERENCES] Banned user attempted to update preferences:', user.email);
       return res.status(403).json({ success: false, message: 'Account has been suspended' });
     }
 
@@ -564,11 +612,14 @@ router.post('/preferences', async (req: Request, res: Response) => {
     if (notificationSettings) update.notification_settings = notificationSettings;
     if (privacySettings) update.privacy_settings = privacySettings;
     if (preferences) update.preferences = preferences;
+
     await supabasePublic.from(TABLES.USERS).update(update).eq('id', user.id);
+    console.log('✅ [PREFERENCES] Preferences updated successfully for:', user.email);
 
     return res.json({ success: true, message: 'Preferences updated' });
   } catch (e) {
-    return res.status(401).json({ success: false, message: 'Invalid token or error updating preferences' });
+    console.error('❌ [PREFERENCES] Unexpected error:', e);
+    return res.status(500).json({ success: false, message: 'Error updating preferences' });
   }
 });
 
