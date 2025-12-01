@@ -19,6 +19,7 @@ import {
   CreditCard
 } from 'lucide-react';
 import { useAuth } from './AuthContext';
+import { useTheme } from './ThemeContext';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 
@@ -290,34 +291,13 @@ export default function Layout({ children }: LayoutProps) {
     }, 0);
   }, [logout, navigate]);
 
-  // Dark mode toggle state
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
+  // Dark mode toggle state from context
+  const { darkMode, toggleDarkMode } = useTheme();
 
-  // Apply dark mode on mount
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-      document.body.style.backgroundColor = '#1e293b';
-    } else {
-      document.documentElement.classList.remove('dark');
-      document.body.style.backgroundColor = '';
-    }
-  }, [darkMode]);
+  // Local state handling removed - now handled globally by ThemeContext
 
   const handleDarkModeToggle = () => {
-    setDarkMode((prev) => {
-      const newMode = !prev;
-      if (!newMode) { // toggled left: light mode
-        document.documentElement.classList.remove('dark');
-        document.body.style.backgroundColor = '';
-        localStorage.setItem('darkMode', 'false');
-      } else { // toggled right: dark mode
-        document.documentElement.classList.add('dark');
-        document.body.style.backgroundColor = '#1e293b';
-        localStorage.setItem('darkMode', 'true');
-      }
-      return newMode;
-    });
+    toggleDarkMode();
   };
 
   // Helper to get avatar URL

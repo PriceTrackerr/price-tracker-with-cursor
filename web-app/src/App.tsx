@@ -20,6 +20,7 @@ import Features from './pages/Features'
 
 import { AuthProvider, useAuth } from './components/AuthContext'
 import { ReconnectingIndicator } from './components/AuthContext'
+import { ThemeProvider } from './components/ThemeContext'
 import './i18n'
 import { I18nextProvider } from 'react-i18next'
 import i18n from './i18n'
@@ -101,9 +102,11 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <ThemeProvider>
+        <AppContent />
+      </ThemeProvider>
     </AuthProvider>
   )
 }
 
-export default App 
+export default App

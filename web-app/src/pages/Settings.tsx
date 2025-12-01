@@ -16,15 +16,16 @@ import {
 import toast from 'react-hot-toast';
 import { useAuth } from '../components/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useTheme } from '../components/ThemeContext';
 import { useTranslation } from 'react-i18next';
 
 export default function Settings() {
   const { t, i18n } = useTranslation();
-  const { user, logout } = useAuth();
+  const { user, logout, token } = useAuth();
   const navigate = useNavigate();
+  const { darkMode, toggleDarkMode } = useTheme();
 
   // States
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
@@ -68,25 +69,17 @@ export default function Settings() {
     }
   }, [user?.preferences?.language, i18n]);
 
-  // Dark mode effect
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-      document.body.style.backgroundColor = '#1e293b';
-      localStorage.setItem('darkMode', 'true');
-    } else {
-      document.documentElement.classList.remove('dark');
-      document.body.style.backgroundColor = '';
-      localStorage.setItem('darkMode', 'false');
-    }
-  }, [darkMode]);
+  // Local dark mode effect removed - handled by ThemeContext
 
   // API helpers
   const updateNotificationSetting = async (key: keyof typeof notificationSettings, value: boolean) => {
     const newSettings = { ...notificationSettings, [key]: value };
     setNotificationSettings(newSettings);
     try {
-      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.error('Not authenticated');
+        return;
+      }
       const res = await fetch('/api/users/preferences', {
         method: 'POST',
         headers: {
@@ -110,7 +103,10 @@ export default function Settings() {
     const newSettings = { ...privacySettings, [key]: value };
     setPrivacySettings(newSettings);
     try {
-      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.error('Not authenticated');
+        return;
+      }
       const res = await fetch('/api/users/preferences', {
         method: 'POST',
         headers: {
@@ -134,7 +130,10 @@ export default function Settings() {
     const newPrefs = { ...preferences, [key]: value };
     setPreferences(newPrefs);
     try {
-      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.error('Not authenticated');
+        return;
+      }
       const res = await fetch('/api/users/preferences', {
         method: 'POST',
         headers: {
@@ -166,7 +165,11 @@ export default function Settings() {
     }
     setPasswordLoading(true);
     try {
-      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.error('Not authenticated');
+        setPasswordLoading(false);
+        return;
+      }
       const res = await fetch('/api/users/change-password', {
         method: 'POST',
         headers: {
@@ -205,7 +208,11 @@ export default function Settings() {
 
   const handleDeleteAccount = async () => {
     try {
-      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.error('Not authenticated');
+        setShowDeleteModal(false);
+        return;
+      }
       const res = await fetch('/api/users/delete-account', {
         method: 'DELETE',
         headers: {
@@ -403,15 +410,27 @@ export default function Settings() {
                   </select>
                 </div>
               </div>
-              <div className="flex items-center justify-between py-4 border-t border-slate-100 mt-6">
-                <div className="flex items-center gap-3">
-                  {darkMode ? <Moon className="w-5 h-5 text-indigo-600" /> : <Sun className="w-5 h-5 text-amber-500" />}
-                  <div>
-                    <div className="font-medium text-slate-900 mb-1">Dark Mode</div>
-                    <div className="text-sm text-slate-600">Enable dark theme across the app</div>
-                  </div>
+              <div className="flex items-center justify-between py-4">
+                <div>
+                  <div className="font-medium text-slate-900 mb-1">Dark Mode</div>
+                  <div className="text-sm text-slate-600">Toggle dark mode theme</div>
                 </div>
-                <Toggle checked={darkMode} onChange={() => setDarkMode(!darkMode)} />
+                <button
+                  className={`relative inline-flex h-6 w-11 items-center toggle-modern ${darkMode ? 'active' : ''}`}
+                  aria-checked={darkMode}
+                  onClick={toggleDarkMode}
+                  style={{ minWidth: 44, minHeight: 24 }}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${darkMode ? 'translate-x-6' : 'translate-x-1'} flex items-center justify-center`}
+                  >
+                    {darkMode ? (
+                      <Moon className="w-3 h-3 text-slate-900" />
+                    ) : (
+                      <Sun className="w-3 h-3 text-yellow-500" />
+                    )}
+                  </span>
+                </button>
               </div>
             </div>
           </div>
