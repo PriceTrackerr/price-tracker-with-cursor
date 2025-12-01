@@ -26,13 +26,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
             root.classList.add('dark');
             document.body.style.backgroundColor = '#1e293b'; // Slate-900/950 equivalent
             localStorage.setItem('darkMode', 'true');
-            console.log('✅ Dark mode activated. Root classes:', root.className);
+            console.log('✅ Dark mode activated. Has dark class:', root.classList.contains('dark'));
         } else {
-            console.log('☀️ Deactivating dark mode...');
+            console.log('☀️ De activating dark mode...');
             root.classList.remove('dark');
             document.body.style.backgroundColor = '#f8fafc'; // Slate-50
             localStorage.setItem('darkMode', 'false');
-            console.log('✅ Dark mode deactivated. Root classes:', root.className);
+            console.log('✅ Dark mode deactivated. Has dark class:', root.classList.contains('dark'));
         }
     }, [darkMode]);
 
