@@ -403,7 +403,8 @@ router.get('/me', async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, message: 'Invalid token' });
     }
 
-    const { data: userData, error: userError } = await supabasePublic
+    // Use service role to read user data (bypass RLS)
+    const { data: userData, error: userError } = await supabase
       .from(TABLES.USERS)
       .select('*')
       .eq('id', user.id)
@@ -413,7 +414,8 @@ router.get('/me', async (req: Request, res: Response) => {
       if (userError.code === 'PGRST116') {
         // User not found in users table, create a basic record
         console.log('User not found in users table, creating basic record for:', user.id);
-        const { data: newUser, error: createError } = await supabasePublic
+        // Use service role to create user (bypass RLS)
+        const { data: newUser, error: createError } = await supabase
           .from(TABLES.USERS)
           .insert({
             id: user.id,
@@ -550,7 +552,8 @@ router.post('/preferences', async (req: Request, res: Response) => {
 
     console.log('✅ [PREFERENCES] Valid auth token for user:', user.email);
 
-    const { data: userData, error: userError } = await supabasePublic
+    // Use service role to read user data (bypass RLS)
+    const { data: userData, error: userError } = await supabase
       .from(TABLES.USERS)
       .select('*')
       .eq('id', user.id)
