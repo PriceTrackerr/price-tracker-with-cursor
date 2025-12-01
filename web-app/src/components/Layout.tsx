@@ -431,8 +431,8 @@ export default function Layout({ children }: LayoutProps) {
                     key={item.id}
                     to={item.href}
                     className={`w-full flex items-center rounded-lg transition-all duration-200 ${isActive
-                        ? "bg-blue-600 text-white shadow-lg shadow-blue-600/25"
-                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                      ? "bg-blue-600 text-white shadow-lg shadow-blue-600/25"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                       } ${sidebarCollapsed ? "justify-center h-12 px-2" : "gap-3 h-12 px-3"}`}
                     title={sidebarCollapsed ? item.label : undefined}
                   >
@@ -443,25 +443,6 @@ export default function Layout({ children }: LayoutProps) {
               })}
             </div>
           </nav>
-
-          {/* User Section */}
-          {!sidebarCollapsed && user && (
-            <div className="p-4 border-t border-gray-200">
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-gradient-to-r from-gray-50 to-blue-50">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">
-                    {user.username ? user.username[0].toUpperCase() : (user.email ? user.email[0].toUpperCase() : 'U')}
-                  </span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
-                    {user.username || user.email}
-                  </p>
-                  <p className="text-xs text-gray-500 truncate">Free Plan</p>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </aside>
 
@@ -496,8 +477,8 @@ export default function Layout({ children }: LayoutProps) {
                         key={item.id}
                         to={item.href}
                         className={`w-full flex items-center gap-3 h-12 px-3 rounded-lg transition-all duration-200 ${isActive
-                            ? "bg-blue-600 text-white shadow-lg shadow-blue-600/25"
-                            : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                          ? "bg-blue-600 text-white shadow-lg shadow-blue-600/25"
+                          : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                           }`}
                         onClick={() => setMobileMenuOpen(false)}
                       >

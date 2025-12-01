@@ -34,7 +34,7 @@ router.get('/metrics', authMiddleware, async (req: AuthRequest, res: Response) =
   try {
     // Get all products for analysis
     const allProducts = await db.getProducts();
-    
+
     // Calculate condition scoring metrics
     const conditionMetrics = {
       totalAnalyses: allProducts.length,
@@ -116,7 +116,7 @@ router.get('/enhanced-analysis/:productId', authMiddleware, async (req: AuthRequ
   try {
     const { productId } = req.params;
     const product = await db.getProductById(productId);
-    
+
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
@@ -151,7 +151,7 @@ router.post('/condition/analyze/:productId', authMiddleware, async (req: AuthReq
   try {
     const { productId } = req.params;
     const product = await db.getProductById(productId);
-    
+
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
@@ -170,7 +170,7 @@ router.post('/condition/analyze/:productId', authMiddleware, async (req: AuthReq
     if (alternatives.length > 0) {
       const bestAlternative = alternatives[0];
       const ebayCondition = await ebayService.getConditionAnalysis(bestAlternative.itemId);
-      
+
       if (ebayCondition) {
         // Create extended analysis with additional data
         const extendedAnalysis = {
@@ -211,14 +211,14 @@ router.post('/condition/compare/:productId', authMiddleware, async (req: AuthReq
   try {
     const { productId } = req.params;
     const product = await db.getProductById(productId);
-    
+
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
 
     // Get used alternatives from multiple sources
     const usedOptions = await ebayService.getUsedAlternatives(product.title);
-    
+
     // Convert EbayProduct to Product format for comparison
     const convertedProducts = usedOptions.map(ebayProduct => ({
       id: ebayProduct.itemId,
@@ -236,7 +236,7 @@ router.post('/condition/compare/:productId', authMiddleware, async (req: AuthReq
       sellerRating: ebayProduct.seller.feedbackPercentage,
       sellerReviewCount: ebayProduct.seller.feedbackScore
     }));
-    
+
     const comparison = await conditionService.compareWithNewCondition(product, convertedProducts);
 
     res.json({ success: true, data: comparison });
@@ -253,17 +253,17 @@ router.get('/coupons/find/:productId', authMiddleware, async (req: AuthRequest, 
   try {
     const { productId } = req.params;
     const product = await db.getProductById(productId);
-    
+
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
 
     // Extract store from URL
     const store = extractStoreFromUrl(product.url);
-    
+
     // Get coupons from free sources - use product-specific search
     const [freeCoupons, stackableCoupons] = await Promise.allSettled([
-      freeCouponService.findCoupons(store, product.title),
+      freeCouponService.findCoupons(store),
       freeCouponService.getStackableCoupons(store, product.title)
     ]);
 
@@ -296,7 +296,7 @@ router.post('/coupons/validate', authMiddleware, async (req: AuthRequest, res: R
   try {
     const { coupons, productId } = req.body;
     const product = await db.getProductById(productId);
-    
+
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
@@ -325,7 +325,7 @@ router.get('/arbitrage/opportunities/:productId', authMiddleware, async (req: Au
   try {
     const { productId } = req.params;
     const { userCountry = 'US' } = req.query;
-    
+
     const product = await db.getProductById(productId);
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' });
@@ -347,12 +347,12 @@ router.get('/arbitrage/opportunities/:productId', authMiddleware, async (req: Au
         try {
           const rate = rates.find(r => r.to === intlProduct.currency)?.rate || 1;
           const usdPrice = intlProduct.price / rate;
-          
+
           // Estimate shipping and duties (simple calculation)
           const shipping = estimateShipping(intlProduct.location.country, userCountry as string, 2); // 2lb estimate
           const duties = estimateDuties(usdPrice, 'electronics');
           const landedCost = usdPrice + shipping + duties;
-          
+
           if (landedCost < product.price) {
             opportunities.push({
               platform: 'eBay',
@@ -441,13 +441,13 @@ router.get('/community/credibility/:productId', authMiddleware, async (req: Auth
   try {
     const { productId } = req.params;
     const product = await db.getProductById(productId);
-    
+
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
 
     const credibility = await communityService.calculateCredibilityScore(product);
-    
+
     res.json({ success: true, data: credibility });
   } catch (error) {
     console.error('Credibility analysis error:', error);
@@ -535,7 +535,7 @@ router.get('/product-card-analysis/:productId', authMiddleware, async (req: Auth
   try {
     const { productId } = req.params;
     const product = await db.getProductById(productId);
-    
+
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
@@ -644,8 +644,8 @@ router.get('/product-card-analysis/:productId', authMiddleware, async (req: Auth
 
   } catch (error) {
     console.error('Demo analysis error:', error);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       message: 'Demo analysis failed',
       error: error instanceof Error ? error.message : 'Unknown error'
     });
@@ -671,16 +671,16 @@ router.get('/admin/dashboard-stats', authMiddleware, async (req: AuthRequest, re
     let totalConditionScore = 0;
     let analyzedProducts = 0;
     const platformStats = new Map<string, { count: number; avgPrice: number; totalPrice: number }>();
-    
+
     if (recentAnalyses.status === 'fulfilled' && recentAnalyses.value.length > 0) {
       const products = recentAnalyses.value.slice(0, 10); // Analyze last 10 products
-      
+
       for (const product of products) {
         try {
           const analysis = await conditionService.analyzeCondition(product);
           totalConditionScore += analysis.score;
           analyzedProducts++;
-          
+
           // Update platform stats
           const platform = product.platform.toLowerCase();
           const stats = platformStats.get(platform) || { count: 0, avgPrice: 0, totalPrice: 0 };
