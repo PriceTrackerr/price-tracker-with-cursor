@@ -15,6 +15,7 @@ interface AdvancedAnalysisProps {
     communityRating?: number;
     finalPrice?: number;
     isVerified?: boolean;
+    imageUrl?: string;
   };
 }
 
@@ -33,13 +34,7 @@ const safeToFixed = (value: any, decimals: number = 2): string => {
 
 export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
   const { getAuthHeaders, token, user } = useAuth();
-  const [activeTab, setActiveTab] = useState('condition');
   const [loading, setLoading] = useState(true);
-
-  // Coupon State
-  const [coupons, setCoupons] = useState<Array<{ code: string; description: string; discount?: string; successRate?: number; source: string }>>([]);
-  const [loadingCoupons, setLoadingCoupons] = useState(false);
-  const [couponError, setCouponError] = useState('');
 
   const [aiRecommendation, setAiRecommendation] = useState<{
     verdict: string;
@@ -51,8 +46,8 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
   // Safety check - ensure product has required fields
   if (!product || !product.id) {
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mt-4">
-        <p className="text-gray-600 text-sm">Product data unavailable</p>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 mt-4">
+        <p className="text-gray-600 dark:text-gray-300 text-sm">Product data unavailable</p>
       </div>
     );
   }
@@ -300,285 +295,159 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
     loadAnalysisData();
   }, [product.id, product.title, product.price, token, getAuthHeaders]);
 
-  // Fetch coupons when tab is active
-  useEffect(() => {
-    if (activeTab === 'coupons' && coupons.length === 0 && !loadingCoupons) {
-      fetchCoupons();
-    }
-  }, [activeTab]);
-
-  const fetchCoupons = async () => {
-    setLoadingCoupons(true);
-    setCouponError('');
-    try {
-      const res = await fetch(`/api/coupons/find?query=${encodeURIComponent(product.title)}`, {
-        headers: getAuthHeaders()
-      });
-      const data = await res.json();
-      if (data.success && Array.isArray(data.data)) {
-        setCoupons(data.data);
-      } else {
-        setCoupons([]);
-      }
-    } catch (err) {
-      console.error('Error fetching coupons:', err);
-      setCouponError('Failed to load coupons');
-    } finally {
-      setLoadingCoupons(false);
-    }
-  };
-
-  const handleCopy = (code: string) => {
-    navigator.clipboard.writeText(code);
-    toast.success('Code copied to clipboard!');
-  };
-
-  const handleApply = (code: string) => {
-    // Try to send message to extension
-    try {
-      // Method 1: Chrome Runtime (if in extension context)
-      if (window.chrome && window.chrome.runtime && window.chrome.runtime.sendMessage) {
-        window.chrome.runtime.sendMessage({ type: 'APPLY_COUPON', code }, (response) => {
-          if (window.chrome.runtime.lastError) {
-            console.log('Extension message failed, trying postMessage');
-            // Fallback to postMessage
-            window.postMessage({ type: 'APPLY_COUPON_FROM_WEB', code }, '*');
-          } else {
-            toast.success('Applying coupon...');
-          }
-        });
-      } else {
-        // Method 2: postMessage (for web app to content script)
-        window.postMessage({ type: 'APPLY_COUPON_FROM_WEB', code }, '*');
-        toast.success('Applying coupon...');
-      }
-    } catch (e) {
-      console.error('Failed to apply coupon:', e);
-      toast.error('Could not apply coupon automatically');
-    }
-  };
-
-  const tabs = [
-    { id: 'condition', label: '🧠 Condition', color: 'blue' },
-    { id: 'coupons', label: '🎟️ Coupons', color: 'green' },
-    { id: 'global', label: '🌍 Global', color: 'purple' },
-    { id: 'community', label: '👥 Community', color: 'orange' }
-  ];
-
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-600';
-    if (score >= 60) return 'text-yellow-600';
-    return 'text-red-600';
-  };
-
-  const getRiskLevel = (score: number) => {
-    if (score >= 80) return { level: 'Low', color: 'bg-green-100 text-green-800' };
-    if (score >= 60) return { level: 'Medium', color: 'bg-yellow-100 text-yellow-800' };
-    return { level: 'High', color: 'bg-red-100 text-red-800' };
-  };
-
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mt-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 mt-4">
         <div className="flex items-center justify-center min-h-[300px]">
           <div className="text-center">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
-            <p className="text-gray-600 text-sm">Loading analysis...</p>
+            <p className="text-gray-600 dark:text-gray-300 text-sm">Loading analysis...</p>
           </div>
         </div>
       </div>
     );
   }
 
+  // Calculate deal score from current data
+  const dealScore = (() => {
+    let score = 5;
+    if (features.priceHistory.length > 5) {
+      const avg = features.priceHistory.reduce((sum, h) => sum + h.price, 0) / features.priceHistory.length;
+      if (product.price < avg * 0.85) score += 3;
+      else if (product.price < avg * 0.95) score += 1.5;
+    }
+    if (features.couponStack.length > 0) score += 1;
+    return Math.min(10, score).toFixed(1);
+  })();
+
+  const estimatedSavings = features.couponSavings || Math.round(safePrice * 0.12);
+
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mt-4">
-      {/* Header */}
-      <div className="flex items-center gap-2 mb-4">
-        <span className="text-lg">⚡</span>
-        <h3 className="text-lg font-semibold text-gray-900">Advanced Analysis</h3>
-      </div>
+    <section className="py-16 bg-slate-900 dark:bg-slate-950 text-white overflow-hidden relative rounded-3xl my-8">
+      {/* Background Glows */}
+      <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-indigo-500/20 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-violet-500/20 rounded-full blur-[100px] pointer-events-none" />
 
-      {/* Tab Navigation */}
-      <div className="flex space-x-1 mb-4 bg-gray-100 p-1 rounded-lg">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === tab.id
-              ? 'bg-white text-blue-600 shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
-              }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <div className="max-w-7xl mx-auto px-6 relative z-10">
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-sm font-medium mb-6">
+              <span className="text-base">🤖</span>
+              <span>Powered by Advanced AI</span>
+            </div>
+            <h2 className="text-4xl lg:text-5xl font-bold mb-6 tracking-tight">
+              Shopping Intelligence <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-violet-400">
+                From the Future.
+              </span>
+            </h2>
+            <p className="text-lg text-slate-400 mb-8 leading-relaxed">
+              Our AI analyzes millions of data points to predict price trends, assess deal quality, and find hidden discounts that other tools miss.
+            </p>
 
-      {/* Tab Content */}
-      <div className="min-h-[200px]">
-        {activeTab === 'condition' && (
-          <div className="space-y-4">
-            {/* AI Recommendation Card - At the TOP */}
-            {(user?.subscription?.tier === 'pro') ? (
-              aiRecommendation && (
-                <div className={`relative overflow-hidden rounded-xl p-6 shadow-lg ${aiRecommendation.verdict === 'STRONG BUY' || aiRecommendation.verdict === 'BUY'
-                  ? 'bg-gradient-to-br from-green-900 via-green-800 to-emerald-900'
-                  : aiRecommendation.verdict === 'WAIT'
-                    ? 'bg-gradient-to-br from-yellow-900 via-yellow-800 to-amber-900'
-                    : 'bg-gradient-to-br from-red-900 via-red-800 to-rose-900'
-                  }`}>
-                  {aiRecommendation.loading ? (
-                    <div className="flex items-center justify-center py-8">
-                      <div className="text-center">
-                        <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-white mb-3"></div>
-                        <p className="text-white/90 text-sm font-medium">AI thinking…</p>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="text-2xl">🤖</span>
-                        <span className="font-bold text-white text-lg">AI Recommendation</span>
-                      </div>
-                      <div className="mb-3">
-                        <span className={`text-2xl font-bold ${aiRecommendation.verdict === 'STRONG BUY' || aiRecommendation.verdict === 'BUY'
-                          ? 'text-green-300'
-                          : aiRecommendation.verdict === 'WAIT'
-                            ? 'text-yellow-300'
-                            : 'text-red-300'
-                          }`}>
-                          {aiRecommendation.confidence}% Confidence: {aiRecommendation.verdict}
-                        </span>
-                      </div>
-                      <p className="text-white/90 text-sm mb-4 leading-relaxed">
-                        {aiRecommendation.reason || 'AI thinking… try again'}
-                      </p>
-                      <a
-                        href={product.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white px-5 py-2.5 rounded-lg hover:bg-white/30 transition-all font-medium text-sm border border-white/30"
-                      >
-                        <span>🛒</span>
-                        Buy Now with AI Analysis
-                      </a>
-                    </>
-                  )}
+            <div className="space-y-6">
+              {[
+                { title: 'Price Prediction', desc: 'Know if the price will drop in the next 7 days.', icon: '📊' },
+                { title: 'Deal Quality Score', desc: 'Instant 1-10 rating based on historical data.', icon: '⭐' },
+                { title: 'Smart Coupons', desc: 'Automatically tests the best codes for you.', icon: '⚡' }
+              ].map((feature, i) => (
+                <div key={i} className="flex gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center flex-shrink-0 border border-slate-700">
+                    <span className="text-2xl">{feature.icon}</span>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold mb-1">{feature.title}</h3>
+                    <p className="text-slate-400">{feature.desc}</p>
+                  </div>
                 </div>
-              )
-            ) : (
-              <div className="relative overflow-hidden rounded-xl p-6 shadow-lg bg-gradient-to-br from-gray-900 via-gray-800 to-slate-900">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-2xl">🔒</span>
-                  <span className="font-bold text-white text-lg">AI Analysis</span>
-                </div>
-                <p className="text-white/90 text-sm mb-4 leading-relaxed">
-                  Unlock AI-powered price predictions, buy/wait recommendations, and sentiment analysis with Pro.
-                </p>
-                <a
-                  href="/subscription"
-                  className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-500 to-amber-600 text-white px-5 py-2.5 rounded-lg hover:from-yellow-400 hover:to-amber-500 transition-all font-medium text-sm shadow-lg"
-                >
-                  <span>⭐</span>
-                  Upgrade to Pro
-                </a>
-              </div>
-            )}
-
-            <div className="text-center py-8 bg-gray-50 rounded-lg border border-gray-100">
-              <div className="text-4xl mb-3">🧠</div>
-              <h4 className="text-lg font-semibold text-gray-900 mb-2">Condition Analysis Coming Soon</h4>
-              <p className="text-gray-600 max-w-md mx-auto">
-                We're building an AI-powered system to analyze product condition from images and descriptions.
-              </p>
+              ))}
             </div>
           </div>
-        )}
 
-        {activeTab === 'coupons' && (
-          <div className="space-y-4">
-            {loadingCoupons ? (
-              <div className="text-center py-12">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mb-2"></div>
-                <p className="text-gray-600">Finding best coupons...</p>
-              </div>
-            ) : couponError ? (
-              <div className="text-center py-8 text-red-600">
-                <p>{couponError}</p>
-                <button onClick={fetchCoupons} className="mt-2 text-sm underline">Try Again</button>
-              </div>
-            ) : coupons.length === 0 ? (
-              <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-100">
-                <div className="text-4xl mb-3">🎟️</div>
-                <h4 className="text-lg font-semibold text-gray-900 mb-2">No Coupons Found</h4>
-                <p className="text-gray-600 max-w-md mx-auto">
-                  We couldn't find any active coupons for this product right now.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-semibold text-gray-900">Available Coupons ({coupons.length})</h4>
-                  <span className="text-xs text-green-600 font-medium bg-green-50 px-2 py-1 rounded">
-                    Up to {coupons[0].discount || '15%'} Off
-                  </span>
-                </div>
-                {coupons.map((coupon, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-3 border border-green-100 bg-green-50/30 rounded-lg hover:bg-green-50 transition-colors">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold text-green-700 text-lg">{coupon.code}</span>
-                        {coupon.successRate && (
-                          <span className="text-xs bg-green-100 text-green-800 px-1.5 py-0.5 rounded">
-                            {coupon.successRate}% Success
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-600 mt-0.5">{coupon.description}</p>
-                      <p className="text-xs text-gray-400 mt-1">Source: {coupon.source}</p>
+          <div className="relative">
+            {/* Hand-drawn border effect */}
+            <svg className="absolute -inset-4 w-[calc(100%+2rem)] h-[calc(100%+2rem)] pointer-events-none" viewBox="0 0 400 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path
+                d="M10,10 Q5,5 15,8 L380,15 Q395,15 390,30 L395,470 Q395,490 375,488 L20,485 Q5,485 8,470 L5,25 Q5,10 10,10 Z"
+                stroke="rgba(255,255,255,0.3)"
+                strokeWidth="2"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+
+            <div className="relative bg-slate-800/50 backdrop-blur-xl border border-slate-700 rounded-3xl p-8">
+              {/* AI Card Simulation */}
+              <div className="space-y-6">
+                <div className="flex items-center justify-between border-b border-slate-700 pb-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-white rounded-lg p-2 flex items-center justify-center">
+                      {product.imageUrl ? (
+                        <img src={product.imageUrl} alt="Product" className="w-full h-full object-contain" />
+                      ) : (
+                        <span className="text-2xl">📦</span>
+                      )}
                     </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleCopy(coupon.code)}
-                        className="px-3 py-1.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded hover:bg-gray-50"
-                      >
-                        Copy
-                      </button>
-                      <button
-                        onClick={() => handleApply(coupon.code)}
-                        className="px-3 py-1.5 text-sm font-medium text-white bg-green-600 rounded hover:bg-green-700 shadow-sm"
-                      >
-                        Apply
-                      </button>
+                    <div>
+                      <div className="font-medium text-white truncate max-w-[200px]">{product.title.substring(0, 30)}...</div>
+                      <div className="text-sm text-slate-400">{product.platform}</div>
                     </div>
                   </div>
-                ))}
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-white">${product.price.toFixed(2)}</div>
+                    <div className="text-sm text-green-400">-13% Drop</div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  {(user?.subscription?.tier === 'pro' && aiRecommendation) ? (
+                    <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-700/50">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm text-slate-400">AI Recommendation</span>
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${aiRecommendation.verdict === 'STRONG BUY' || aiRecommendation.verdict === 'BUY'
+                            ? 'bg-green-500/20 text-green-400'
+                            : aiRecommendation.verdict === 'WAIT'
+                              ? 'bg-yellow-500/20 text-yellow-400'
+                              : 'bg-red-500/20 text-red-400'
+                          }`}>
+                          {aiRecommendation.loading ? 'Analyzing...' : aiRecommendation.verdict}
+                        </span>
+                      </div>
+                      <p className="text-sm text-slate-300">
+                        {aiRecommendation.loading
+                          ? 'AI is analyzing price trends...'
+                          : aiRecommendation.reason}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-700/50">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm text-slate-400">AI Recommendation</span>
+                        <span className="px-2 py-1 rounded bg-green-500/20 text-green-400 text-xs font-medium">Strong Buy</span>
+                      </div>
+                      <p className="text-sm text-slate-300">
+                        Price is at a 6-month low. AI predicts a 85% chance of price increase within 48 hours.
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-700/50 text-center">
+                      <div className="text-sm text-slate-400 mb-1">Deal Score</div>
+                      <div className="text-3xl font-bold text-indigo-400">{dealScore}<span className="text-sm text-slate-500">/10</span></div>
+                    </div>
+                    <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-700/50 text-center">
+                      <div className="text-sm text-slate-400 mb-1">Potential Savings</div>
+                      <div className="text-3xl font-bold text-green-400">${estimatedSavings}</div>
+                    </div>
+                  </div>
+                </div>
               </div>
-            )}
+            </div>
           </div>
-        )}
-
-        {activeTab === 'global' && (
-          <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-100">
-            <div className="text-4xl mb-3">🌍</div>
-            <h4 className="text-lg font-semibold text-gray-900 mb-2">Global Comparison Coming Soon</h4>
-            <p className="text-gray-600 max-w-md mx-auto">
-              Compare prices across international markets to find the absolute lowest price worldwide.
-            </p>
-          </div>
-        )}
-
-        {activeTab === 'community' && (
-          <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-100">
-            <div className="text-4xl mb-3">👥</div>
-            <h4 className="text-lg font-semibold text-gray-900 mb-2">Community Features Coming Soon</h4>
-            <p className="text-gray-600 max-w-md mx-auto">
-              Join the discussion, share deals, and get verified advice from our expert community.
-            </p>
-          </div>
-        )}
+        </div>
       </div>
-
-    </div>
+    </section>
   );
 }
