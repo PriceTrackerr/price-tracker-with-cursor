@@ -107,7 +107,7 @@ function AdvancedFilters({
   const [showFilters, setShowFilters] = useState(false);
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6">
       {/* Filter Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-2">
@@ -117,14 +117,14 @@ function AdvancedFilters({
         <div className="flex items-center space-x-2">
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center space-x-1 text-sm text-gray-600 hover:text-gray-900"
+            className="flex items-center space-x-1 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
           >
             {showFilters ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             <span>{showFilters ? 'Hide' : 'Show'} Filters</span>
           </button>
           <button
             onClick={onClearFilters}
-            className="text-sm text-red-600 hover:text-red-700"
+            className="text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
           >
             Clear All
           </button>
@@ -133,22 +133,22 @@ function AdvancedFilters({
 
       {/* Quick Stats */}
       {filterOptions && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
           <div className="text-center">
             <div className="text-2xl font-bold text-gray-900">{filterOptions.totalProducts}</div>
             <div className="text-sm text-gray-600">Total Products</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-green-600">{filterOptions.priceDropStats.productsWithPriceDrops}</div>
-            <div className="text-sm text-gray-600">Price Drops</div>
+            <div className="text-sm text-gray-600 dark:text-gray-300">Price Drops</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-blue-600">${filterOptions.priceRange.min.toFixed(0)} - ${filterOptions.priceRange.max.toFixed(0)}</div>
-            <div className="text-sm text-gray-600">Price Range</div>
+            <div className="text-sm text-gray-600 dark:text-gray-300">Price Range</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-purple-600">{filterOptions.platforms.length}</div>
-            <div className="text-sm text-gray-600">Platforms</div>
+            <div className="text-sm text-gray-600 dark:text-gray-300">Platforms</div>
           </div>
         </div>
       )}
@@ -157,7 +157,7 @@ function AdvancedFilters({
         <div className="space-y-4">
           {/* Search */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Search Products</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Search Products</label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
@@ -165,7 +165,7 @@ function AdvancedFilters({
                 placeholder="Search by title, platform..."
                 value={filters.search}
                 onChange={(e) => onFilterChange('search', e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full pl-10 pr-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
           </div>
@@ -173,11 +173,11 @@ function AdvancedFilters({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Platform Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Platform</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Platform</label>
               <select
                 value={filters.platform}
                 onChange={(e) => onFilterChange('platform', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">All Platforms</option>
                 {filterOptions?.platforms.map(platform => (
@@ -190,34 +190,34 @@ function AdvancedFilters({
 
             {/* Price Range */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Min Price</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Min Price</label>
               <input
                 type="number"
                 placeholder="Min"
                 value={filters.minPrice}
                 onChange={(e) => onFilterChange('minPrice', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Max Price</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Max Price</label>
               <input
                 type="number"
                 placeholder="Max"
                 value={filters.maxPrice}
                 onChange={(e) => onFilterChange('maxPrice', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
 
             {/* Stock Status */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Stock Status</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Stock Status</label>
               <select
                 value={filters.stockStatus}
                 onChange={(e) => onFilterChange('stockStatus', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">All Status</option>
                 <option value="in_stock">In Stock</option>
@@ -237,18 +237,18 @@ function AdvancedFilters({
                 onChange={(e) => onFilterChange('hasPriceDrop', e.target.checked)}
                 className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
-              <label htmlFor="hasPriceDrop" className="text-sm font-medium text-gray-700">
+              <label htmlFor="hasPriceDrop" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Only Price Drops
               </label>
             </div>
 
             {/* Sort By */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Sort By</label>
               <select
                 value={filters.sortBy}
                 onChange={(e) => onFilterChange('sortBy', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="createdAt">Date Added</option>
                 <option value="price">Price</option>
@@ -261,7 +261,7 @@ function AdvancedFilters({
 
             {/* Sort Order */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Order</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Order</label>
               <div className="flex space-x-2">
                 <button
                   onClick={() => onFilterChange('sortOrder', 'asc')}
@@ -491,7 +491,7 @@ const ProductCard: React.FC<{
       onClick={() => navigate(`/products/${product.id}`)}
     >
       {/* Product Image - Responsive */}
-      <div className="relative h-48 sm:h-56 md:h-64 bg-gray-100">
+      <div className="relative h-48 sm:h-56 md:h-64 bg-gray-100 dark:bg-gray-700">
         <img
           src={product.imageUrl || 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400&h=300&fit=crop'}
           alt={product.title || 'Product image'}
@@ -552,7 +552,7 @@ const ProductCard: React.FC<{
       <div className="p-3 md:p-4">
         {/* Title and global matches pill */}
         <div className="flex flex-col gap-1 mb-2">
-          <h3 className="text-sm md:text-base font-semibold text-gray-900 line-clamp-2 leading-tight">
+          <h3 className="text-sm md:text-base font-semibold text-gray-900 dark:text-white line-clamp-2 leading-tight">
             {product.title}
           </h3>
           {globalMatchCount > 0 && (
@@ -574,7 +574,7 @@ const ProductCard: React.FC<{
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
           <div className="flex items-center gap-2">
             <DollarSign className="w-4 h-4 text-gray-500" />
-            <span className="text-lg md:text-xl font-bold text-gray-900">
+            <span className="text-lg md:text-xl font-bold text-gray-900 dark:text-white">
               {product.currency}{product.price.toFixed(2)}
             </span>
             {priceChange && (
@@ -596,7 +596,7 @@ const ProductCard: React.FC<{
         {product.priceHistory && product.priceHistory.length > 0 && (
           <div className="mb-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-gray-700">Price History</span>
+              <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Price History</span>
               {product.priceHistory.length > 3 && (
                 <button
                   onClick={() => setShowAllHistory(!showAllHistory)}
@@ -623,7 +623,7 @@ const ProductCard: React.FC<{
                   <span className="text-gray-500">
                     {new Date(entry.timestamp).toLocaleDateString()}
                   </span>
-                  <span className="font-medium text-gray-900">
+                  <span className="font-medium text-gray-900 dark:text-white">
                     {entry.currency}{entry.price.toFixed(2)}
                   </span>
                 </div>
@@ -701,11 +701,11 @@ export default function Products() {
   // Show loading state while auth is initializing
   if (token === undefined) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
         <div className="max-w-7xl mx-auto space-y-6">
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading your products...</p>
+            <p className="mt-4 text-gray-600 dark:text-gray-300">Loading your products...</p>
           </div>
         </div>
       </div>
@@ -715,11 +715,11 @@ export default function Products() {
   // Show login prompt if not authenticated
   if (!token) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
         <div className="max-w-7xl mx-auto space-y-6">
           <div className="text-center py-12">
             <Package className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">Please log in to view your products</h3>
+            <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">Please log in to view your products</h3>
             <p className="mt-1 text-sm text-gray-500">
               You need to be authenticated to access your tracked products.
             </p>

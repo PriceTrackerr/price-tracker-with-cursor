@@ -73,29 +73,29 @@ function AlertCard({
 
   return (
     <div className={`transition-all duration-300 border rounded-[0.625rem] p-4 ${isTargetReached
-        ? 'border-green-200 bg-green-50/50'
-        : isActive
-          ? 'border-gray-300 hover:border-blue-500 bg-white hover:shadow-md'
-          : 'border-gray-200 bg-gray-50'
+      ? 'border-green-200 dark:border-green-700/50 bg-green-50/50 dark:bg-green-900/20'
+      : isActive
+        ? 'border-gray-300 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-400 bg-white dark:bg-gray-800 hover:shadow-md'
+        : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50'
       }`}>
       <div className="space-y-4">
         {/* Header with Product Info and Controls */}
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-medium text-[#030213] truncate">{productName}</h3>
+              <h3 className="font-medium text-gray-900 dark:text-white truncate">{productName}</h3>
               {isTargetReached && (
                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                   Target Reached
                 </span>
               )}
             </div>
-            <p className="text-sm text-[#717182]">{platform}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">{platform}</p>
           </div>
 
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-2">
-              <span className="text-xs text-[#717182]">
+              <span className="text-xs text-gray-600 dark:text-gray-400">
                 {isActive ? 'Active' : 'Inactive'}
               </span>
               <button
@@ -119,14 +119,14 @@ function AlertCard({
         {/* Price Information */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
-            <p className="text-xs text-[#717182] uppercase tracking-wide">Current Price</p>
-            <p className="text-lg font-semibold text-[#030213]">
+            <p className="text-xs text-gray-600 dark:text-gray-400 uppercase tracking-wide">Current Price</p>
+            <p className="text-lg font-semibold text-gray-900 dark:text-white">
               <PriceDisplay priceUSD={currentPrice} selectedCurrency="USD" />
             </p>
           </div>
           <div className="space-y-1">
-            <p className="text-xs text-[#717182] uppercase tracking-wide">Target Price</p>
-            <p className="text-lg font-semibold text-[#030213]">
+            <p className="text-xs text-gray-600 dark:text-gray-400 uppercase tracking-wide">Target Price</p>
+            <p className="text-lg font-semibold text-gray-900 dark:text-white">
               <PriceDisplay priceUSD={targetPrice} selectedCurrency="USD" />
             </p>
           </div>
@@ -144,7 +144,7 @@ function AlertCard({
           ) : (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-[#717182]">
+                <span className="text-sm text-gray-600 dark:text-gray-400">
                   {isAboveTarget ? 'Above target by' : 'Below target by'}
                 </span>
                 <div className={`flex items-center gap-1 text-sm font-medium ${isAboveTarget ? 'text-red-600' : 'text-green-600'
@@ -241,9 +241,9 @@ function CreateAlertDialog({
 
       {open && (
         <div className="fixed inset-0 bg-[#030213] bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-[0.625rem] p-6 w-full max-w-md mx-4">
+          <div className="bg-white dark:bg-gray-800 rounded-[0.625rem] p-6 w-full max-w-md mx-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-gray-900">Create Price Alert</h3>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white">Create Price Alert</h3>
               <button onClick={handleCancel} className="text-gray-500 hover:text-gray-700">
                 <X className="w-5 h-5" />
               </button>
@@ -251,11 +251,11 @@ function CreateAlertDialog({
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Product Selection */}
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Product</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Product</label>
                 <select
                   value={selectedProductId}
                   onChange={(e) => setSelectedProductId(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-[0.625rem] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[0.625rem] bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
                 >
                   <option value="">Select a product to track</option>
@@ -269,7 +269,7 @@ function CreateAlertDialog({
 
               {/* Target Price */}
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Target Price</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Target Price</label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#717182]">
                     $
@@ -280,7 +280,7 @@ function CreateAlertDialog({
                     placeholder="0.00"
                     value={targetPrice}
                     onChange={(e) => setTargetPrice(e.target.value)}
-                    className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-[0.625rem] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                    className="w-full pl-8 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[0.625rem] bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     required
                   />
                 </div>
@@ -338,7 +338,7 @@ function CreateAlertDialog({
                 <button
                   type="button"
                   onClick={handleCancel}
-                  className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-[0.625rem] hover:bg-gray-200 font-medium"
+                  className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-[0.625rem] hover:bg-gray-200 dark:hover:bg-gray-600 font-medium"
                 >
                   Cancel
                 </button>
@@ -555,13 +555,13 @@ export default function Alerts() {
   }
 
   return (
-    <div className="min-h-screen bg-white p-6">
+    <div className="min-h-screen bg-white dark:bg-gray-900 p-6">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="space-y-2">
             <div className="flex items-center gap-3">
-              <h2 className="text-2xl font-medium text-gray-900">Alerts</h2>
+              <h2 className="text-2xl font-medium text-gray-900 dark:text-white">Alerts</h2>
               {reachedTargets > 0 && (
                 <div className="relative">
                   <BellRing className="text-green-600" size={20} />
@@ -592,7 +592,7 @@ export default function Alerts() {
             <select
               value={filterBy}
               onChange={(e) => setFilterBy(e.target.value)}
-              className="w-full sm:w-48 pl-10 pr-4 py-2 border border-gray-300 rounded-[0.625rem] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+              className="w-full sm:w-48 pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-[0.625rem] bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="all">All Alerts</option>
               <option value="active">Active Only</option>
@@ -606,7 +606,7 @@ export default function Alerts() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="w-full sm:w-48 pl-10 pr-4 py-2 border border-gray-300 rounded-[0.625rem] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+              className="w-full sm:w-48 pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-[0.625rem] bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="newest">Newest First</option>
               <option value="oldest">Oldest First</option>
@@ -620,7 +620,7 @@ export default function Alerts() {
         {filteredAndSortedAlerts.length === 0 ? (
           <div className="text-center py-12">
             <Bell className="mx-auto text-[#717182] mb-4" size={48} />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No alerts found</h3>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No alerts found</h3>
             <p className="text-[#717182] mb-4">
               {alerts.length === 0
                 ? "Create your first price alert to get notified when products reach your target price."

@@ -544,7 +544,7 @@ export default function History() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading price history...</p>
+          <p className="text-gray-600 dark:text-gray-300">Loading price history...</p>
         </div>
       </div>
     );
@@ -650,7 +650,7 @@ export default function History() {
       {/* Floating Filter Controls - Figma Design */}
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-cyan-600/10 rounded-3xl blur-xl opacity-50"></div>
-        <div className="relative border-0 bg-white/80 backdrop-blur-xl shadow-2xl shadow-blue-500/10 rounded-2xl p-6">
+        <div className="relative border-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl shadow-2xl shadow-blue-500/10 rounded-2xl p-6">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
@@ -665,14 +665,14 @@ export default function History() {
             <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-2">
                 <Filter className="w-4 h-4 text-gray-500" />
-                <span className="text-sm text-gray-600">Filters:</span>
+                <span className="text-sm text-gray-600 dark:text-gray-300">Filters:</span>
               </div>
 
               <div className="relative">
                 <select
                   value={selectedProduct}
                   onChange={(e) => handleProductSelection(e.target.value)}
-                  className="w-48 px-3 py-2 border-0 bg-gray-50/50 backdrop-blur-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
+                  className="w-48 px-3 py-2 border-0 bg-gray-50/50 dark:bg-gray-700/50 backdrop-blur-sm rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
                 >
                   <option value="">Select Product</option>
                   <option value="all">All Products</option>
@@ -713,7 +713,7 @@ export default function History() {
               <select
                 value={timeRange}
                 onChange={(e) => setTimeRange(e.target.value)}
-                className="w-32 px-3 py-2 border-0 bg-gray-50/50 backdrop-blur-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-32 px-3 py-2 border-0 bg-gray-50/50 dark:bg-gray-700/50 backdrop-blur-sm text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="7d">7 Days</option>
                 <option value="30d">30 Days</option>
@@ -724,7 +724,7 @@ export default function History() {
               <select
                 value={chartType}
                 onChange={(e) => setChartType(e.target.value)}
-                className="w-32 px-3 py-2 border-0 bg-gray-50/50 backdrop-blur-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-32 px-3 py-2 border-0 bg-gray-50/50 dark:bg-gray-700/50 backdrop-blur-sm text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="line">Line</option>
                 <option value="area">Area</option>
@@ -824,13 +824,13 @@ export default function History() {
       </div>
 
       {/* Main Chart */}
-      <div className="border-0 shadow-2xl shadow-gray-200/20 rounded-2xl overflow-hidden">
-        <div className="bg-gradient-to-r from-gray-50 to-blue-50/30 p-6 border-b border-gray-100">
+      <div className="border-0 bg-white dark:bg-gray-800 shadow-2xl shadow-gray-200/20 dark:shadow-gray-900/20 rounded-2xl overflow-hidden">
+        <div className="bg-gradient-to-r from-gray-50 dark:from-gray-700 to-blue-50/30 dark:to-blue-900/30 p-6 border-b border-gray-100 dark:border-gray-700">
           <div className="flex items-center justify-between">
-            <h3 className="text-xl font-bold text-gray-900">Price Trend Analysis</h3>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white">Price Trend Analysis</h3>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-              <span className="text-sm text-gray-600">{currentProduct?.title || 'Select a product'}</span>
+              <span className="text-sm text-gray-600 dark:text-gray-300">{currentProduct?.title || 'Select a product'}</span>
               {currentProduct && currentProductHasDrop() && (
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 animate-pulse">
                   Price Drop!
@@ -839,7 +839,7 @@ export default function History() {
             </div>
           </div>
         </div>
-        <div className="p-6">
+        <div className="p-6 bg-white dark:bg-gray-800">
           <div className="h-96">
             <ResponsiveContainer width="100%" height="100%">
               {renderChart()}
@@ -849,27 +849,27 @@ export default function History() {
       </div>
 
       {/* Price History Table */}
-      <div className="border-0 shadow-2xl shadow-gray-200/20 rounded-2xl overflow-hidden">
-        <div className="bg-gradient-to-r from-gray-50 to-blue-50/30 p-6 border-b border-gray-100">
-          <h3 className="text-xl font-bold text-gray-900">Price History Details</h3>
+      <div className="border-0 bg-white dark:bg-gray-800 shadow-2xl shadow-gray-200/20 dark:shadow-gray-900/20 rounded-2xl overflow-hidden">
+        <div className="bg-gradient-to-r from-gray-50 dark:from-gray-700 to-blue-50/30 dark:to-blue-900/30 p-6 border-b border-gray-100 dark:border-gray-700">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white">Price History Details</h3>
         </div>
-        <div className="p-6">
+        <div className="p-6 bg-white dark:bg-gray-800">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Date</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Price</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Change</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Change %</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Status</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Date</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Price</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Change</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Change %</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Status</th>
                 </tr>
               </thead>
               <tbody>
                 {chartData.map((entry, index) => (
-                  <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-3 px-4 text-gray-700">{entry.date}</td>
-                    <td className="py-3 px-4 font-medium text-gray-900">${entry.price.toFixed(2)}</td>
+                  <tr key={index} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                    <td className="py-3 px-4 text-gray-700 dark:text-gray-300">{entry.date}</td>
+                    <td className="py-3 px-4 font-medium text-gray-900 dark:text-white">${entry.price.toFixed(2)}</td>
                     <td className={`py-3 px-4 flex items-center gap-1 ${getChangeColor(entry.change)}`}>
                       {getChangeIcon(entry.change)}
                       <span>${Math.abs(entry.change).toFixed(2)}</span>
