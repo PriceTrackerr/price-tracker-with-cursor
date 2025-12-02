@@ -41,7 +41,7 @@ function DashboardNav() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 shadow-sm">
+    <nav className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-gray-700/50 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -85,7 +85,7 @@ function DashboardNav() {
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="md:hidden border-t border-slate-100 bg-white px-4 py-4 shadow-xl">
+        <div className="md:hidden border-t border-slate-100 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-4 shadow-xl">
           <div className="space-y-4">
             <div className="flex items-center gap-3 px-3 py-2 bg-slate-50 rounded-lg">
               <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-semibold text-sm">
@@ -134,7 +134,7 @@ function MetricCard({ title, value, subtitle, icon: Icon, trend, color, onClick 
   return (
     <div
       onClick={onClick}
-      className={`relative overflow-hidden bg-white rounded-2xl p-6 border border-slate-200/60 shadow-sm hover:shadow-md transition-all duration-300 group ${onClick ? 'cursor-pointer hover:-translate-y-1' : ''}`}
+      className={`relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl p-6 border border-slate-200/60 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300 group ${onClick ? 'cursor-pointer hover:-translate-y-1' : ''}`}
     >
       <div className="flex justify-between items-start mb-4">
         <div className={`w-12 h-12 rounded-xl ${style.bg} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
@@ -206,7 +206,7 @@ function CreateAlertModal({ product, isOpen, onClose }: { product: any, isOpen: 
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-      <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-scale-in">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-scale-in">
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
           <h3 className="text-lg font-semibold text-slate-900">Create Price Alert</h3>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">
@@ -623,7 +623,7 @@ export default function Dashboard() {
         </div>
 
         {/* Recent Products Section */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm overflow-hidden">
           <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
             <div>
               <h2 className="text-lg font-bold text-slate-900">Recent Tracked Products</h2>
