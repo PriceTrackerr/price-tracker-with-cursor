@@ -323,50 +323,50 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
   const estimatedSavings = features.couponSavings || Math.round(safePrice * 0.12);
 
   return (
-    <section className="py-16 bg-slate-900 dark:bg-slate-950 text-white overflow-hidden relative rounded-3xl my-8">
+    <section className="py-8 md:py-16 bg-slate-900 dark:bg-slate-950 text-white overflow-hidden relative rounded-2xl md:rounded-3xl my-4 md:my-8">
       {/* Background Glows */}
-      <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-indigo-500/20 rounded-full blur-[100px] pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-violet-500/20 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute top-0 right-0 w-[200px] md:w-[400px] h-[200px] md:h-[400px] bg-indigo-500/20 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[200px] md:w-[400px] h-[200px] md:h-[400px] bg-violet-500/20 rounded-full blur-[100px] pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-6 relative z-10">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-sm font-medium mb-6">
-              <span className="text-base">🤖</span>
+      <div className="max-w-7xl mx-auto px-4 md:px-6 relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 items-center">
+          <div className="order-2 lg:order-1">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-xs md:text-sm font-medium mb-4 md:mb-6">
+              <span className="text-sm md:text-base">🤖</span>
               <span>Powered by Advanced AI</span>
             </div>
-            <h2 className="text-4xl lg:text-5xl font-bold mb-6 tracking-tight">
-              Shopping Intelligence <br />
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 tracking-tight leading-tight">
+              Shopping Intelligence <br className="hidden sm:inline" />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-violet-400">
                 From the Future.
               </span>
             </h2>
-            <p className="text-lg text-slate-400 mb-8 leading-relaxed">
+            <p className="text-sm md:text-base lg:text-lg text-slate-400 mb-6 md:mb-8 leading-relaxed">
               Our AI analyzes millions of data points to predict price trends, assess deal quality, and find hidden discounts that other tools miss.
             </p>
 
-            <div className="space-y-6">
+            <div className="space-y-4 md:space-y-6">
               {[
                 { title: 'Price Prediction', desc: 'Know if the price will drop in the next 7 days.', icon: '📊' },
                 { title: 'Deal Quality Score', desc: 'Instant 1-10 rating based on historical data.', icon: '⭐' },
                 { title: 'Smart Coupons', desc: 'Automatically tests the best codes for you.', icon: '⚡' }
               ].map((feature, i) => (
-                <div key={i} className="flex gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center flex-shrink-0 border border-slate-700">
-                    <span className="text-2xl">{feature.icon}</span>
+                <div key={i} className="flex gap-3 md:gap-4">
+                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-slate-800 flex items-center justify-center flex-shrink-0 border border-slate-700">
+                    <span className="text-xl md:text-2xl">{feature.icon}</span>
                   </div>
-                  <div>
-                    <h3 className="text-xl font-semibold mb-1">{feature.title}</h3>
-                    <p className="text-slate-400">{feature.desc}</p>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base md:text-lg lg:text-xl font-semibold mb-0.5 md:mb-1">{feature.title}</h3>
+                    <p className="text-xs md:text-sm lg:text-base text-slate-400">{feature.desc}</p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="relative">
-            {/* Hand-drawn border effect */}
-            <svg className="absolute -inset-4 w-[calc(100%+2rem)] h-[calc(100%+2rem)] pointer-events-none" viewBox="0 0 400 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <div className="relative order-1 lg:order-2">
+            {/* Hand-drawn border effect - hidden on mobile for better performance */}
+            <svg className="absolute -inset-4 w-[calc(100%+2rem)] h-[calc(100%+2rem)] pointer-events-none hidden md:block" viewBox="0 0 400 500" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path
                 d="M10,10 Q5,5 15,8 L380,15 Q395,15 390,30 L395,470 Q395,490 375,488 L20,485 Q5,485 8,470 L5,25 Q5,10 10,10 Z"
                 stroke="rgba(255,255,255,0.3)"
@@ -377,34 +377,34 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
               />
             </svg>
 
-            <div className="relative bg-slate-800/50 backdrop-blur-xl border border-slate-700 rounded-3xl p-8">
+            <div className="relative bg-slate-800/50 backdrop-blur-xl border border-slate-700 rounded-2xl md:rounded-3xl p-4 md:p-6 lg:p-8">
               {/* AI Card Simulation */}
-              <div className="space-y-6">
-                <div className="flex items-center justify-between border-b border-slate-700 pb-6">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-white rounded-lg p-2 flex items-center justify-center">
+              <div className="space-y-4 md:space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-slate-700 pb-4 md:pb-6 gap-3">
+                  <div className="flex items-center gap-3 md:gap-4 min-w-0 flex-1">
+                    <div className="w-10 h-10 md:w-12 md:h-12 bg-white rounded-lg p-1 md:p-2 flex items-center justify-center flex-shrink-0">
                       {product.imageUrl ? (
                         <img src={product.imageUrl} alt="Product" className="w-full h-full object-contain" />
                       ) : (
-                        <span className="text-2xl">📦</span>
+                        <span className="text-xl md:text-2xl">📦</span>
                       )}
                     </div>
-                    <div>
-                      <div className="font-medium text-white truncate max-w-[200px]">{product.title.substring(0, 30)}...</div>
-                      <div className="text-sm text-slate-400">{product.platform}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-white text-sm md:text-base truncate">{product.title.substring(0, 40)}...</div>
+                      <div className="text-xs md:text-sm text-slate-400">{product.platform}</div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-white">${product.price.toFixed(2)}</div>
-                    <div className="text-sm text-green-400">-13% Drop</div>
+                  <div className="text-left sm:text-right flex-shrink-0">
+                    <div className="text-xl md:text-2xl font-bold text-white">${product.price.toFixed(2)}</div>
+                    <div className="text-xs md:text-sm text-green-400">-13% Drop</div>
                   </div>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-3 md:space-y-4">
                   {(user?.subscription?.tier === 'pro' && aiRecommendation) ? (
-                    <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-700/50">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm text-slate-400">AI Recommendation</span>
+                    <div className="bg-slate-900/50 rounded-xl p-3 md:p-4 border border-slate-700/50">
+                      <div className="flex justify-between items-center mb-2 flex-wrap gap-2">
+                        <span className="text-xs md:text-sm text-slate-400">AI Recommendation</span>
                         <span className={`px-2 py-1 rounded text-xs font-medium ${aiRecommendation.verdict === 'STRONG BUY' || aiRecommendation.verdict === 'BUY'
                             ? 'bg-green-500/20 text-green-400'
                             : aiRecommendation.verdict === 'WAIT'
@@ -414,32 +414,32 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
                           {aiRecommendation.loading ? 'Analyzing...' : aiRecommendation.verdict}
                         </span>
                       </div>
-                      <p className="text-sm text-slate-300">
+                      <p className="text-xs md:text-sm text-slate-300 leading-relaxed">
                         {aiRecommendation.loading
                           ? 'AI is analyzing price trends...'
                           : aiRecommendation.reason}
                       </p>
                     </div>
                   ) : (
-                    <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-700/50">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm text-slate-400">AI Recommendation</span>
+                    <div className="bg-slate-900/50 rounded-xl p-3 md:p-4 border border-slate-700/50">
+                      <div className="flex justify-between items-center mb-2 flex-wrap gap-2">
+                        <span className="text-xs md:text-sm text-slate-400">AI Recommendation</span>
                         <span className="px-2 py-1 rounded bg-green-500/20 text-green-400 text-xs font-medium">Strong Buy</span>
                       </div>
-                      <p className="text-sm text-slate-300">
+                      <p className="text-xs md:text-sm text-slate-300 leading-relaxed">
                         Price is at a 6-month low. AI predicts a 85% chance of price increase within 48 hours.
                       </p>
                     </div>
                   )}
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-700/50 text-center">
-                      <div className="text-sm text-slate-400 mb-1">Deal Score</div>
-                      <div className="text-3xl font-bold text-indigo-400">{dealScore}<span className="text-sm text-slate-500">/10</span></div>
+                  <div className="grid grid-cols-2 gap-3 md:gap-4">
+                    <div className="bg-slate-900/50 rounded-xl p-3 md:p-4 border border-slate-700/50 text-center">
+                      <div className="text-xs md:text-sm text-slate-400 mb-1">Deal Score</div>
+                      <div className="text-2xl md:text-3xl font-bold text-indigo-400">{dealScore}<span className="text-xs md:text-sm text-slate-500">/10</span></div>
                     </div>
-                    <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-700/50 text-center">
-                      <div className="text-sm text-slate-400 mb-1">Potential Savings</div>
-                      <div className="text-3xl font-bold text-green-400">${estimatedSavings}</div>
+                    <div className="bg-slate-900/50 rounded-xl p-3 md:p-4 border border-slate-700/50 text-center">
+                      <div className="text-xs md:text-sm text-slate-400 mb-1">Potential Savings</div>
+                      <div className="text-2xl md:text-3xl font-bold text-green-400">${estimatedSavings}</div>
                     </div>
                   </div>
                 </div>
