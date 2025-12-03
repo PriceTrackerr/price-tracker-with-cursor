@@ -258,3 +258,30 @@ tell me the resolution of the images and screenshots i should add and where shou
 
 
 and what else should be added to the website? what do u recommend?
+
+
+
+
+i checked vercel logs and found this:
+
+
+2025-12-03 07:47:22.163 [info] [AUTH] Validating Supabase token: eyJhbGciOiJIUzI1NiIs...
+2025-12-03 07:47:22.286 [info] [AUTH] Successfully authenticated user: 0b855de9-752c-44b6-8472-f61b92b75cd8 Admin: false
+2025-12-03 07:47:22.430 [info] 🤖 Calling Groq AI for product: NEXPOW OBD2 Scanner, Car Code Reader, Auto Diagnostic Tool for Check Engine Light, Car Scanner for All Vehicles since 1996
+2025-12-03 07:47:22.430 [info] 📊 Analysis: 0.0% vs avg, trend: flat, volatility: 0.0%
+2025-12-03 07:47:22.773 [info] 📝 Groq response: VERDICT: STRONG BUY
+Confidence: 65%
+Risk: Low
+Reason: The price is exactly the 30-day average and global cheapest, with low risk and no predicted drop, making it an attractive purchase opportunity. 
+Action: Buy now
+Alternative: Consider alternative OBD2 scanners with similar features, but be aware that this one is currently the cheapest option, and the savings may be limited.
+2025-12-03 07:47:22.960 [info] 💾 Cached AI recommendation for product f3e05d44-a63e-4cd6-8629-90fe2d810f34
+2025-12-03 07:47:22.961 [info] 196.191.61.43 - - [03/Dec/2025:07:47:22 +0000] "POST /api/ai/recommendation HTTP/1.1" 200 528 "https://price-tracker-with-cursor-web-app.vercel.app/products/f3e05d44-a63e-4cd6-8629-90fe2d810f34" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36"
+
+
+
+but in product detailp page the ai recommendation's response is this:
+AI Recommendation
+STRONG BUY
+The price is exactly the 30-day average and global cheapest, with low risk and no predicted drop, making it an attractive purchase opportunity.
+- now where is the alternative i want it to show the full response that is loging in vercel

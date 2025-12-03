@@ -40,6 +40,8 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
     verdict: string;
     confidence: number;
     reason: string;
+    action?: string;
+    alternative?: string;
     loading: boolean;
   } | null>(null);
 
@@ -263,6 +265,8 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
               verdict: recData.data.verdict || 'WAIT',
               confidence: recData.data.confidence || 75,
               reason: recData.data.reason || 'Analysis completed.',
+              action: recData.data.action,
+              alternative: recData.data.alternative,
               loading: false
             });
           } else {
@@ -406,19 +410,31 @@ export default function AdvancedAnalysis({ product }: AdvancedAnalysisProps) {
                       <div className="flex justify-between items-center mb-2 flex-wrap gap-2">
                         <span className="text-xs md:text-sm text-slate-400">AI Recommendation</span>
                         <span className={`px-2 py-1 rounded text-xs font-medium ${aiRecommendation.verdict === 'STRONG BUY' || aiRecommendation.verdict === 'BUY'
-                            ? 'bg-green-500/20 text-green-400'
-                            : aiRecommendation.verdict === 'WAIT'
-                              ? 'bg-yellow-500/20 text-yellow-400'
-                              : 'bg-red-500/20 text-red-400'
+                          ? 'bg-green-500/20 text-green-400'
+                          : aiRecommendation.verdict === 'WAIT'
+                            ? 'bg-yellow-500/20 text-yellow-400'
+                            : 'bg-red-500/20 text-red-400'
                           }`}>
                           {aiRecommendation.loading ? 'Analyzing...' : aiRecommendation.verdict}
                         </span>
                       </div>
-                      <p className="text-xs md:text-sm text-slate-300 leading-relaxed">
-                        {aiRecommendation.loading
-                          ? 'AI is analyzing price trends...'
-                          : aiRecommendation.reason}
-                      </p>
+                      <div className="space-y-2">
+                        <p className="text-xs md:text-sm text-slate-300 leading-relaxed">
+                          {aiRecommendation.loading
+                            ? 'AI is analyzing price trends...'
+                            : aiRecommendation.reason}
+                        </p>
+                        {!aiRecommendation.loading && aiRecommendation.action && (
+                          <p className="text-xs md:text-sm text-indigo-300 border-t border-slate-700/50 pt-2">
+                            <span className="font-semibold">Action:</span> {aiRecommendation.action}
+                          </p>
+                        )}
+                        {!aiRecommendation.loading && aiRecommendation.alternative && (
+                          <p className="text-xs md:text-sm text-slate-400">
+                            <span className="font-semibold">Alternative:</span> {aiRecommendation.alternative}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   ) : (
                     <div className="bg-slate-900/50 rounded-xl p-3 md:p-4 border border-slate-700/50">

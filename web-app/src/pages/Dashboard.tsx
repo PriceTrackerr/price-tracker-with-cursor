@@ -149,9 +149,9 @@ function MetricCard({ title, value, subtitle, icon: Icon, trend, color, onClick 
       </div>
 
       <div>
-        <h3 className="text-slate-500 text-sm font-medium mb-1">{title}</h3>
-        <div className="text-3xl font-bold text-slate-900 tracking-tight mb-1">{value}</div>
-        {subtitle && <p className="text-slate-400 text-sm">{subtitle}</p>}
+        <h3 className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">{title}</h3>
+        <div className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight mb-1">{value}</div>
+        {subtitle && <p className="text-slate-400 dark:text-slate-500 text-sm">{subtitle}</p>}
       </div>
 
       {/* Decorative gradient blob */}

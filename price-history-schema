@@ -1,0 +1,13 @@
+create table public.price_history (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  product_id uuid null,
+  price numeric(10, 2) not null,
+  currency character varying(3) null default 'USD'::character varying,
+  timestamp timestamp with time zone null default now(),
+  constraint price_history_pkey primary key (id),
+  constraint price_history_product_id_fkey foreign KEY (product_id) references products (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create index IF not exists idx_price_history_product_id on public.price_history using btree (product_id) TABLESPACE pg_default;
+
+create index IF not exists idx_price_history_timestamp on public.price_history using btree ("timestamp") TABLESPACE pg_default;
