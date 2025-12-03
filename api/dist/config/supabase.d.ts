@@ -20,6 +20,7 @@ export declare const TABLES: {
     readonly DEAL_COMMENTS: "deal_comments";
     readonly GLOBAL_MARKET_DATA: "global_market_data";
     readonly AUTOMATION_RULES: "automation_rules";
+    readonly AI_RECOMMENDATIONS: "ai_recommendations";
 };
 export declare function handleSupabaseError(error: any, operation: string): never;
 export declare function isSupabaseConfigured(): boolean;

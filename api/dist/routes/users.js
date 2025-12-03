@@ -333,7 +333,7 @@ router.get('/me', async (req, res) => {
         if (error || !user) {
             return res.status(401).json({ success: false, message: 'Invalid token' });
         }
-        const { data: userData, error: userError } = await supabase_1.supabasePublic
+        const { data: userData, error: userError } = await supabase_1.supabase
             .from(supabase_1.TABLES.USERS)
             .select('*')
             .eq('id', user.id)
@@ -341,7 +341,7 @@ router.get('/me', async (req, res) => {
         if (userError) {
             if (userError.code === 'PGRST116') {
                 console.log('User not found in users table, creating basic record for:', user.id);
-                const { data: newUser, error: createError } = await supabase_1.supabasePublic
+                const { data: newUser, error: createError } = await supabase_1.supabase
                     .from(supabase_1.TABLES.USERS)
                     .insert({
                     id: user.id,
@@ -398,6 +398,12 @@ router.get('/me', async (req, res) => {
                 notificationSettings: userData.notification_settings,
                 privacySettings: userData.privacy_settings,
                 preferences: userData.preferences,
+                subscription: {
+                    tier: userData.subscription_tier || 'free',
+                    status: userData.subscription_status || 'inactive',
+                    renewsAt: userData.subscription_renews_at,
+                    endsAt: userData.subscription_ends_at
+                }
             },
         });
     }
@@ -450,17 +456,59 @@ router.post('/preferences', async (req, res) => {
         const token = auth.replace('Bearer ', '');
         const { data: { user }, error } = await supabase_1.supabasePublic.auth.getUser(token);
         if (error || !user) {
+            console.log('❌ [PREFERENCES] Invalid auth token');
             return res.status(401).json({ success: false, message: 'Invalid token' });
         }
-        const { data: userData, error: userError } = await supabase_1.supabasePublic
+        console.log('✅ [PREFERENCES] Valid auth token for user:', user.email);
+        const { data: userData, error: userError } = await supabase_1.supabase
             .from(supabase_1.TABLES.USERS)
             .select('*')
             .eq('id', user.id)
             .single();
-        if (userError || !userData) {
-            (0, supabase_1.handleSupabaseError)(userError, 'fetch user');
+        if (userError) {
+            if (userError.code === 'PGRST116') {
+                console.log('⚠️ [PREFERENCES] User not found in users table, creating record for:', user.id);
+                const { data: newUser, error: createError } = await supabase_1.supabase
+                    .from(supabase_1.TABLES.USERS)
+                    .insert({
+                    id: user.id,
+                    email: user.email,
+                    username: user.user_metadata?.username || user.email?.split('@')[0] || 'user',
+                    role: 'user',
+                    notification_settings: { priceDrops: true, newProducts: true, weeklySummary: true },
+                    privacy_settings: { shareData: false, analytics: true },
+                    preferences: { currency: 'USD', language: 'en' },
+                    seen_price_drop_ids: [],
+                })
+                    .select()
+                    .single();
+                if (createError) {
+                    console.error('❌ [PREFERENCES] Failed to create user record:', createError);
+                    return res.status(500).json({ success: false, message: 'Failed to create user record' });
+                }
+                console.log('✅ [PREFERENCES] User record created successfully');
+                const update = {};
+                if (notificationSettings)
+                    update.notification_settings = notificationSettings;
+                if (privacySettings)
+                    update.privacy_settings = privacySettings;
+                if (preferences)
+                    update.preferences = preferences;
+                await supabase_1.supabase.from(supabase_1.TABLES.USERS).update(update).eq('id', user.id);
+                console.log('✅ [PREFERENCES] Preferences updated for newly created user');
+                return res.json({ success: true, message: 'Preferences updated' });
+            }
+            else {
+                console.error('❌ [PREFERENCES] Database error:', userError);
+                (0, supabase_1.handleSupabaseError)(userError, 'fetch user');
+            }
+        }
+        if (!userData) {
+            console.log('❌ [PREFERENCES] User data is null');
+            return res.status(404).json({ success: false, message: 'User not found' });
         }
         if (userData.role === 'banned') {
+            console.log('❌ [PREFERENCES] Banned user attempted to update preferences:', user.email);
             return res.status(403).json({ success: false, message: 'Account has been suspended' });
         }
         const update = {};
@@ -470,11 +518,13 @@ router.post('/preferences', async (req, res) => {
             update.privacy_settings = privacySettings;
         if (preferences)
             update.preferences = preferences;
-        await supabase_1.supabasePublic.from(supabase_1.TABLES.USERS).update(update).eq('id', user.id);
+        await supabase_1.supabase.from(supabase_1.TABLES.USERS).update(update).eq('id', user.id);
+        console.log('✅ [PREFERENCES] Preferences updated successfully for:', user.email);
         return res.json({ success: true, message: 'Preferences updated' });
     }
     catch (e) {
-        return res.status(401).json({ success: false, message: 'Invalid token or error updating preferences' });
+        console.error('❌ [PREFERENCES] Unexpected error:', e);
+        return res.status(500).json({ success: false, message: 'Error updating preferences' });
     }
 });
 router.get('/', auth_1.authMiddleware, async (req, res) => {
@@ -535,107 +585,6 @@ router.get('/admin/analytics', auth_1.authMiddleware, async (req, res) => {
     catch (e) {
         console.error('Failed to fetch admin analytics:', e);
         return res.status(500).json({ success: false, message: 'Failed to load analytics' });
-    }
-});
-router.post('/mark-price-drop-seen', async (req, res) => {
-    const auth = req.headers.authorization;
-    if (!auth || !auth.startsWith('Bearer ')) {
-        return res.status(401).json({ success: false, message: 'Missing token' });
-    }
-    try {
-        const token = auth.replace('Bearer ', '');
-        const { data: { user }, error } = await supabase_1.supabasePublic.auth.getUser(token);
-        if (error || !user) {
-            return res.status(401).json({ success: false, message: 'Invalid token' });
-        }
-        const { productId } = req.body || {};
-        if (!productId || typeof productId !== 'string') {
-            return res.status(400).json({ success: false, message: 'Product ID is required' });
-        }
-        const { data: userData, error: userError } = await supabase_1.supabasePublic
-            .from(supabase_1.TABLES.USERS)
-            .select('seen_price_drop_ids')
-            .eq('id', user.id)
-            .single();
-        if (userError) {
-            if (userError.code === 'PGRST116') {
-                console.log('User not found in users table for mark-price-drop-seen, creating basic record');
-                const { data: newUser, error: createError } = await supabase_1.supabasePublic
-                    .from(supabase_1.TABLES.USERS)
-                    .insert({
-                    id: user.id,
-                    email: user.email,
-                    username: user.user_metadata?.username || user.email?.split('@')[0] || 'user',
-                    role: 'user',
-                    seen_price_drop_ids: [productId]
-                })
-                    .select()
-                    .single();
-                if (createError) {
-                    console.error('Failed to create user record for mark-price-drop-seen:', createError);
-                    return res.status(500).json({ success: false, message: 'Failed to create user record' });
-                }
-                return res.json({ success: true, message: 'Price drop marked as seen' });
-            }
-            else {
-                return res.status(500).json({ success: false, message: 'Failed to fetch user' });
-            }
-        }
-        if (!userData)
-            return res.status(404).json({ success: false, message: 'User not found' });
-        const seenPriceDropIds = userData.seen_price_drop_ids || [];
-        if (!seenPriceDropIds.includes(productId)) {
-            seenPriceDropIds.push(productId);
-            const { error: updErr } = await supabase_1.supabasePublic
-                .from(supabase_1.TABLES.USERS)
-                .update({ seen_price_drop_ids: seenPriceDropIds })
-                .eq('id', user.id);
-            if (updErr)
-                return res.status(500).json({ success: false, message: 'Failed to update user' });
-        }
-        return res.json({ success: true, message: 'Price drop marked as seen' });
-    }
-    catch (error) {
-        console.error('Error marking price drop as seen:', error);
-        return res.status(500).json({ success: false, message: 'Failed to mark price drop as seen' });
-    }
-});
-router.get('/seen-price-drops', async (req, res) => {
-    const auth = req.headers.authorization;
-    if (!auth || !auth.startsWith('Bearer ')) {
-        return res.status(401).json({ success: false, message: 'Missing token' });
-    }
-    try {
-        const token = auth.replace('Bearer ', '');
-        const { data: { user }, error } = await supabase_1.supabasePublic.auth.getUser(token);
-        if (error || !user) {
-            return res.status(401).json({ success: false, message: 'Invalid token' });
-        }
-        const { data: userData, error: userError } = await supabase_1.supabasePublic
-            .from(supabase_1.TABLES.USERS)
-            .select('seen_price_drop_ids')
-            .eq('id', user.id)
-            .single();
-        if (userError) {
-            if (userError.code === 'PGRST116') {
-                console.log('User not found in users table for seen-price-drops, returning empty array');
-                return res.json({
-                    success: true,
-                    data: [],
-                });
-            }
-            else {
-                (0, supabase_1.handleSupabaseError)(userError, 'fetch user');
-            }
-        }
-        return res.json({
-            success: true,
-            data: userData?.seen_price_drop_ids || [],
-        });
-    }
-    catch (error) {
-        console.error('Error fetching seen price drops:', error);
-        return res.status(500).json({ success: false, message: 'Failed to fetch seen price drops' });
     }
 });
 router.post('/:userId/ban', auth_1.authMiddleware, async (req, res) => {
@@ -757,6 +706,95 @@ router.post('/:userId/delete', auth_1.authMiddleware, async (req, res) => {
     }
     catch (e) {
         return res.status(401).json({ success: false, message: 'Invalid token' });
+    }
+});
+router.get('/seen-price-drops', auth_1.authMiddleware, async (req, res) => {
+    try {
+        const userId = req.user?.uid;
+        console.log('[USERS] Fetching seen price drops for user:', req.user?.email);
+        if (!userId) {
+            return res.status(401).json({ success: false, message: 'Unauthorized' });
+        }
+        const { data: user, error } = await supabase_1.supabase
+            .from(supabase_1.TABLES.USERS)
+            .select('seen_price_drop_ids')
+            .eq('id', userId)
+            .single();
+        if (error) {
+            console.error('[USERS] Error fetching seen  price drops:', error);
+            return res.status(500).json({ success: false, message: 'Failed to fetch seen price drops' });
+        }
+        const rawSeenIds = user?.seen_price_drop_ids || [];
+        if (rawSeenIds.length > 0) {
+            const { data: existingProducts, error: productsError } = await supabase_1.supabase
+                .from(supabase_1.TABLES.PRODUCTS)
+                .select('id')
+                .in('id', rawSeenIds);
+            if (productsError) {
+                console.warn('[USERS] Error checking product existence:', productsError);
+                return res.json({ success: true, data: rawSeenIds });
+            }
+            const existingProductIds = existingProducts.map((p) => p.id);
+            const validSeenIds = rawSeenIds.filter((id) => existingProductIds.includes(id));
+            if (validSeenIds.length !== rawSeenIds.length) {
+                console.log(`[USERS] Found ${rawSeenIds.length - validSeenIds.length} orphaned price drop IDs - cleaning...`);
+                await supabase_1.supabase
+                    .from(supabase_1.TABLES.USERS)
+                    .update({ seen_price_drop_ids: validSeenIds })
+                    .eq('id', userId);
+            }
+            console.log(`[USERS] Seen price drops (after cleanup): ${validSeenIds.length} valid IDs`);
+            return res.json({ success: true, data: validSeenIds });
+        }
+        console.log('[USERS] No seen price drops');
+        return res.json({ success: true, data: [] });
+    }
+    catch (error) {
+        console.error('[USERS] Error in seen-price-drops endpoint:', error);
+        return res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+});
+router.post('/mark-price-drop-seen', auth_1.authMiddleware, async (req, res) => {
+    try {
+        const userId = req.user?.uid;
+        const { productId } = req.body;
+        console.log('[USERS] Marking price drop as seen for user:', req.user?.email, ', productId:', productId);
+        if (!userId) {
+            return res.status(401).json({ success: false, message: 'Unauthorized' });
+        }
+        if (!productId) {
+            return res.status(400).json({ success: false, message: 'Product ID is required' });
+        }
+        const { data: user, error: fetchError } = await supabase_1.supabase
+            .from(supabase_1.TABLES.USERS)
+            .select('seen_price_drop_ids')
+            .eq('id', userId)
+            .single();
+        if (fetchError || !user) {
+            console.error('[USERS] Error fetching user:', fetchError);
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+        const currentSeenIds = user?.seen_price_drop_ids || [];
+        if (!currentSeenIds.includes(productId)) {
+            const updatedSeenIds = [...currentSeenIds, productId];
+            const { error: updateError } = await supabase_1.supabase
+                .from(supabase_1.TABLES.USERS)
+                .update({ seen_price_drop_ids: updatedSeenIds })
+                .eq('id', userId);
+            if (updateError) {
+                console.error('[USERS] Error updating seen price drops:', updateError);
+                return res.status(500).json({ success: false, message: 'Failed to update seen price drops' });
+            }
+            console.log('[USERS] Successfully marked price drop as seen. Updated array:', updatedSeenIds);
+        }
+        else {
+            console.log('[USERS] Price drop already marked as seen');
+        }
+        return res.json({ success: true, message: 'Price drop marked as seen' });
+    }
+    catch (error) {
+        console.error('[USERS] Error in mark-price-drop-seen endpoint:', error);
+        return res.status(500).json({ success: false, message: 'Internal server error' });
     }
 });
 exports.default = router;

@@ -13,6 +13,7 @@ const compression_1 = __importDefault(require("compression"));
 const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const http_1 = require("http");
 const socket_io_1 = require("socket.io");
+const cronJobs_1 = require("./services/cronJobs");
 const database_1 = require("./config/database");
 const supabase_1 = require("./config/supabase");
 const products_1 = __importDefault(require("./routes/products"));
@@ -26,6 +27,8 @@ const features_1 = __importDefault(require("./routes/features"));
 const productMatching_1 = __importDefault(require("./routes/productMatching"));
 const aiRecommendation_1 = __importDefault(require("./routes/aiRecommendation"));
 const subscriptions_1 = __importDefault(require("./routes/subscriptions"));
+const cron_1 = __importDefault(require("./routes/cron"));
+const coupons_1 = __importDefault(require("./routes/coupons"));
 const errorHandler_1 = require("./middleware/errorHandler");
 const notFound_1 = require("./middleware/notFound");
 const app = (0, express_1.default)();
@@ -34,7 +37,9 @@ const allowedOrigins = [
     'http://localhost:3000',
     'http://localhost:5173',
     'https://price-tracker-with-cursor-web-app.vercel.app',
+    'https://price-tracker-with-cursor-web-app-s.vercel.app',
     'https://price-tracker-with-cursor.vercel.app',
+    'https://price-tracker-with-cursor-2am4ntk8x.vercel.app',
     ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
     ...(process.env.ADMIN_DASHBOARD_URL ? [process.env.ADMIN_DASHBOARD_URL] : []),
 ];
@@ -93,10 +98,13 @@ app.use((0, helmet_1.default)({
 }));
 const limiter = (0, express_rate_limit_1.default)({
     windowMs: 15 * 60 * 1000,
-    max: process.env.NODE_ENV === 'production' ? 100 : 1000,
+    max: process.env.NODE_ENV === 'production' ? 500 : 1000,
     message: 'Too many requests from this IP, please try again later.',
     standardHeaders: true,
     legacyHeaders: false,
+    skip: (req) => {
+        return req.path === '/health' || req.path === '/health/database';
+    }
 });
 app.use('/api/', limiter);
 app.use(process.env.NODE_ENV === 'development' ? (0, morgan_1.default)('dev') : (0, morgan_1.default)('combined'));
@@ -210,6 +218,8 @@ app.use('/api/advanced', advancedFeatures_1.default);
 app.use('/api/features', features_1.default);
 app.use('/api/product-matching', productMatching_1.default);
 app.use('/api/ai', aiRecommendation_1.default);
+app.use('/api/cron', cron_1.default);
+app.use('/api/coupons', coupons_1.default);
 io.on('connection', (socket) => {
     console.log('Client connected:', socket.id);
     socket.on('join-room', (roomId) => {
@@ -231,7 +241,8 @@ async function startServer() {
         const db = (0, database_1.getDb)();
         await db.getProducts();
         console.log('✅ Database connected successfully');
-        console.log('⚠️ Cron jobs temporarily disabled for debugging');
+        (0, cronJobs_1.initializeCronJobs)();
+        console.log('✅ Cron jobs initialized (checking prices every 12 hours)');
         server.listen(PORT, () => {
             console.log(`🚀 Server running on port ${PORT}`);
             console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);

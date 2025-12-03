@@ -40,6 +40,7 @@ exports.TABLES = {
     DEAL_COMMENTS: 'deal_comments',
     GLOBAL_MARKET_DATA: 'global_market_data',
     AUTOMATION_RULES: 'automation_rules',
+    AI_RECOMMENDATIONS: 'ai_recommendations',
 };
 function handleSupabaseError(error, operation) {
     console.error(`Supabase ${operation} error:`, error);

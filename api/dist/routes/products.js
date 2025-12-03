@@ -132,7 +132,18 @@ router.post('/track', auth_1.authMiddleware, validateProduct, async (req, res) =
         }
         const { url, title, price, currency, platform, imageUrl, stockStatus, discountInfo } = req.body;
         const userId = req.user.uid;
+        const user = await db.getUserById(userId);
+        const subscriptionTier = user?.subscription_tier || 'free';
+        const productLimit = subscriptionTier === 'free' ? 5 : 999;
         const products = await db.getProducts(userId);
+        if (products.length >= productLimit) {
+            return res.status(403).json({
+                success: false,
+                error: `Product limit reached. ${subscriptionTier === 'free' ? 'Upgrade to Pro to track more products.' : 'You have reached your product limit.'}`,
+                limit: productLimit,
+                current: products.length
+            });
+        }
         console.log(`[DEBUG] Checking for duplicates - User: ${userId}, URL: ${url}`);
         console.log(`[DEBUG] User has ${products.length} products`);
         const incomingCanonical = canonicalizeUrl(url, platform);
@@ -1670,10 +1681,12 @@ router.get('/debug/search-provider', async (req, res) => {
             }
             return candidates;
         })();
-        return res.json({ success: true, provider, counts, env: {
+        return res.json({
+            success: true, provider, counts, env: {
                 has_SERPER_API_KEY: serper,
                 has_SERPAPI_KEY: serpapi
-            } });
+            }
+        });
     }
     catch (e) {
         return res.status(500).json({ success: false, error: e?.message || 'unknown' });

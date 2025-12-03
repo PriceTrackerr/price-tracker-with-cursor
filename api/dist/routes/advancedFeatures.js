@@ -209,7 +209,7 @@ router.get('/coupons/find/:productId', auth_1.authMiddleware, async (req, res) =
         }
         const store = extractStoreFromUrl(product.url);
         const [freeCoupons, stackableCoupons] = await Promise.allSettled([
-            freeCouponService.findCoupons(store, product.title),
+            freeCouponService.findCoupons(store),
             freeCouponService.getStackableCoupons(store, product.title)
         ]);
         const coupons = freeCoupons.status === 'fulfilled' ? freeCoupons.value : [];

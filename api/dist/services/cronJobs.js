@@ -158,12 +158,12 @@ async function checkPriceAlerts() {
     }
 }
 const initializeCronJobs = () => {
-    node_cron_1.default.schedule('*/30 * * * *', async () => {
+    node_cron_1.default.schedule('0 */12 * * *', async () => {
         console.log('[CRON] Running scheduled price drop check...');
         await checkPriceAlerts();
         console.log('[CRON] Price drop check complete.');
     });
-    console.log('Cron jobs initialized (checking every 30 minutes)');
+    console.log('✅ Cron jobs initialized (checking prices every 12 hours at 00:00 and 12:00)');
 };
 exports.initializeCronJobs = initializeCronJobs;
 //# sourceMappingURL=cronJobs.js.map

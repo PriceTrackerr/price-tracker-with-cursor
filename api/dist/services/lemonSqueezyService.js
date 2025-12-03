@@ -41,7 +41,7 @@ const lemonsqueezy_js_1 = require("@lemonsqueezy/lemonsqueezy.js");
 const crypto_1 = __importDefault(require("crypto"));
 const LEMONSQUEEZY_API_KEY = process.env.LEMONSQUEEZY_API_KEY || '';
 const LEMONSQUEEZY_WEBHOOK_SECRET = process.env.LEMONSQUEEZY_WEBHOOK_SECRET || '';
-const LEMONSQUEEZY_STORE_ID = process.env.LEMONSQUEEZY_STORE_ID || '';
+const LEMONSQUEEZY_STORE_ID = parseInt(process.env.LEMONSQUEEZY_STORE_ID || '0', 10);
 (0, lemonsqueezy_js_1.lemonSqueezySetup)({
     apiKey: LEMONSQUEEZY_API_KEY,
     onError: (error) => {
@@ -58,10 +58,10 @@ exports.SUBSCRIPTION_TIERS = {
     },
     pro: {
         name: 'pro',
-        productLimit: 10,
+        productLimit: 999,
         aiRecommendation: true,
         exportData: true,
-        notificationsPerDay: 10,
+        notificationsPerDay: 100,
         trialDays: 7,
     },
 };
@@ -69,7 +69,16 @@ class LemonSqueezyService {
     async createCheckoutSession(userId, planId, email, customData) {
         try {
             const { createCheckout } = await Promise.resolve().then(() => __importStar(require('@lemonsqueezy/lemonsqueezy.js')));
-            const checkout = await createCheckout(LEMONSQUEEZY_STORE_ID, planId, {
+            const variantId = parseInt(planId, 10);
+            if (isNaN(variantId)) {
+                throw new Error(`Invalid variant ID: ${planId}`);
+            }
+            console.log('Creating checkout with:', {
+                storeId: LEMONSQUEEZY_STORE_ID,
+                variantId,
+                email
+            });
+            const checkout = await createCheckout(LEMONSQUEEZY_STORE_ID, variantId, {
                 checkoutData: {
                     email,
                     custom: {
@@ -78,12 +87,18 @@ class LemonSqueezyService {
                     },
                 },
             });
-            if (!checkout || !checkout.data) {
+            console.log('LemonSqueezy checkout response:', JSON.stringify(checkout, null, 2));
+            if (!checkout || !checkout.data || !checkout.data.data) {
+                console.error('Checkout failed - no data in response');
                 throw new Error('Failed to create checkout session');
             }
+            const checkoutUrl = checkout.data.data.attributes?.url || '';
+            const checkoutId = checkout.data.data.id || '';
+            console.log('Extracted checkout URL:', checkoutUrl);
+            console.log('Extracted checkout ID:', checkoutId);
             return {
-                checkoutUrl: checkout.data.attributes?.url || '',
-                checkoutId: checkout.data.id || '',
+                checkoutUrl,
+                checkoutId,
             };
         }
         catch (error) {
