@@ -12,12 +12,12 @@ router.get('/update-prices', async (req: Request, res: Response) => {
 
     try {
         console.log('[CRON] 🚀 Starting automated price update...');
-        const tenHoursAgo = new Date(Date.now() - 10 * 60 * 60 * 1000).toISOString();
+        const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
 
         const { data: productsToUpdate, error: fetchError } = await supabase
             .from('products')
             .select('id, title, url, platform, price, last_checked')
-            .or(`last_checked.is.null,last_checked.lt.${tenHoursAgo}`)
+            .or(`last_checked.is.null,last_checked.lt.${twelveHoursAgo}`)
             .order('last_checked', { ascending: true, nullsFirst: true })
             .limit(20);
 
@@ -72,19 +72,22 @@ router.get('/update-prices', async (req: Request, res: Response) => {
                 const oldPrice = product.price || 0;
                 const updateData: any = { last_checked: new Date().toISOString() };
 
+                // Always add price history entry (even if price didn't change)
+                // This creates a continuous daily history for trend analysis
+                await db.addPriceHistory({
+                    productId: product.id,
+                    price: newPrice,
+                    currency: results[0].currency || 'USD'
+                });
+
                 if (newPrice !== oldPrice && newPrice > 0) {
                     updateData.price = newPrice;
                     await db.updateProduct(product.id, updateData);
-                    await db.addPriceHistory({
-                        productId: product.id,
-                        price: newPrice,
-                        currency: results[0].currency || 'USD'
-                    });
                     stats.updated++;
                     console.log(`[CRON] ✅ Updated ${product.id}: $${oldPrice} → $${newPrice}`);
                 } else {
                     await db.updateProduct(product.id, updateData);
-                    console.log(`[CRON] ℹ️ No change ${product.id}: $${oldPrice}`);
+                    console.log(`[CRON] ℹ️ No change ${product.id}: $${newPrice} (history saved)`);
                 }
             } catch (productError: any) {
                 stats.errors++;
