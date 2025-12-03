@@ -486,7 +486,7 @@ const ProductCard: React.FC<{
   return (
     <div
       id={`product-${product.id}`}
-      className={`product-card bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-200 ${highlighted ? 'highlighted-product' : ''
+      className={`product-card bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-200 ${highlighted ? 'highlighted-product' : ''
         }`}
       onClick={() => navigate(`/products/${product.id}`)}
     >

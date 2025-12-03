@@ -85,7 +85,7 @@ function DashboardNav() {
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="md:hidden border-t border-slate-100 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-4 shadow-xl">
+        <div className="md:hidden border-t border-slate-100 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-4 shadow-xl">
           <div className="space-y-4">
             <div className="flex items-center gap-3 px-3 py-2 bg-slate-50 rounded-lg">
               <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-semibold text-sm">

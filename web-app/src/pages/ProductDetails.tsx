@@ -257,7 +257,7 @@ export default function ProductDetails() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow relative">
+    <div className="max-w-5xl mx-auto p-6 bg-white dark:bg-gray-900 rounded-lg shadow relative">
       <button className="mb-4 text-blue-600 hover:underline" onClick={() => navigate(-1)}>
         ← {t('back')}
       </button>
