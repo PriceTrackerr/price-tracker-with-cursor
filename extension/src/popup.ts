@@ -583,24 +583,14 @@ document.addEventListener('DOMContentLoaded', function () {
     // Update stats display
     function updateStats() {
         console.log('Updating stats display...');
-        const statNumbers = document.querySelectorAll('.stat-number');
-        console.log('Found stat numbers:', statNumbers.length);
-
-        if (statNumbers.length >= 3) {
-            statNumbers[0].textContent = userStats.trackedProducts.toString();
-            statNumbers[1].textContent = userStats.activeAlerts.toString();
-            statNumbers[2].textContent = `$${userStats.totalSaved.toFixed(2)}`;
-            console.log('Stats updated:', {
-                products: userStats.trackedProducts,
-                alerts: userStats.activeAlerts,
-                saved: userStats.totalSaved
-            });
-        } else {
-            console.error('Not enough stat number elements found');
-        }
-
-        // Also update the tracked count badge in the header
+        // The current popup design doesn't have .stat-number elements
+        // We only update the tracked count badge in the header
         updateTrackedCountBadge();
+        console.log('Stats updated:', {
+            products: userStats.trackedProducts,
+            alerts: userStats.activeAlerts,
+            saved: userStats.totalSaved
+        });
     }
 
     // Update tracked count badge in header

@@ -68,10 +68,6 @@ interface ProviderDescriptor {
 }
 
 const PROVIDERS: ProviderDescriptor[] = [
-  { name: 'brightdata', handler: fetchWithBrightData },
-  { name: 'apify', handler: fetchWithApify },
-  { name: 'scrapedo', handler: fetchWithScrapeDo },
-  { name: 'scrapingbee', handler: fetchWithScrapingBee },
   { name: 'serper', handler: fetchWithSerper }
 ];
 
@@ -296,7 +292,7 @@ function extractCoreQuery(q: string): string {
   const tokens = s.replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(Boolean);
   const brandList = ['apple', 'samsung', 'sony', 'xiaomi', 'oneplus', 'huawei', 'google', 'lenovo', 'dell', 'hp', 'asus', 'acer', 'msi', 'bose', 'jbl', 'beats'];
   const brand = tokens.find(t => brandList.includes(t));
-  const keywords = tokens.filter(t => t.length > 2 && !['with','and','for','the','new','pro','max','gen','generation','edition'].includes(t));
+  const keywords = tokens.filter(t => t.length > 2 && !['with', 'and', 'for', 'the', 'new', 'pro', 'max', 'gen', 'generation', 'edition'].includes(t));
   const core = [brand, ...keywords].filter(Boolean).slice(0, 4).join(' ');
   return core || q;
 }
@@ -357,8 +353,8 @@ function parseApifyResults(data: any[], source: ProviderName): ScrapedItem[] {
     const url = item.productUrl || item.url || item.link;
     const price = parsePrice(
       typeof item.price === 'string' ? item.price :
-      typeof item.price === 'number' ? item.price.toString() :
-      (item.currentPrice || item.minPrice || '')
+        typeof item.price === 'number' ? item.price.toString() :
+          (item.currentPrice || item.minPrice || '')
     );
     const platform = detectPlatform(url);
     if (!url || !platform || price <= 0) return;
