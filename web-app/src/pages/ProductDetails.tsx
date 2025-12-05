@@ -351,8 +351,8 @@ export default function ProductDetails() {
           <button
             onClick={() => setActiveTab('ai')}
             className={`${activeTab === 'ai'
-                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
               } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
           >
             AI Analysis
@@ -365,8 +365,8 @@ export default function ProductDetails() {
               }
             }}
             className={`${activeTab === 'coupons'
-                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
               } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
           >
             Coupons
@@ -374,8 +374,8 @@ export default function ProductDetails() {
           <button
             onClick={() => setActiveTab('global')}
             className={`${activeTab === 'global'
-                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
               } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
           >
             Global
@@ -383,8 +383,8 @@ export default function ProductDetails() {
           <button
             onClick={() => setActiveTab('community')}
             className={`${activeTab === 'community'
-                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
               } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
           >
             Community
@@ -410,14 +410,14 @@ export default function ProductDetails() {
             ) : coupons.length > 0 ? (
               <>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  Found {coupons.length} coupon{coupons.length !== 1 ? 's' : ''} from {Array.from(new Set(coupons.map(c => c.source))).join(', ')}
+                  Found {coupons.length} valid coupon code{coupons.length !== 1 ? 's' : ''}
                 </p>
                 <div className="grid gap-4">
                   {coupons.map((coupon, index) => (
                     <div key={index} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800">
-                      <div className="flex items-start justify-between">
+                      <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
+                          <div className="flex items-center gap-2 mb-2 flex-wrap">
                             <code className="px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded font-mono text-sm font-semibold">
                               {coupon.code}
                             </code>
@@ -432,16 +432,31 @@ export default function ProductDetails() {
                           </div>
                           <p className="text-sm text-gray-700 dark:text-gray-300">{coupon.description}</p>
                         </div>
-                        {coupon.link && (
-                          <a
-                            href={coupon.link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium whitespace-nowrap"
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(coupon.code);
+                              toast.success(
+                                `Code copied: ${coupon.code}`);
+                            }}
+                            className="px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 text-sm font-medium whitespace-nowrap"
+                          >
+                            Copy
+                          </button>
+                          <button
+                            onClick={() => {
+                              // Copy code to clipboard
+                              navigator.clipboard.writeText(coupon.code);
+                              // Open ORIGINAL product URL (not coupon link!)
+                              window.open(safeProduct.url, '_blank');
+                              // Show toast
+                              toast.success(`Code copied! Opening ${safeProduct.platform}...`);
+                            }}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium whitespace-nowrap"
                           >
                             Apply →
-                          </a>
-                        )}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -449,8 +464,8 @@ export default function ProductDetails() {
               </>
             ) : (
               <div className="text-center py-12">
-                <p className="text-gray-600 dark:text-gray-400 mb-2">No active coupons found right now</p>
-                <p className="text-sm text-gray-500 dark:text-gray-500">Check back later or visit the product page directly</p>
+                <p className="text-gray-600 dark:text-gray-400 mb-2 font-medium">No active coupon codes found right now</p>
+                <p className="text-sm text-gray-500 dark:text-gray-500">Try checking the product page directly or come back later</p>
               </div>
             )}
           </div>

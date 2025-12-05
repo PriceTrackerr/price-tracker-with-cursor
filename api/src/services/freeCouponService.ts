@@ -12,6 +12,56 @@ interface Coupon {
 }
 
 export class FreeCouponService {
+  // Common brand keywords for validation
+  private readonly BRAND_KEYWORDS = [
+    'apple', 'samsung', 'sony', 'nike', 'adidas', 'dell', 'hp', 'lenovo',
+    'asus', 'microsoft', 'google', 'amazon', 'walmart', 'target', 'shark',
+    'dyson', 'bose', 'jbl', 'beats', 'lg', 'panasonic', 'canon', 'nikon'
+  ];
+
+  /**
+   * Validate if a coupon is real and relevant
+   */
+  private isValidCoupon(coupon: Coupon, originalQuery: string): boolean {
+    // Must have a valid code (4-20 alphanumeric characters)
+    if (!coupon.code || !/^[A-Z0-9]{4,20}$/.test(coupon.code)) {
+      return false;
+    }
+
+    // Exclude generic noise words that aren't codes
+    const excludeWords = ['EDIT', 'LINK', 'POST', 'TODAY', 'DEAL', 'MORE', 'CLICK', 'HERE', 'READ', 'VIEW'];
+    if (excludeWords.includes(coupon.code)) {
+      return false;
+    }
+
+    // Exclude Slickdeals deal pages (not actual codes)
+    if (coupon.link && coupon.link.includes('slickdeals.net')) {
+      return false;
+    }
+
+    const queryLower = originalQuery.toLowerCase();
+    const descLower = coupon.description.toLowerCase();
+
+    // Check if title mentions the product brand OR is store-wide
+    const hasBrand = this.BRAND_KEYWORDS.some(brand =>
+      queryLower.includes(brand) && descLower.includes(brand)
+    );
+    const isStoreWide = /sitewide|store.*wide|entire.*store|all.*orders/i.test(coupon.description);
+
+    // Must be brand-relevant OR store-wide
+    if (!hasBrand && !isStoreWide) {
+      return false;
+    }
+
+    // Must have clear discount indicators
+    const hasDiscount = /\d+%|\$\d+|off|free|save/i.test(coupon.description) || coupon.discount;
+    if (!hasDiscount) {
+      return false;
+    }
+
+    return true;
+  }
+
   /**
    * Find coupons for a given store or product title
    */
@@ -19,20 +69,30 @@ export class FreeCouponService {
     const cleanQuery = this.extractStoreName(query);
     console.log(`🎟️ Finding coupons for: ${cleanQuery}`);
 
+    let allCoupons: Coupon[] = [];
+
     // 1. Try CouponFollow (Best working source)
-    let coupons = await this.scrapeCouponFollow(cleanQuery);
-    if (coupons.length > 0) return coupons.slice(0, 5);
+    const cfCoupons = await this.scrapeCouponFollow(cleanQuery);
+    allCoupons.push(...cfCoupons);
 
     // 2. Try Slickdeals RSS (Free, reliable)
-    console.log('⚠️ CouponFollow empty, trying Slickdeals...');
-    coupons = await this.scrapeSlickdeals(query); // Use full query for Slickdeals
-    if (coupons.length > 0) return coupons.slice(0, 5);
+    const sdCoupons = await this.scrapeSlickdeals(query);
+    allCoupons.push(...sdCoupons);
 
     // 3. Try Reddit via old.reddit.com (Fallback)
-    console.log('⚠️ Slickdeals empty, trying Reddit...');
-    coupons = await this.scrapeReddit(cleanQuery);
+    const redditCoupons = await this.scrapeReddit(cleanQuery);
+    allCoupons.push(...redditCoupons);
 
-    return coupons.slice(0, 5);
+    // Aggressive filtering: only keep REAL, relevant codes
+    const validCoupons = allCoupons.filter(c => this.isValidCoupon(c, query));
+
+    // Deduplicate by code
+    const uniqueCoupons = Array.from(
+      new Map(validCoupons.map(c => [c.code, c])).values()
+    );
+
+    console.log(`✅ Found ${uniqueCoupons.length} valid coupons (filtered from ${allCoupons.length} total)`);
+    return uniqueCoupons.slice(0, 5);
   }
 
   /**
