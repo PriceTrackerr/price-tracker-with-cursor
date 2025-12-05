@@ -50,10 +50,11 @@ router.get('/:productId', authMiddleware, async (req: Request, res: Response) =>
     try {
         const { productId } = req.params;
 
-        // Get product from database
-        const product = await db.findProductById(productId);
+        // Get product using db.getProductById (matches Db interface)
+        const product = await db.getProductById(productId);
 
-        if (!product) {
+        if (!product || !product.title) {
+            console.error('[COUPONS] Product not found:', productId);
             return res.status(404).json({
                 success: false,
                 error: 'Product not found'
