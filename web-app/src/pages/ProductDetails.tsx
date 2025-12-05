@@ -55,6 +55,10 @@ export default function ProductDetails() {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loadingCoupons, setLoadingCoupons] = useState(false);
 
+  // Global landed cost state
+  const [globalData, setGlobalData] = useState<any>(null);
+  const [loadingGlobal, setLoadingGlobal] = useState(false);
+
   useEffect(() => {
     async function fetchProduct() {
       if (!productId) return;
@@ -252,6 +256,33 @@ export default function ProductDetails() {
     }
   };
 
+  // Fetch global landed costs
+  const fetchGlobalData = async () => {
+    if (!productId) return;
+
+    setLoadingGlobal(true);
+    try {
+      const res = await fetch(`/api/global/landed-cost?productId=${productId}`, {
+        headers: getAuthHeaders(),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.data) {
+          setGlobalData(data.data);
+        }
+      } else {
+        console.warn('Failed to fetch global data');
+        setGlobalData(null);
+      }
+    } catch (error) {
+      console.error('Error fetching global data:', error);
+      setGlobalData(null);
+    } finally {
+      setLoadingGlobal(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="max-w-2xl mx-auto p-6">
@@ -372,7 +403,12 @@ export default function ProductDetails() {
             Coupons
           </button>
           <button
-            onClick={() => setActiveTab('global')}
+            onClick={() => {
+              setActiveTab('global');
+              if (!globalData && !loadingGlobal) {
+                fetchGlobalData();
+              }
+            }}
             className={`${activeTab === 'global'
               ? 'border-blue-600 text-blue-600 dark:text-blue-400'
               : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
@@ -473,9 +509,89 @@ export default function ProductDetails() {
 
         {/* Global Tab */}
         {activeTab === 'global' && (
-          <div className="text-center py-12">
-            <p className="text-gray-600 dark:text-gray-400 text-lg font-medium">Coming Soon</p>
-            <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">Global price comparison feature</p>
+          <div className="space-y-4">
+            {loadingGlobal ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <span className="ml-3 text-gray-600 dark:text-gray-400">Calculating global prices...</span>
+              </div>
+            ) : globalData && globalData.countries ? (
+              <>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  Compare landed costs across 6 countries (includes shipping, VAT, and import tariffs)
+                </p>
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {globalData.countries.map((country: any) => {
+                    const isCheapest = country.countryCode === globalData.cheapest;
+                    return (
+                      <div
+                        key={country.countryCode}
+                        className={`p-4 rounded-lg border-2 ${isCheapest
+                          ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
+                          }`}
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-3xl">{country.flag}</span>
+                            <div>
+                              <h3 className="font-semibold text-gray-900 dark:text-white">{country.country}</h3>
+                              {isCheapest && (
+                                <span className="text-xs bg-green-600 text-white px-2 py-0.5 rounded font-medium">
+                                  Cheapest!
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600 dark:text-gray-400">Local Price:</span>
+                            <span className="font-medium">{country.currencySymbol}{country.localPrice.toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600 dark:text-gray-400">Shipping:</span>
+                            <span>+${country.shipping}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600 dark:text-gray-400">Delivery:</span>
+                            <span className="text-xs text-gray-500">{country.deliveryDays} days</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600 dark:text-gray-400">VAT ({country.vatRate}%):</span>
+                            <span>+{country.currencySymbol}{country.vatAmount.toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600 dark:text-gray-400">Tariff ({country.tariffRate}%):</span>
+                            <span>+{country.currencySymbol}{country.tariffAmount.toLocaleString()}</span>
+                          </div>
+                          <div className="pt-2 border-t border-gray-300 dark:border-gray-600 flex justify-between font-bold">
+                            <span className="text-gray-900 dark:text-white">Total:</span>
+                            <span className="text-lg text-blue-600 dark:text-blue-400">
+                              {country.currencySymbol}{country.total.toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => window.open(safeProduct.url, '_blank')}
+                          className="mt-3 w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium"
+                        >
+                          Buy Now →
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-4 text-center italic">
+                  * Estimates from CurrencyLayer, API Ninja, and WITS/Dutify APIs. Final costs may vary — verify at checkout.
+                </p>
+              </>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-gray-600 dark:text-gray-400 mb-2 font-medium">Unable to load global pricing</p>
+                <p className="text-sm text-gray-500 dark:text-gray-500">Try again later or check your API keys</p>
+              </div>
+            )}
           </div>
         )}
 
