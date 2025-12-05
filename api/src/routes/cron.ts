@@ -6,6 +6,59 @@ import { getDb } from '../config/database';
 const router = express.Router();
 const db = getDb();
 
+// Serper API key rotation (4 accounts = 10,000 free credits total)
+function getRotatedSerperKey(): string {
+    const keys = [
+        process.env.SERPER_API_KEY_1,
+        process.env.SERPER_API_KEY_2,
+        process.env.SERPER_API_KEY_3,
+        process.env.SERPER_API_KEY_4,
+        process.env.SERPER_API_KEY // Fallback to original
+    ].filter(Boolean); // Remove undefined keys
+
+    if (keys.length === 0) {
+        throw new Error('No Serper API keys configured');
+    }
+
+    // Rotate daily (day of year determines which key)
+    const dayOfYear = Math.floor(Date.now() / 86400000);
+    const keyIndex = dayOfYear % keys.length;
+
+    console.log(`[CRON] 🔑 Using Serper key ${keyIndex + 1}/${keys.length}`);
+    return keys[keyIndex]!;
+}
+
+// Extract clean search query from product title
+function extractSearchQuery(title: string): string {
+    if (!title) return '';
+
+    // Remove common noise words and extract core product name
+    const cleaned = title
+        .replace(/\(.*?\)/g, '') // Remove parentheses content
+        .replace(/\[.*?\]/g, '') // Remove bracket content
+        .replace(/For Original|Original/gi, '') // Remove "For Original"
+        .replace(/Renewed|Refurbished/gi, '') // Keep these but clean
+        .trim();
+
+    // Extract brand keywords (common brands)
+    const brands = ['Apple', 'Samsung', 'Sony', 'Nike', 'Adidas', 'Dell', 'HP', 'Lenovo',
+        'Asus', 'Microsoft', 'Google', 'Amazon', 'Walmart', 'Target', 'Shark'];
+    const words = cleaned.split(/\s+/);
+    const brand = words.find(w => brands.some(b => w.toLowerCase().includes(b.toLowerCase())));
+
+    // Take first 4-6 meaningful words
+    const meaningfulWords = words
+        .filter(w => w.length > 2) // Skip short words
+        .filter(w => !['with', 'and', 'for', 'the', 'new', 'pro', 'max'].includes(w.toLowerCase()))
+        .slice(0, 6);
+
+    const query = brand
+        ? `${brand} ${meaningfulWords.filter(w => w !== brand).slice(0, 4).join(' ')}`
+        : meaningfulWords.join(' ');
+
+    return query.trim() || title.substring(0, 50); // Fallback to first 50 chars
+}
+
 router.get('/update-prices', async (req: Request, res: Response) => {
     const startTime = Date.now();
     const stats = { checked: 0, updated: 0, errors: 0, skipped: [] as string[], duration: 0 };
@@ -41,25 +94,38 @@ router.get('/update-prices', async (req: Request, res: Response) => {
 
             try {
                 stats.checked++;
-                const searchQuery = product.title || '';
-                if (!searchQuery) {
+                const originalTitle = product.title || '';
+                if (!originalTitle) {
                     stats.skipped.push(product.id);
                     console.log(`[CRON] ⚠️ Skipped ${product.id} - no title`);
                     continue;
                 }
 
-                console.log(`[CRON] 🔍 Checking: ${product.title.substring(0, 50)}...`);
+                // Extract clean search query for better Serper results
+                const searchQuery = extractSearchQuery(originalTitle);
+                console.log(`[CRON] 🔍 Checking: ${originalTitle.substring(0, 50)}...`);
+                console.log(`[CRON] 🔎 Search query: "${searchQuery}"`);
+
+                // Set the rotated API key temporarily
+                const currentKey = getRotatedSerperKey();
+                const originalKey = process.env.SERPER_API_KEY;
+                process.env.SERPER_API_KEY = currentKey;
 
                 let results;
                 try {
                     results = await realProductSearch.searchProducts(searchQuery, 1);
                 } catch (searchError: any) {
+                    // Restore original key
+                    process.env.SERPER_API_KEY = originalKey;
                     // If search fails (e.g., "All providers failed"), still update last_checked
-                    console.log(`[CRON] ⚠️ Search failed for "${product.title.substring(0, 40)}...": ${searchError.message || 'Provider error'}`);
+                    console.log(`[CRON] ⚠️ Search failed for "${searchQuery}": ${searchError.message || 'Provider error'}`);
                     await db.updateProduct(product.id, { last_checked: new Date().toISOString() });
                     stats.skipped.push(product.id);
                     continue;
                 }
+
+                // Restore original API key after search
+                process.env.SERPER_API_KEY = originalKey;
 
                 if (!results || results.length === 0) {
                     await db.updateProduct(product.id, { last_checked: new Date().toISOString() });
