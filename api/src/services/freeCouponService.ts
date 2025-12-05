@@ -1,12 +1,14 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
+import { parseStringPromise } from 'xml2js';
 
 interface Coupon {
   code: string;
   description: string;
   discount?: string;
   successRate?: number;
-  source: 'Honey' | 'CouponFollow' | 'Reddit';
+  source: 'Honey' | 'CouponFollow' | 'Reddit' | 'Slickdeals';
+  link?: string;
 }
 
 export class FreeCouponService {
@@ -21,8 +23,13 @@ export class FreeCouponService {
     let coupons = await this.scrapeCouponFollow(cleanQuery);
     if (coupons.length > 0) return coupons.slice(0, 5);
 
-    // 2. Try Reddit via old.reddit.com (Fallback)
-    console.log('⚠️ CouponFollow empty, trying Reddit...');
+    // 2. Try Slickdeals RSS (Free, reliable)
+    console.log('⚠️ CouponFollow empty, trying Slickdeals...');
+    coupons = await this.scrapeSlickdeals(query); // Use full query for Slickdeals
+    if (coupons.length > 0) return coupons.slice(0, 5);
+
+    // 3. Try Reddit via old.reddit.com (Fallback)
+    console.log('⚠️ Slickdeals empty, trying Reddit...');
     coupons = await this.scrapeReddit(cleanQuery);
 
     return coupons.slice(0, 5);
@@ -105,6 +112,7 @@ export class FreeCouponService {
           const coupons = posts
             .map((p: any) => {
               const title = p.data?.title || '';
+              const permalink = p.data?.permalink || '';
               // Try to extract a code from title like "[Code]...", "Use code XYZ", "CODE: SAVE20", "Promo: DEAL15"
               const codeMatch =
                 title.match(/code\s*:?\s*([A-Z0-9]{4,15})/i) ||
@@ -123,6 +131,7 @@ export class FreeCouponService {
                   description: title.substring(0, 100), // Truncate long titles
                   discount,
                   source: 'Reddit' as const,
+                  link: permalink ? `https://reddit.com${permalink}` : undefined,
                   successRate: p.data.score > 10 ? 75 : p.data.score > 5 ? 60 : 50 // Estimate based on upvotes
                 };
               }
@@ -149,6 +158,69 @@ export class FreeCouponService {
 
     } catch (error) {
       console.warn('❌ Reddit scrape failed:', error instanceof Error ? error.message : 'Unknown error');
+      return [];
+    }
+  }
+
+  private async scrapeSlickdeals(query: string): Promise<Coupon[]> {
+    try {
+      // Extract first 3 words for better RSS search
+      const searchQuery = query.split(' ').slice(0, 3).join(' ');
+      const encodedQuery = encodeURIComponent(searchQuery);
+      const rssUrl = `https://slickdeals.net/newsearch.php?searcharea=deals&searchin=first&rss=1&query=${encodedQuery}`;
+
+      console.log(`🔍 Fetching Slickdeals RSS for: ${searchQuery}`);
+
+      const response = await axios.get(rssUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        },
+        timeout: 10000
+      });
+
+      const xmlData = await parseStringPromise(response.data);
+      const items = xmlData?.rss?.channel?.[0]?.item || [];
+      const coupons: Coupon[] = [];
+
+      for (const item of items.slice(0, 10)) {
+        const title = item.title?.[0] || '';
+        const description = item.description?.[0] || '';
+        const link = item.link?.[0] || '';
+
+        const combinedText = `${title} ${description}`;
+
+        // Extract coupon codes (common patterns: SAVE20, FREESHIP, CODE123)
+        const codeMatches = combinedText.matchAll(/\b([A-Z][A-Z0-9]{3,14})\b/g);
+        const excludeWords = ['EDIT', 'LINK', 'POST', 'TODAY', 'DEAL', 'MORE', 'CLICK'];
+
+        for (const match of codeMatches) {
+          const code = match[1];
+          if (!excludeWords.includes(code)) {
+            // Extract discount if mentioned
+            const discountMatch = combinedText.match(/(\d+)%\s*off/i);
+            const discount = discountMatch ? `${discountMatch[1]}% off` : undefined;
+
+            coupons.push({
+              code,
+              description: title.substring(0, 100),
+              discount,
+              source: 'Slickdeals' as const,
+              link: link || undefined
+            });
+          }
+        }
+      }
+
+      // Remove duplicates
+      const uniqueCoupons = Array.from(
+        new Map(coupons.map(c => [c.code, c])).values()
+      );
+
+      console.log(`✅ Found ${uniqueCoupons.length} Slickdeals coupons`);
+      return uniqueCoupons.slice(0, 5);
+
+    } catch (error) {
+      console.warn('❌ Slickdeals RSS fetch failed:', error instanceof Error ? error.message : 'Unknown error');
       return [];
     }
   }
