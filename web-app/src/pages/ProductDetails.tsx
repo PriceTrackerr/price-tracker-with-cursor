@@ -606,6 +606,16 @@ export default function ProductDetails() {
                     }
                   }).filter(Boolean)}
                 </div>
+
+                {/* ASIN Availability Disclaimer */}
+                <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <p className="text-sm text-blue-800 dark:text-blue-200 leading-relaxed">
+                    <strong>ℹ️ Note:</strong> Amazon uses different product codes (ASINs) per country. Some products may not be available in all regions.
+                    Links open the same ASIN in each country's store - if unavailable, you'll see an error page.
+                    Prices and shipping estimates are still accurate for comparison.
+                  </p>
+                </div>
+
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-4 text-center italic">
                   * Estimates from ExchangeRate.host and API Ninja. Final costs may vary — verify at checkout.
                 </p>
