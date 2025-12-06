@@ -516,3 +516,73 @@ http://api.exchangerate.host/live
 Step 3: Integrate into your application
 
 This was barely scratching the surface of the exchangeratehost API. For specific integration guides and code examples, please have a look at the API's Documentation.
+
+
+
+
+i had already tracked iphone 16 pro 1tb locked then i checked everytabs price was $799.97
+- ai analysis it says: The price is at the 30-day average, with no savings compared to the highest or average price, and a flat trend over the past 7 days.
+Action: Wait 5 days to see if prices drop before considering a purchase.
+Alternative: Consider buying a refurbished or older model iPhone to save more money.
+but i ahave no 30 days price history tho (i feel this is unreal) and it says avoid 
+- global tab for that product it says cheapest is after calculating all taxes and shipping eventho the prouct is in us it says $884.97 (at bottom its says Estimates from ExchangeRate.host and API Ninja. Final costs may vary — verify at checkout.) then after i click buy it navigates to ebay product page then the price is $649.97 
+
+i asked grok about this problem and it said this:
+You just hit the core flaw of every price tracker that claims “global cheapest” — and you're 100% right:
+Showing “Japan is $42 cheaper” but sending the user to Amazon US is useless and kills trust.
+That’s why Keepa, CamelCamelCamel, and Honey never do real global landed cost — because they can’t solve the redirect problem.
+The Real Solution (2025 — Only One That Works)
+There is only one honest way to make Global tab valuable and trustworthy:
+When a country is cheapest → redirect to the real store in that country.
+Country,Store,Real URL pattern (2025)
+USA,Amazon.com,https://www.amazon.com/dp/{ASIN}
+UK,Amazon.co.uk,https://www.amazon.co.uk/dp/{ASIN}
+Germany,Amazon.de,https://www.amazon.de/dp/{ASIN}
+Japan,Amazon.co.jp,https://www.amazon.co.jp/dp/{ASIN}
+Canada,Amazon.ca,https://www.amazon.ca/dp/{ASIN}
+Australia,Amazon.com.au,https://www.amazon.com.au/dp/{ASIN}
+
+How to get the ASIN from any Amazon URL
+Your user tracks:
+https://www.amazon.com/Apple-AirPods-Pro-2nd-Generation/dp/B0D4SV293K
+→ Extract ASIN = B0D4SV293K
+→ Build Japan link: https://www.amazon.co.jp/dp/B0D4SV293K
+Same ASIN works on all 18 Amazon stores (magic of Amazon).
+
+the prompt:
+Fix Global tab to be honest and useful:
+1. When user tracks an Amazon product → extract ASIN from URL (regex /dp\/([A-Z0-9]{10})/ or /gp\/product\/([A-Z0-9]{10})/)
+2. In landed-cost calculation:
+   - For each country, generate REAL Amazon link:
+     US: https://www.amazon.com/dp/{ASIN}
+     UK: https://www.amazon.co.uk/dp/{ASIN}
+     DE: https://www.amazon.de/dp/{ASIN}
+     JP: https://www.amazon.co.jp/dp/{ASIN}
+     CA: https://www.amazon.ca/dp/{ASIN}
+     AU: https://www.amazon.com.au/dp/{ASIN}
+3. "Buy Now" button on cheapest country → opens the REAL Amazon link for that country
+4. If not Amazon → show "Global estimates only – tracked from [store]"
+5. Highlight cheapest with green badge: "Cheapest in Japan – save $42 → Buy on Amazon JP"
+After this: Global tab is no longer fake — users actually save money.
+
+Result Example
+User tracks AirPods on Amazon.com ($249)
+Global tab shows:
+Japan: ¥32,800 total (~$218) – Save $31
+→ "Buy on Amazon Japan" button → opens real Amazon.co.jp link with same product.
+Users will screenshot this and share it.
+That’s your viral moment.
+For Non-Amazon (Walmart, eBay, etc.)
+Show:
+"Global estimates only – tracked from Walmart US"
+→ No fake redirect.
+Final Verdict
+Do exactly this.
+It’s the only honest global feature that works.
+Deploy → test an Amazon product → click "Buy on Amazon JP" → see real Japanese page.
+Reply “Global tab redirects to real stores” → we launch Pro.
+This is your killer feature.
+No one else does it.
+
+
+so what do u think about this and if you have any better idea please tell me and we'll implement it, my price tracker should be the best from the market or i dont have a shot 

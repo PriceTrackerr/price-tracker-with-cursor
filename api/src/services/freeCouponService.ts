@@ -34,10 +34,10 @@ export class FreeCouponService {
       return false;
     }
 
-    // Exclude Slickdeals deal pages (not actual codes)
-    if (coupon.link && coupon.link.includes('slickdeals.net')) {
-      return false;
-    }
+    // Allow Slickdeals coupons (we extract real codes from RSS, not just deal links)
+// if (coupon.link && coupon.link.includes('slickdeals.net')) {
+//   return false;
+// }
 
     const queryLower = originalQuery.toLowerCase();
     const descLower = coupon.description.toLowerCase();
