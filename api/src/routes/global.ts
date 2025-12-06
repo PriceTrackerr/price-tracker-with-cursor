@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import axios from 'axios';
 import { getDb } from '../config/database';
 import { authMiddleware } from '../middleware/auth';
+import { getStoreConfig } from '../config/stores';
 
 const router = express.Router();
 const db = getDb();
@@ -20,6 +21,10 @@ interface CountryData {
     tariffRate: number;
     tariffAmount: number;
     total: number;
+    realStoreUrl: string | null;          // NEW
+    canBuyHere: boolean;                   // NEW
+    storeName: string;                     // NEW
+    savingsVsTracked: number;              // NEW
 }
 
 // Static shipping costs per country (USD equivalent)
@@ -183,6 +188,10 @@ router.get('/landed-cost', authMiddleware, async (req: Request, res: Response) =
         const usdPrice = parseFloat(product.price) || 0;
         console.log(`[GLOBAL] Calculating landed costs for product (USD $${usdPrice})`);
 
+        // Get store configuration for URL building
+        const storeConfig = getStoreConfig((product as any).storeName || 'unknown');
+        const storeItemId = (product as any).storeItemId;
+
         // Fetch currency rates from ExchangeRate.host
         const rates = await getCurrencyRates();
 
@@ -201,6 +210,16 @@ router.get('/landed-cost', authMiddleware, async (req: Request, res: Response) =
                 const tariffAmount = localPrice * tariffRate;
                 const total = localPrice + shipping + vatAmount + tariffAmount;
 
+                // Build country-specific store URL
+                const canBuyHere = storeConfig?.availableCountries.includes(country.code) || false;
+                const realStoreUrl = (canBuyHere && storeItemId && storeConfig)
+                    ? storeConfig.buildCountryUrl(storeItemId, country.code)
+                    : null;
+
+                // Calculate savings vs tracked price
+                const totalUSD = total / rate;
+                const savingsVsTracked = usdPrice - totalUSD;
+
                 return {
                     country: country.name,
                     countryCode: country.code,
@@ -214,7 +233,11 @@ router.get('/landed-cost', authMiddleware, async (req: Request, res: Response) =
                     vatAmount: Math.round(vatAmount * 100) / 100,
                     tariffRate: Math.round(tariffRate * 100),
                     tariffAmount: Math.round(tariffAmount * 100) / 100,
-                    total: Math.round(total * 100) / 100
+                    total: Math.round(total * 100) / 100,
+                    realStoreUrl,
+                    canBuyHere,
+                    storeName: storeConfig?.displayName || 'Unknown',
+                    savingsVsTracked: Math.round(savingsVsTracked * 100) / 100
                 };
             })
         );
@@ -231,7 +254,8 @@ router.get('/landed-cost', authMiddleware, async (req: Request, res: Response) =
             data: {
                 countries: countryData,
                 cheapest: countryData[cheapestIndex].countryCode,
-                basePrice: usdPrice
+                basePrice: usdPrice,
+                trackedStore: storeConfig?.displayName || 'Unknown'
             }
         });
 

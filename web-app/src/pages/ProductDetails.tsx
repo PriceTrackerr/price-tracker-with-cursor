@@ -528,8 +528,8 @@ export default function ProductDetails() {
                         <div
                           key={country.countryCode || index}
                           className={`p-4 rounded-lg border-2 ${isCheapest
-                              ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-                              : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
+                            ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                            : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
                             }`}
                         >
                           <div className="flex items-center justify-between mb-3">
@@ -575,12 +575,29 @@ export default function ProductDetails() {
                               </span>
                             </div>
                           </div>
-                          <button
-                            onClick={() => window.open(safeProduct.url, '_blank')}
-                            className="mt-3 w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium"
-                          >
-                            Buy Now →
-                          </button>
+
+                          {/* Savings badge */}
+                          {country.savingsVsTracked && country.savingsVsTracked < -5 && (
+                            <div className="my-2 bg-yellow-100 dark:bg-yellow-900/30 px-3 py-1.5 rounded-lg text-center">
+                              <span className="text-yellow-800 dark:text-yellow-200 font-semibold text-sm">
+                                💰 Save ${Math.abs(country.savingsVsTracked).toFixed(2)}!
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Smart Buy button */}
+                          {country.canBuyHere && country.realStoreUrl ? (
+                            <button
+                              onClick={() => window.open(country.realStoreUrl, '_blank')}
+                              className="mt-3 w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm font-medium transition-colors"
+                            >
+                              🛒 Buy on {country.storeName} {country.countryCode}
+                            </button>
+                          ) : (
+                            <div className="mt-3 text-center text-sm text-gray-500 dark:text-gray-400 italic py-2 bg-gray-100 dark:bg-gray-800 rounded-md">
+                              Estimate only - {(globalData as any).trackedStore || 'Store'} not available in {country.country}
+                            </div>
+                          )}
                         </div>
                       );
                     } catch (error) {
