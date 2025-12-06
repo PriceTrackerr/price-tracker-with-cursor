@@ -35,9 +35,9 @@ export class FreeCouponService {
     }
 
     // Allow Slickdeals coupons (we extract real codes from RSS, not just deal links)
-// if (coupon.link && coupon.link.includes('slickdeals.net')) {
-//   return false;
-// }
+    // if (coupon.link && coupon.link.includes('slickdeals.net')) {
+    //   return false;
+    // }
 
     const queryLower = originalQuery.toLowerCase();
     const descLower = coupon.description.toLowerCase();
@@ -224,12 +224,12 @@ export class FreeCouponService {
 
   private async scrapeSlickdeals(query: string): Promise<Coupon[]> {
     try {
-      // Extract first 3 words for better RSS search
-      const searchQuery = query.split(' ').slice(0, 3).join(' ');
-      const encodedQuery = encodeURIComponent(searchQuery);
+      // Shorten query: use first part before comma for better RSS results
+      const shortQuery = query.split(',')[0].trim(); // "Apple iPhone 15" instead of "Apple iPhone 15, 128GB, Black"
+      const encodedQuery = encodeURIComponent(shortQuery);
       const rssUrl = `https://slickdeals.net/newsearch.php?searcharea=deals&searchin=first&rss=1&query=${encodedQuery}`;
 
-      console.log(`🔍 Fetching Slickdeals RSS for: ${searchQuery}`);
+      console.log(`🔍 Fetching Slickdeals RSS for: ${shortQuery}`);
 
       const response = await axios.get(rssUrl, {
         headers: {
@@ -241,36 +241,47 @@ export class FreeCouponService {
       const xmlData = await parseStringPromise(response.data);
       const items = xmlData?.rss?.channel?.[0]?.item || [];
       const coupons: Coupon[] = [];
-      console.log(`📦 Slickdeals returned ${items.length} items`);
+      console.log(`📦 Slickdeals returned ${items.length} items for "${shortQuery}"`);
 
-      for (const item of items.slice(0, 10)) {
+      // Extract brand keywords from original query for relevance checking
+      const queryLower = query.toLowerCase();
+      const brandKeywords = ['apple', 'iphone', 'samsung', 'walmart', 'amazon', 'target', 'nike', 'adidas'];
+      const queryBrands = brandKeywords.filter(brand => queryLower.includes(brand));
+
+      for (const item of items.slice(0, 25)) { // Process more items for better results
         const title = item.title?.[0] || '';
         const description = item.description?.[0] || '';
         const link = item.link?.[0] || '';
-
         const fullText = `${title} ${description}`;
+        const fullTextLower = fullText.toLowerCase();
+
         let extractedCode = null;
         let discount = undefined;
-        // Pattern 1: Explicit codes like "SAVE20", "OFF15", "20OFF", "FREESHIP"
-        const explicitMatch = fullText.match(/(SAVE\d+|OFF\d+|\d+OFF|FREESHIP|BF\d+)/i);
-        if (explicitMatch) {
-          extractedCode = explicitMatch[1].toUpperCase();
-        }
-        // Pattern 2: "code:", "use code", "promo:", "coupon:"
-        if (!extractedCode) {
-          const codeMatch = fullText.match(/(?:code|promo|coupon)\s*:?\s*([A-Z0-9]{4,15})/i);
-          if (codeMatch) {
-            extractedCode = codeMatch[1].toUpperCase();
+
+        // Much broader regex: Match SAVE, OFF, coupon codes, percentages, etc.
+        const broadMatches = fullText.matchAll(/([A-Z0-9]{3,}|SAVE|OFF|BF|FREE|COUPON|PROMO|DISCOUNT|%OFF|\$OFF|(\d+%?\s*off))/gi);
+
+        for (const match of broadMatches) {
+          const potentialCode = match[0].toUpperCase();
+
+          // Skip noise words
+          if (['THE', 'AND', 'FOR', 'WITH', 'THIS'].includes(potentialCode)) continue;
+
+          // Accept if it looks like a code pattern
+          if (/^(SAVE\d+|OFF\d+|\d+OFF|FREESHIP|WELCOME|BF\d+|CYBER|DEAL)$/i.test(potentialCode)) {
+            extractedCode = potentialCode;
+            break;
           }
         }
-        // Pattern 3: Extract discount percentage/dollar amounts
+
+        // Extract discount from text
         const percentMatch = fullText.match(/(\d+)%\s*off/i);
         const dollarMatch = fullText.match(/\$(\d+)\s*off/i);
 
         if (percentMatch) {
           discount = `${percentMatch[1]}% off`;
           if (!extractedCode) {
-            extractedCode = `${percentMatch[1]}OFF`;
+            extractedCode = `${percentMatch[1]}OFF`; // Generate code from percentage
           }
         } else if (dollarMatch) {
           discount = `$${dollarMatch[1]} off`;
@@ -278,8 +289,13 @@ export class FreeCouponService {
             extractedCode = `SAVE${dollarMatch[1]}`;
           }
         }
-        // If we found a code OR discount, add it
-        if (extractedCode || discount) {
+
+        // Check relevance: Has discount/code AND matches query brands (or is generic)
+        const hasBrandMatch = queryBrands.length === 0 || queryBrands.some(brand => fullTextLower.includes(brand));
+        const hasDiscount = discount || extractedCode;
+
+        // Accept if semi-relevant: has discount and brand match (looser than before)
+        if (hasDiscount && hasBrandMatch) {
           const finalCode = extractedCode || 'DEAL';
 
           coupons.push({
@@ -289,7 +305,7 @@ export class FreeCouponService {
             source: 'Slickdeals' as const,
             link: link || undefined
           });
-          console.log(`✅ Extracted: ${finalCode} - ${title.substring(0, 50)}...`);
+          console.log(`✅ Extracted: ${finalCode} ${discount ? '(' + discount + ')' : ''} - ${title.substring(0, 50)}...`);
         }
       }
 
