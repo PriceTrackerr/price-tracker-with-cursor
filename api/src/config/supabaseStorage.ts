@@ -1,6 +1,6 @@
 import { supabase, TABLES, handleSupabaseError } from './supabase';
-import type { 
-  Product, User, Alert, Notification, PriceHistory, Payment, 
+import type {
+  Product, User, Alert, Notification, PriceHistory, Payment,
   AffiliateTransaction, PayoutRequest, SubscriptionPlan,
   CouponInfo, CouponStack, PriceGuarantee, ExpertCurator,
   WatchlistShared, CommunityVote, DealComment, GlobalMarketData,
@@ -119,6 +119,11 @@ class SupabaseStorage {
   async addProduct(productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
     try {
       const now = new Date().toISOString();
+
+      // Import store detection at runtime to avoid circular deps
+      const { detectStore } = await import('../config/stores');
+      const storeInfo = detectStore((productData as any).url);
+
       // Map to snake_case columns expected by Supabase
       const toInsert: any = {
         url: (productData as any).url,
@@ -130,6 +135,8 @@ class SupabaseStorage {
         user_id: (productData as any).userId,
         stock_status: (productData as any).stockStatus || 'unknown',
         discount_info: (productData as any).discountInfo ?? undefined,
+        store_name: storeInfo.storeName, // NEW: Store detection
+        store_item_id: storeInfo.storeItemId, // NEW: ASIN/item ID
         created_at: now,
         updated_at: now
       };
@@ -208,6 +215,8 @@ class SupabaseStorage {
         discountInfo: row.discount_info,
         matchedProducts: row.matched_products || [],
         totalMatches: row.total_matches || (row.matched_products ? row.matched_products.length : 0),
+        storeName: row.store_name, // NEW: Store name (amazon, ebay, etc)
+        storeItemId: row.store_item_id // NEW: ASIN or item ID
       } as any;
     } catch (error) {
       handleSupabaseError(error, 'getProductById');
@@ -386,7 +395,7 @@ class SupabaseStorage {
         console.error('🚨 Supabase insert error:', error);
         throw error;
       }
-      
+
       console.log('✅ Alert created successfully with ID:', data.id);
       return data.id;
     } catch (error) {
@@ -398,7 +407,7 @@ class SupabaseStorage {
   async getAlerts(userId?: string): Promise<Alert[]> {
     try {
       let query = supabase.from(TABLES.ALERTS).select('*');
-      
+
       if (userId) {
         query = query.eq('user_id', userId);
       }
@@ -406,7 +415,7 @@ class SupabaseStorage {
       const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
-      
+
       // Map snake_case columns back to camelCase
       return (data || []).map((alert: any) => ({
         id: alert.id,
@@ -534,7 +543,7 @@ class SupabaseStorage {
   async getNotifications(userId?: string): Promise<Notification[]> {
     try {
       let query = supabase.from(TABLES.NOTIFICATIONS).select('*');
-      
+
       if (userId) {
         query = query.eq('user_id', userId);
       }
@@ -644,7 +653,7 @@ class SupabaseStorage {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      
+
       return (data || []).map((match: any) => ({
         id: match.id,
         sourceProductId: match.source_product_id,
@@ -818,7 +827,7 @@ class SupabaseStorage {
       if (error) throw error;
 
       const referredUserIds = (data as Array<{ referredUserId: string }> | null)?.map((t: { referredUserId: string }) => t.referredUserId) || [];
-      
+
       if (referredUserIds.length === 0) return [];
 
       const { data: users, error: usersError } = await supabase
@@ -851,7 +860,7 @@ class SupabaseStorage {
   async getPayoutRequests(affiliateUserId?: string): Promise<PayoutRequest[]> {
     try {
       let query = supabase.from(TABLES.PAYOUT_REQUESTS).select('*');
-      
+
       if (affiliateUserId) {
         query = query.eq('affiliateUserId', affiliateUserId);
       }
