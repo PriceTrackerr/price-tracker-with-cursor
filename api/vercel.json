@@ -11,5 +11,11 @@
       "src": "/(.*)",
       "dest": "src/index.ts"
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/update-prices",
+      "schedule": "0 */12 * * *"
+    }
   ]
 }
