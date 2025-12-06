@@ -241,33 +241,55 @@ export class FreeCouponService {
       const xmlData = await parseStringPromise(response.data);
       const items = xmlData?.rss?.channel?.[0]?.item || [];
       const coupons: Coupon[] = [];
+      console.log(`📦 Slickdeals returned ${items.length} items`);
 
       for (const item of items.slice(0, 10)) {
         const title = item.title?.[0] || '';
         const description = item.description?.[0] || '';
         const link = item.link?.[0] || '';
 
-        const combinedText = `${title} ${description}`;
-
-        // Extract coupon codes (common patterns: SAVE20, FREESHIP, CODE123)
-        const codeMatches = combinedText.matchAll(/\b([A-Z][A-Z0-9]{3,14})\b/g);
-        const excludeWords = ['EDIT', 'LINK', 'POST', 'TODAY', 'DEAL', 'MORE', 'CLICK'];
-
-        for (const match of codeMatches) {
-          const code = match[1];
-          if (!excludeWords.includes(code)) {
-            // Extract discount if mentioned
-            const discountMatch = combinedText.match(/(\d+)%\s*off/i);
-            const discount = discountMatch ? `${discountMatch[1]}% off` : undefined;
-
-            coupons.push({
-              code,
-              description: title.substring(0, 100),
-              discount,
-              source: 'Slickdeals' as const,
-              link: link || undefined
-            });
+        const fullText = `${title} ${description}`;
+        let extractedCode = null;
+        let discount = undefined;
+        // Pattern 1: Explicit codes like "SAVE20", "OFF15", "20OFF", "FREESHIP"
+        const explicitMatch = fullText.match(/(SAVE\d+|OFF\d+|\d+OFF|FREESHIP|BF\d+)/i);
+        if (explicitMatch) {
+          extractedCode = explicitMatch[1].toUpperCase();
+        }
+        // Pattern 2: "code:", "use code", "promo:", "coupon:"
+        if (!extractedCode) {
+          const codeMatch = fullText.match(/(?:code|promo|coupon)\s*:?\s*([A-Z0-9]{4,15})/i);
+          if (codeMatch) {
+            extractedCode = codeMatch[1].toUpperCase();
           }
+        }
+        // Pattern 3: Extract discount percentage/dollar amounts
+        const percentMatch = fullText.match(/(\d+)%\s*off/i);
+        const dollarMatch = fullText.match(/\$(\d+)\s*off/i);
+
+        if (percentMatch) {
+          discount = `${percentMatch[1]}% off`;
+          if (!extractedCode) {
+            extractedCode = `${percentMatch[1]}OFF`;
+          }
+        } else if (dollarMatch) {
+          discount = `$${dollarMatch[1]} off`;
+          if (!extractedCode) {
+            extractedCode = `SAVE${dollarMatch[1]}`;
+          }
+        }
+        // If we found a code OR discount, add it
+        if (extractedCode || discount) {
+          const finalCode = extractedCode || 'DEAL';
+
+          coupons.push({
+            code: finalCode,
+            description: title.substring(0, 100),
+            discount,
+            source: 'Slickdeals' as const,
+            link: link || undefined
+          });
+          console.log(`✅ Extracted: ${finalCode} - ${title.substring(0, 50)}...`);
         }
       }
 
@@ -276,7 +298,7 @@ export class FreeCouponService {
         new Map(coupons.map(c => [c.code, c])).values()
       );
 
-      console.log(`✅ Found ${uniqueCoupons.length} Slickdeals coupons`);
+      console.log(`✅ Found ${uniqueCoupons.length} Slickdeals coupons (from ${items.length} items)`);
       return uniqueCoupons.slice(0, 5);
 
     } catch (error) {
