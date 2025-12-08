@@ -2712,18 +2712,6 @@
       "triggeredAt": "2025-08-06T16:10:02.371Z"
     },
     {
-      "id": "alert_new_2",
-      "userId": "1753818521609lw3h2",
-      "productId": "1753887792271kyihc",
-      "targetPrice": 280,
-      "isActive": false,
-      "createdAt": "2025-08-06T09:00:00.000Z",
-      "lastTriggered": "2025-08-06T10:00:00.000Z",
-      "emailSent": true,
-      "currentPrice": 249.99,
-      "triggeredAt": "2025-08-06T16:10:04.656Z"
-    },
-    {
       "id": "alert_new_3",
       "userId": "1753818521609lw3h2",
       "productId": "1753887931479igp4b",

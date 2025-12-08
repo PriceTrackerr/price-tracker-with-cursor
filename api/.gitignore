@@ -1,6 +1,6 @@
 # Dependencies
 node_modules/
-package-lock.json
+
 
 # Environment variables
 .env
@@ -10,7 +10,7 @@ package-lock.json
 # Build output
 dist/
 build/
-*.js
+
 *.js.map
 !jest.config.js
 
@@ -50,4 +50,3 @@ Thumbs.db
 .vercel
 
 # Readme files
-.md
