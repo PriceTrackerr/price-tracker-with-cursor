@@ -28,6 +28,7 @@ import subscriptionRoutes from './routes/subscriptions';
 import cronRoutes from './routes/cron';
 import couponRoutes from './routes/coupons';
 import globalRoutes from './routes/global';
+import contactRoutes from './routes/contact';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler';
@@ -264,6 +265,7 @@ app.use('/api/ai', aiRecommendationRoutes);
 app.use('/api/cron', cronRoutes);
 app.use('/api/coupons', couponRoutes);
 app.use('/api/global', globalRoutes);
+app.use('/api/contact', contactRoutes);
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {

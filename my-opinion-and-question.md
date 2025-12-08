@@ -586,3 +586,18 @@ No one else does it.
 
 
 so what do u think about this and if you have any better idea please tell me and we'll implement it, my price tracker should be the best from the market or i dont have a shot 
+
+
+
+
+now i think this is what i left to do
+- adding e-commerce patforms and some brand logos on landing page (the brand logos are not necessary tho)
+* give me the resolution of the images i should get for the platforms logo and where should i put them and also the names of the image (how i should rename)
+- adding screenshots of dashboard or products page to landing page
+- add demo video to landing page (like a how to works thing)
+- create some pages like contact us, features (in this page we'll write all the features thst my product offers and it must me very convincing)
+* add features page and write every feature we offer and make it really catchy and convincing but not misleading
+* add contact us page, in that page make some form to submit user's email and name and message that email should be sent to my email realpricetracker94@gmail.com (check the email from terms and conditions page)
+- make some buttons in footer functional (some are but some aren't)
+- once user login there is no button to turn back to landing page so we'll add home button or the logo button clickable
+- for pricing section take a look at my subscription page i want the exact style and content from there no basic and premium just free and pro (monthly and yearly)

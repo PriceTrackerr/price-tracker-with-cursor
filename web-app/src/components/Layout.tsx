@@ -373,15 +373,17 @@ export default function Layout({ children }: LayoutProps) {
           {/* Header */}
           <div className={`border-b border-gray-200 dark:border-gray-700 ${sidebarCollapsed ? 'p-2' : 'p-4'}`}>
             {!sidebarCollapsed && (
-              <div className="flex flex-col items-center gap-3">
-                <div className="w-16 h-16 bg-[#2563EB] rounded-lg flex items-center justify-center shadow-sm">
-                  <svg width="40" height="40" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="0" y="0" width="100" height="100" rx="20" fill="#2563EB" />
-                    <path d="M25 70 C35 50, 65 50, 75 30" stroke="white" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
-                    <circle cx="75" cy="30" r="6" fill="white" />
-                  </svg>
-                </div>
-                <span className="font-bold text-lg text-gray-900 dark:text-white text-center">Price Tracker</span>
+              <>
+                <Link to="/" className="flex flex-col items-center gap-3 hover:opacity-80 transition-opacity">
+                  <div className="w-16 h-16 bg-[#2563EB] rounded-lg flex items-center justify-center shadow-sm">
+                    <svg width="40" height="40" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <rect x="0" y="0" width="100" height="100" rx="20" fill="#2563EB" />
+                      <path d="M25 70 C35 50, 65 50, 75 30" stroke="white" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
+                      <circle cx="75" cy="30" r="6" fill="white" />
+                    </svg>
+                  </div>
+                  <span className="font-bold text-lg text-gray-900 dark:text-white text-center">Price Tracker</span>
+                </Link>
                 <button
                   onClick={() => setSidebarCollapsed(true)}
                   className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
@@ -389,17 +391,19 @@ export default function Layout({ children }: LayoutProps) {
                 >
                   <X className="w-4 h-4" />
                 </button>
-              </div>
+              </>
             )}
             {sidebarCollapsed && (
-              <div className="flex flex-col items-center gap-3">
-                <div className="w-12 h-12 bg-[#2563EB] rounded-lg flex items-center justify-center shadow-sm">
-                  <svg width="28" height="28" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="0" y="0" width="100" height="100" rx="20" fill="#2563EB" />
-                    <path d="M25 70 C35 50, 65 50, 75 30" stroke="white" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
-                    <circle cx="75" cy="30" r="6" fill="white" />
-                  </svg>
-                </div>
+              <>
+                <Link to="/" className="flex flex-col items-center gap-3 hover:opacity-80 transition-opacity">
+                  <div className="w-12 h-12 bg-[#2563EB] rounded-lg flex items-center justify-center shadow-sm">
+                    <svg width="28" height="28" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <rect x="0" y="0" width="100" height="100" rx="20" fill="#2563EB" />
+                      <path d="M25 70 C35 50, 65 50, 75 30" stroke="white" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
+                      <circle cx="75" cy="30" r="6" fill="white" />
+                    </svg>
+                  </div>
+                </Link>
                 <button
                   onClick={() => setSidebarCollapsed(false)}
                   className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
@@ -407,7 +411,7 @@ export default function Layout({ children }: LayoutProps) {
                 >
                   <Menu className="w-4 h-4" />
                 </button>
-              </div>
+              </>
             )}
           </div>
 
@@ -439,52 +443,54 @@ export default function Layout({ children }: LayoutProps) {
       </aside>
 
       {/* Sidebar (Mobile Drawer) */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 md:hidden">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setMobileMenuOpen(false)} />
-          <aside className="relative h-full w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 shadow-xl">
-            <div className="flex flex-col h-full">
-              <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 bg-[#2563EB] rounded-lg flex items-center justify-center shadow-sm">
-                    <svg width="24" height="24" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <rect x="0" y="0" width="100" height="100" rx="20" fill="#2563EB" />
-                      <path d="M25 70 C35 50, 65 50, 75 30" stroke="white" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
-                      <circle cx="75" cy="30" r="6" fill="white" />
-                    </svg>
+      {
+        mobileMenuOpen && (
+          <div className="fixed inset-0 z-50 md:hidden">
+            <div className="absolute inset-0 bg-black/40" onClick={() => setMobileMenuOpen(false)} />
+            <aside className="relative h-full w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 shadow-xl">
+              <div className="flex flex-col h-full">
+                <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                  <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                    <div className="w-10 h-10 bg-[#2563EB] rounded-lg flex items-center justify-center shadow-sm">
+                      <svg width="24" height="24" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="0" y="0" width="100" height="100" rx="20" fill="#2563EB" />
+                        <path d="M25 70 C35 50, 65 50, 75 30" stroke="white" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
+                        <circle cx="75" cy="30" r="6" fill="white" />
+                      </svg>
+                    </div>
+                    <span className="font-bold text-lg text-gray-900 dark:text-white">Price Tracker</span>
+                  </Link>
+                  <button onClick={() => setMobileMenuOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg" aria-label="Close menu">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                <nav className="flex-1 p-4">
+                  <div className="space-y-2">
+                    {navigation.map((item) => {
+                      const Icon = item.icon;
+                      const isActive = location.pathname === item.href;
+                      return (
+                        <Link
+                          key={item.id}
+                          to={item.href}
+                          className={`w-full flex items-center gap-3 h-12 px-3 rounded-lg transition-all duration-200 ${isActive
+                            ? "bg-blue-600 text-white shadow-lg shadow-blue-600/25"
+                            : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
+                            }`}
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          <Icon className="w-5 h-5" />
+                          <span>{item.label}</span>
+                        </Link>
+                      );
+                    })}
                   </div>
-                  <span className="font-bold text-lg text-gray-900 dark:text-white">Price Tracker</span>
-                </div>
-                <button onClick={() => setMobileMenuOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg" aria-label="Close menu">
-                  <X className="w-5 h-5" />
-                </button>
+                </nav>
               </div>
-              <nav className="flex-1 p-4">
-                <div className="space-y-2">
-                  {navigation.map((item) => {
-                    const Icon = item.icon;
-                    const isActive = location.pathname === item.href;
-                    return (
-                      <Link
-                        key={item.id}
-                        to={item.href}
-                        className={`w-full flex items-center gap-3 h-12 px-3 rounded-lg transition-all duration-200 ${isActive
-                          ? "bg-blue-600 text-white shadow-lg shadow-blue-600/25"
-                          : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
-                          }`}
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        <Icon className="w-5 h-5" />
-                        <span>{item.label}</span>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </nav>
-            </div>
-          </aside>
-        </div>
-      )}
+            </aside>
+          </div>
+        )
+      }
 
       {/* Main Content Area */}
       <div className={`transition-all duration-300 min-h-screen ${sidebarCollapsed ? "md:ml-16" : "md:ml-64"
@@ -753,6 +759,6 @@ export default function Layout({ children }: LayoutProps) {
       </div>
 
 
-    </div>
+    </div >
   );
 } 

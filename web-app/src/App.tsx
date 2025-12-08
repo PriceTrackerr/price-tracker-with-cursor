@@ -17,6 +17,7 @@ import TermsAndConditions from './pages/TermsAndConditions'
 import ResetPassword from './pages/ResetPassword'
 import About from './pages/About'
 import Features from './pages/Features'
+import Contact from './pages/Contact'
 
 import { AuthProvider, useAuth } from './components/AuthContext'
 import { ReconnectingIndicator } from './components/AuthContext'
@@ -81,6 +82,7 @@ function AppContent() {
             <Route path="/reset-password/*" element={<ResetPassword />} />
             <Route path="/about" element={<About />} />
             <Route path="/features" element={<Features />} />
+            <Route path="/contact" element={<Contact />} />
 
           </Routes>
           <Toaster

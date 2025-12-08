@@ -24,7 +24,8 @@ import {
   Sparkles,
   Brain,
   LineChart,
-  Search
+  Search,
+  LayoutGrid
 } from 'lucide-react';
 
 // --- Types ---
@@ -41,65 +42,55 @@ interface LandingPlan {
     exportData: boolean;
     prioritySupport: boolean;
   };
+  description?: string;
 }
 
 const DEFAULT_LANDING_PLANS: LandingPlan[] = [
   {
-    id: 'basic_monthly',
-    name: 'Basic Monthly',
-    price: 3,
+    id: 'free',
+    name: 'Free Starter',
+    price: 0,
     currency: 'USD',
     interval: 'monthly',
     features: {
-      maxTrackedProducts: 50,
+      maxTrackedProducts: 10,
       alertFrequency: 'daily',
-      priceHistoryDays: 60,
+      priceHistoryDays: 30,
       exportData: false,
       prioritySupport: false,
     },
+    description: "Perfect for casual shoppers."
   },
   {
-    id: 'basic_yearly',
-    name: 'Basic Yearly',
-    price: 30,
-    currency: 'USD',
-    interval: 'yearly',
-    features: {
-      maxTrackedProducts: 50,
-      alertFrequency: 'daily',
-      priceHistoryDays: 60,
-      exportData: false,
-      prioritySupport: false,
-    },
-  },
-  {
-    id: 'premium_monthly',
-    name: 'Premium Monthly',
-    price: 8,
+    id: 'pro_monthly',
+    name: 'Pro Monthly',
+    price: 4.99,
     currency: 'USD',
     interval: 'monthly',
     features: {
-      maxTrackedProducts: 200,
+      maxTrackedProducts: 9999, // Unlimited representation
       alertFrequency: 'instant',
       priceHistoryDays: 365,
       exportData: true,
       prioritySupport: true,
     },
+    description: "For power users & resellers."
   },
   {
-    id: 'premium_yearly',
-    name: 'Premium Yearly',
-    price: 80,
+    id: 'pro_yearly',
+    name: 'Pro Yearly',
+    price: 49.99,
     currency: 'USD',
     interval: 'yearly',
     features: {
-      maxTrackedProducts: 200,
+      maxTrackedProducts: 9999,
       alertFrequency: 'instant',
       priceHistoryDays: 365,
       exportData: true,
       prioritySupport: true,
     },
-  },
+    description: "Best value for year-round savings."
+  }
 ];
 
 // --- Components ---
@@ -135,15 +126,10 @@ function Navigation() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8">
-            {['Features', 'AI Analysis', 'Pricing', 'FAQ'].map((item) => (
-              <a
-                key={item}
-                href={`#${item.toLowerCase().replace(' ', '-')}`}
-                className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors"
-              >
-                {item}
-              </a>
-            ))}
+            <Link to="/features" className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Features</Link>
+            <a href="#ai-analysis" className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">AI Analysis</a>
+            <a href="#pricing" className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Pricing</a>
+            <Link to="/contact" className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Contact</Link>
           </div>
 
           {/* Desktop Auth Buttons */}
@@ -153,7 +139,7 @@ function Navigation() {
                 to="/dashboard"
                 className="bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 rounded-full font-medium transition-all hover:shadow-lg hover:shadow-slate-500/20 flex items-center gap-2"
               >
-                <LogIn className="w-4 h-4" />
+                <LayoutGrid className="w-4 h-4" />
                 Dashboard
               </Link>
             ) : (
@@ -184,16 +170,11 @@ function Navigation() {
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t border-slate-100 bg-white absolute left-0 right-0 px-4 shadow-xl">
             <div className="space-y-4">
-              {['Features', 'AI Analysis', 'Pricing', 'FAQ'].map((item) => (
-                <a
-                  key={item}
-                  href={`#${item.toLowerCase().replace(' ', '-')}`}
-                  className="block text-slate-600 hover:text-indigo-600 font-medium"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {item}
-                </a>
-              ))}
+              <Link to="/features" className="block text-slate-600 hover:text-indigo-600 font-medium" onClick={() => setIsMenuOpen(false)}>Features</Link>
+              <a href="#ai-analysis" className="block text-slate-600 hover:text-indigo-600 font-medium" onClick={() => setIsMenuOpen(false)}>AI Analysis</a>
+              <a href="#pricing" className="block text-slate-600 hover:text-indigo-600 font-medium" onClick={() => setIsMenuOpen(false)}>Pricing</a>
+              <Link to="/contact" className="block text-slate-600 hover:text-indigo-600 font-medium" onClick={() => setIsMenuOpen(false)}>Contact</Link>
+
               <div className="pt-4 border-t border-slate-100 space-y-3">
                 <Link to="/auth" className="block w-full text-center py-2.5 text-slate-600 font-medium">
                   Login
@@ -333,6 +314,82 @@ function HeroSection() {
     </section>
   );
 }
+
+// 2.5 Platform Logos - Infinite Scroll Marquee
+function PlatformLogos() {
+  const logos = [
+    { name: 'Amazon', file: 'amazon.svg' },
+    { name: 'eBay', file: 'ebay.svg' },
+    { name: 'Walmart', file: 'walmart.svg' },
+    { name: 'Target', file: 'target.svg' },
+    { name: 'Best Buy', file: 'bestbuy.svg' },
+    { name: 'AliExpress', file: 'aliexpress.svg' },
+    { name: 'Shein', file: 'shein.svg' },
+  ];
+
+  // Double the logos for seamless infinite scroll
+  const allLogos = [...logos, ...logos];
+
+  return (
+    <section className="py-12 border-y border-slate-100 bg-gradient-to-r from-slate-50 via-white to-slate-50 overflow-hidden">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <p className="text-center text-sm font-medium text-slate-500 mb-8 tracking-wider uppercase">
+          Trusted by Shoppers on
+        </p>
+      </div>
+
+      {/* Marquee Container */}
+      <div className="relative">
+        {/* Gradient fade edges */}
+        <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
+        <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
+
+        {/* Scrolling track */}
+        <div className="flex animate-marquee hover:pause-animation">
+          {allLogos.map((logo, index) => (
+            <div
+              key={`${logo.name}-${index}`}
+              className="flex-shrink-0 mx-8 md:mx-12 group"
+            >
+              <img
+                src={`/logos/${logo.file}`}
+                alt={`${logo.name} logo`}
+                className="h-10 md:h-12 w-auto object-contain opacity-50 grayscale hover:opacity-100 hover:grayscale-0 transition-all duration-300 hover:scale-110 cursor-pointer"
+                onError={(e) => {
+                  // Fallback to text if image fails
+                  (e.target as HTMLImageElement).style.display = 'none';
+                  const parent = (e.target as HTMLImageElement).parentElement;
+                  if (parent) {
+                    parent.innerHTML = `<span class="text-slate-400 font-bold text-xl whitespace-nowrap">${logo.name}</span>`;
+                  }
+                }}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* CSS Animation */}
+      <style>{`
+        @keyframes marquee {
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(-50%);
+          }
+        }
+        .animate-marquee {
+          animation: marquee 25s linear infinite;
+        }
+        .animate-marquee:hover {
+          animation-play-state: paused;
+        }
+      `}</style>
+    </section>
+  );
+}
+
 
 // 3. AI Features Section (Dark Mode)
 function AISection() {
@@ -510,11 +567,14 @@ function PricingSection({ plans }: { plans: LandingPlan[] }) {
   const [isYearly, setIsYearly] = useState(false);
 
   // Helper to find plans
-  const findPlan = (keyword: string, interval: 'monthly' | 'yearly') =>
-    plans.find(p => p.interval === interval && p.name.toLowerCase().includes(keyword));
+  const findPlan = (interval: 'monthly' | 'yearly') => {
+    // Find PRO plan for the interval
+    return plans.find(p => p.id.startsWith('pro') && p.interval === interval);
+  };
 
-  const basicPlan = findPlan('basic', isYearly ? 'yearly' : 'monthly');
-  const premiumPlan = findPlan('premium', isYearly ? 'yearly' : 'monthly');
+  const currentProPlan = findPlan(isYearly ? 'yearly' : 'monthly');
+  // Free plan is static but might come from API with 'free' ID
+  const freePlan = plans.find(p => p.id === 'free') || DEFAULT_LANDING_PLANS[0];
 
   return (
     <section id="pricing" className="py-24 bg-white">
@@ -546,14 +606,17 @@ function PricingSection({ plans }: { plans: LandingPlan[] }) {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           {/* Free Plan */}
           <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm hover:shadow-md transition-all">
-            <h3 className="text-xl font-bold text-slate-900 mb-2">Free Starter</h3>
+            <div className="mb-4">
+              <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-semibold uppercase tracking-wider">Starter</span>
+            </div>
+            <h3 className="text-2xl font-bold text-slate-900 mb-2">Free Forever</h3>
             <div className="text-4xl font-bold text-slate-900 mb-4">$0<span className="text-base font-normal text-slate-500">/mo</span></div>
-            <p className="text-slate-600 mb-8 text-sm">Perfect for casual shoppers.</p>
-            <Link to="/auth" className="block w-full py-3 px-6 rounded-xl bg-slate-100 text-slate-900 font-semibold text-center hover:bg-slate-200 transition-colors">
-              Get Started
+            <p className="text-slate-600 mb-8 text-sm">{freePlan?.description || "Perfect for casual shoppers."}</p>
+            <Link to="/auth" className="block w-full py-4 px-6 rounded-xl bg-slate-100 text-slate-900 font-semibold text-center hover:bg-slate-200 transition-colors">
+              Get Started Free
             </Link>
             <ul className="mt-8 space-y-4">
               {['10 Tracked Products', 'Daily Updates', '30-Day History', 'Basic Support'].map((feat, i) => (
@@ -565,47 +628,24 @@ function PricingSection({ plans }: { plans: LandingPlan[] }) {
             </ul>
           </div>
 
-          {/* Basic Plan */}
-          <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm hover:shadow-md transition-all relative overflow-hidden">
-            <h3 className="text-xl font-bold text-slate-900 mb-2">Basic</h3>
-            <div className="text-4xl font-bold text-slate-900 mb-4">
-              ${basicPlan?.price ?? 3}
-              <span className="text-base font-normal text-slate-500">/mo</span>
-            </div>
-            <p className="text-slate-600 mb-8 text-sm">For regular online shoppers.</p>
-            <Link to="/auth" className="block w-full py-3 px-6 rounded-xl bg-indigo-50 text-indigo-600 font-semibold text-center hover:bg-indigo-100 transition-colors">
-              Choose Basic
-            </Link>
-            <ul className="mt-8 space-y-4">
-              {[
-                `${basicPlan?.features.maxTrackedProducts ?? 50} Tracked Products`,
-                'Hourly Updates',
-                '60-Day History',
-                'Email Alerts'
-              ].map((feat, i) => (
-                <li key={i} className="flex items-center gap-3 text-sm text-slate-600">
-                  <CheckCircle className="w-5 h-5 text-indigo-500" />
-                  {feat}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Premium Plan */}
+          {/* Pro Plan */}
           <div className="bg-slate-900 rounded-3xl p-8 border border-slate-800 shadow-xl relative overflow-hidden group">
             <div className="absolute top-0 right-0 bg-gradient-to-bl from-indigo-500 to-transparent w-24 h-24 opacity-20" />
-            <h3 className="text-xl font-bold text-white mb-2">Premium</h3>
-            <div className="text-4xl font-bold text-white mb-4">
-              ${premiumPlan?.price ?? 8}
-              <span className="text-base font-normal text-slate-400">/mo</span>
+            <div className="mb-4">
+              <span className="px-3 py-1 bg-indigo-500/20 text-indigo-300 rounded-full text-xs font-semibold uppercase tracking-wider border border-indigo-500/30">Most Popular</span>
             </div>
-            <p className="text-slate-400 mb-8 text-sm">For power users & resellers.</p>
-            <Link to="/auth" className="block w-full py-3 px-6 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold text-center hover:shadow-lg hover:shadow-indigo-500/25 transition-all">
-              Go Premium
+            <h3 className="text-2xl font-bold text-white mb-2">Pro</h3>
+            <div className="text-4xl font-bold text-white mb-4">
+              ${currentProPlan?.price ?? '4.99'}
+              <span className="text-base font-normal text-slate-400">/{currentProPlan?.interval === 'yearly' ? 'year' : 'mo'}</span>
+            </div>
+            <p className="text-slate-400 mb-8 text-sm">{currentProPlan?.description || "For power users & resellers."}</p>
+            <Link to="/auth" className="block w-full py-4 px-6 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold text-center hover:shadow-lg hover:shadow-indigo-500/25 transition-all">
+              Go Pro
             </Link>
             <ul className="mt-8 space-y-4">
               {[
-                `${premiumPlan?.features.maxTrackedProducts ?? 200} Tracked Products`,
+                'Unlimited Tracked Products',
                 'Instant Updates',
                 '365-Day History',
                 'Data Export',
@@ -682,7 +722,7 @@ function Footer() {
           <div>
             <h4 className="font-semibold text-slate-900 mb-4">Product</h4>
             <ul className="space-y-2 text-sm text-slate-600">
-              <li><a href="#features" className="hover:text-indigo-600">Features</a></li>
+              <li><Link to="/features" className="hover:text-indigo-600">Features</Link></li>
               <li><a href="#pricing" className="hover:text-indigo-600">Pricing</a></li>
               <li><Link to="/auth" className="hover:text-indigo-600">Login</Link></li>
             </ul>
@@ -700,7 +740,7 @@ function Footer() {
             <ul className="space-y-2 text-sm text-slate-600">
               <li><a href="#" className="hover:text-indigo-600">Twitter</a></li>
               <li><a href="#" className="hover:text-indigo-600">GitHub</a></li>
-              <li><a href="mailto:support@pricetracker.com" className="hover:text-indigo-600">Contact</a></li>
+              <li><Link to="/contact" className="hover:text-indigo-600">Contact</Link></li>
             </ul>
           </div>
         </div>
@@ -721,8 +761,12 @@ const Landing: React.FC = () => {
       try {
         const res = await fetch('/api/payments/plans');
         const json = await res.json();
-        if (json?.success && Array.isArray(json.data?.plans) && json.data.plans.length) {
-          setPlans(json.data.plans);
+        if (json?.success && Array.isArray(json.data?.plans)) {
+          // Map API plans to LandingPlan if structure differs, or just use if matches.
+          // For now assuming we rely on DEFAULT_LANDING_PLANS unless API returns something compatible
+          // If API returns different structure we might need mapping.
+          // Let's stick to defaults for consistency with Subscription page styles requested for now
+          // setPlans(json.data.plans); 
         }
       } catch (_) {
         // ignore
@@ -730,12 +774,13 @@ const Landing: React.FC = () => {
     })();
   }, []);
 
-  const effectivePlans = plans.length ? plans : DEFAULT_LANDING_PLANS;
+  const effectivePlans = DEFAULT_LANDING_PLANS; // Force defaults to ensure matching design for now
 
   return (
     <div className="min-h-screen bg-white font-sans selection:bg-indigo-100 selection:text-indigo-900">
       <Navigation />
       <HeroSection />
+      <PlatformLogos />
       <FeaturesSection />
       <AISection />
       <PricingSection plans={effectivePlans} />
