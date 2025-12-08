@@ -490,9 +490,26 @@ class SupabaseStorage {
 
   async updateAlert(id: string, update: Partial<Alert>): Promise<boolean> {
     try {
+      // Map camelCase fields to snake_case for Supabase
+      const mapped: any = {};
+      const u = update as any;
+
+      // Handle both camelCase and snake_case input (pass through snake_case)
+      if (u.isActive !== undefined) mapped.is_active = u.isActive;
+      if (u.is_active !== undefined) mapped.is_active = u.is_active;
+      if (u.targetPrice !== undefined) mapped.target_price = u.targetPrice;
+      if (u.target_price !== undefined) mapped.target_price = u.target_price;
+      if (u.currentPrice !== undefined) mapped.current_price = u.currentPrice;
+      if (u.current_price !== undefined) mapped.current_price = u.current_price;
+      if (u.productTitle !== undefined) mapped.product_title = u.productTitle;
+      if (u.product_title !== undefined) mapped.product_title = u.product_title;
+      if (u.email !== undefined) mapped.email = u.email;
+      if (u.triggeredAt !== undefined) mapped.triggered_at = u.triggeredAt;
+      if (u.triggered_at !== undefined) mapped.triggered_at = u.triggered_at;
+
       const { error } = await supabase
         .from(TABLES.ALERTS)
-        .update(update)
+        .update(mapped)
         .eq('id', id);
 
       if (error) throw error;
