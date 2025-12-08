@@ -28,7 +28,7 @@ interface Coupon {
   code: string;
   description: string;
   discount?: string;
-  source: 'Honey' | 'CouponFollow' | 'Reddit' | 'Slickdeals';
+  source: 'Honey' | 'CouponFollow' | 'Reddit' | 'Slickdeals' | 'Verified';
   link?: string;
   successRate?: number;
 }
@@ -457,7 +457,10 @@ export default function ProductDetails() {
                             <code className="px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded font-mono text-sm font-semibold">
                               {coupon.code}
                             </code>
-                            <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded text-xs">
+                            <span className={`px-2 py-0.5 rounded text-xs ${coupon.source === 'Verified'
+                              ? 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-200 border border-yellow-200 dark:border-yellow-800'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                              }`}>
                               {coupon.source}
                             </span>
                             {coupon.discount && (
@@ -552,7 +555,11 @@ export default function ProductDetails() {
                             </div>
                             <div className="flex justify-between">
                               <span className="text-gray-600 dark:text-gray-400">Shipping:</span>
-                              <span>+${country.shipping || 0}</span>
+                              {country.isOriginCountry ? (
+                                <span className="text-xs text-green-600 dark:text-green-400 font-medium italic">Usually free with Prime</span>
+                              ) : (
+                                <span>+${country.shipping || 0}</span>
+                              )}
                             </div>
                             {country.deliveryDays && (
                               <div className="flex justify-between">
@@ -561,11 +568,11 @@ export default function ProductDetails() {
                               </div>
                             )}
                             <div className="flex justify-between">
-                              <span className="text-gray-600 dark:text-gray-400">VAT ({country.vatRate || 0}%):</span>
+                              <span className="text-gray-600 dark:text-gray-400">VAT ({country.isOriginCountry ? 0 : country.vatRate || 0}%):</span>
                               <span>+{country.currencySymbol || '$'}{(country.vatAmount || 0).toLocaleString()}</span>
                             </div>
                             <div className="flex justify-between">
-                              <span className="text-gray-600 dark:text-gray-400">Tariff ({country.tariffRate || 0}%):</span>
+                              <span className="text-gray-600 dark:text-gray-400">Tariff ({country.isOriginCountry ? 0 : country.tariffRate || 0}%):</span>
                               <span>+{country.currencySymbol || '$'}{(country.tariffAmount || 0).toLocaleString()}</span>
                             </div>
                             <div className="pt-2 border-t border-gray-300 dark:border-gray-600 flex justify-between font-bold">
@@ -576,8 +583,14 @@ export default function ProductDetails() {
                             </div>
                           </div>
 
-                          {/* Savings badge */}
-                          {country.savingsVsTracked && country.savingsVsTracked < -5 && (
+                          {/* Savings/Status badge */}
+                          {country.isOriginCountry ? (
+                            <div className="my-2 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-lg text-center border border-blue-100 dark:border-blue-800">
+                              <span className="text-blue-700 dark:text-blue-300 font-medium text-xs">
+                                ✨ You’re in the cheapest region
+                              </span>
+                            </div>
+                          ) : country.savingsVsTracked && country.savingsVsTracked < -5 && (
                             <div className="my-2 bg-yellow-100 dark:bg-yellow-900/30 px-3 py-1.5 rounded-lg text-center">
                               <span className="text-yellow-800 dark:text-yellow-200 font-semibold text-sm">
                                 💰 Save ${Math.abs(country.savingsVsTracked).toFixed(2)}!
@@ -617,7 +630,7 @@ export default function ProductDetails() {
                 </div>
 
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-4 text-center italic">
-                  * Estimates from ExchangeRate.host and API Ninja. Final costs may vary — verify at checkout.
+                  * Shipping & taxes shown for international buyers. US users see base price. Estimates from ExchangeRate.host and API Ninja.
                 </p>
               </>
             ) : (

@@ -205,10 +205,16 @@ router.get('/landed-cost', authMiddleware, async (req: Request, res: Response) =
                 const vatRate = await getVATRate(country.code);
                 const tariffRate = await getTariffRate(country.code);
 
-                // Calculate amounts
-                const vatAmount = localPrice * vatRate;
-                const tariffAmount = localPrice * tariffRate;
-                const total = localPrice + shipping + vatAmount + tariffAmount;
+                // Determine if this is the origin country based on currency match
+                // (e.g., product in USD matches US row which uses USD)
+                const isOriginCountry = (product.currency === country.currency);
+
+                // Calculate amounts (zero out fees for origin country)
+                const vatAmount = isOriginCountry ? 0 : localPrice * vatRate;
+                const tariffAmount = isOriginCountry ? 0 : localPrice * tariffRate;
+                const shippingCost = isOriginCountry ? 0 : shipping;
+
+                const total = localPrice + shippingCost + vatAmount + tariffAmount;
 
                 // Build country-specific store URL
                 const canBuyHere = storeConfig?.availableCountries.includes(country.code) || false;
@@ -227,17 +233,18 @@ router.get('/landed-cost', authMiddleware, async (req: Request, res: Response) =
                     currency: country.currency,
                     currencySymbol: country.symbol,
                     localPrice: Math.round(localPrice * 100) / 100,
-                    shipping,
+                    shipping: isOriginCountry ? 0 : shipping, // Return 0 but frontend will handle text
                     deliveryDays,
-                    vatRate: Math.round(vatRate * 100),
+                    vatRate: isOriginCountry ? 0 : Math.round(vatRate * 100),
                     vatAmount: Math.round(vatAmount * 100) / 100,
-                    tariffRate: Math.round(tariffRate * 100),
+                    tariffRate: isOriginCountry ? 0 : Math.round(tariffRate * 100),
                     tariffAmount: Math.round(tariffAmount * 100) / 100,
                     total: Math.round(total * 100) / 100,
                     realStoreUrl,
                     canBuyHere,
                     storeName: storeConfig?.displayName || 'Unknown',
-                    savingsVsTracked: Math.round(savingsVsTracked * 100) / 100
+                    savingsVsTracked: Math.round(savingsVsTracked * 100) / 100,
+                    isOriginCountry // Flag for frontend
                 };
             })
         );
