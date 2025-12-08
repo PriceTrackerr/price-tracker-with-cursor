@@ -132,12 +132,19 @@ router.put('/:id/toggle', authMiddleware, async (req: AuthRequest, res: Response
       return res.status(404).json({ success: false, message: 'Alert not found' });
     }
 
-    // Allow deletion if requester is: alert owner, product owner, or admin
+    // Handle both camelCase and snake_case field names from Supabase
+    const alertUserId = alert.userId || alert.user_id;
+    const alertProductId = alert.productId || alert.product_id;
+    const currentIsActive = alert.isActive !== undefined ? alert.isActive : alert.is_active;
+
+    // Allow toggle if requester is: alert owner, product owner, or admin
     const requesterId = req.user!.uid;
-    let isAuthorized = alert.userId === requesterId;
-    if (!isAuthorized) {
-      const product = await db.getProductById(alert.productId);
-      if (product && product.userId === requesterId) isAuthorized = true;
+    let isAuthorized = alertUserId === requesterId;
+    if (!isAuthorized && alertProductId) {
+      const product = await db.getProductById(alertProductId);
+      if (product && (product.userId === requesterId || product.user_id === requesterId)) {
+        isAuthorized = true;
+      }
     }
     if (!isAuthorized && req.user?.isAdmin) {
       isAuthorized = true;
@@ -146,8 +153,19 @@ router.put('/:id/toggle', authMiddleware, async (req: AuthRequest, res: Response
       return res.status(403).json({ success: false, message: 'Not authorized' });
     }
 
-    await db.updateAlert(id, { isActive: !alert.isActive });
-    return res.json({ success: true, data: { ...alert, isActive: !alert.isActive, id } });
+    // Use snake_case for Supabase update
+    const newIsActive = !currentIsActive;
+    await db.updateAlert(id, { is_active: newIsActive });
+
+    return res.json({
+      success: true,
+      data: {
+        ...alert,
+        isActive: newIsActive,
+        is_active: newIsActive,
+        id
+      }
+    });
   } catch (error: unknown) {
     console.error('Error toggling alert:', error);
     return res.status(500).json({ success: false, message: 'Failed to toggle alert' });
