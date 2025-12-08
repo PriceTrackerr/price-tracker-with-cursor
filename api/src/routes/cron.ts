@@ -2,9 +2,23 @@ import express, { Request, Response } from 'express';
 import { supabase } from '../config/supabase';
 import { realProductSearch } from '../services/realProductSearch';
 import { getDb } from '../config/database';
+import { checkPriceAlerts } from '../services/cronJobs';
 
 const router = express.Router();
 const db = getDb();
+
+// ===== TEST ENDPOINT: Manually trigger alert check (DEV ONLY) =====
+router.get('/test-check-alerts', async (req: Request, res: Response) => {
+    try {
+        console.log('[CRON TEST] Manually triggering checkPriceAlerts...');
+        await checkPriceAlerts();
+        console.log('[CRON TEST] checkPriceAlerts completed');
+        return res.json({ success: true, message: 'Alert check completed! Check console for details.' });
+    } catch (error: any) {
+        console.error('[CRON TEST] Error:', error);
+        return res.status(500).json({ success: false, error: error.message });
+    }
+});
 
 // Serper API key rotation (4 accounts = 10,000 free credits total)
 function getRotatedSerperKey(): string {

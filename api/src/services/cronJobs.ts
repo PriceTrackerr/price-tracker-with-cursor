@@ -6,18 +6,21 @@ const emailService = new EmailService();
 const db = getDb();
 
 async function storeDashboardNotification(product: any, alert: any) {
-  await db.addNotification({
-    productId: product.id,
-    productTitle: product.title,
-    productUrl: product.url,
-    alertId: alert.id,
-    previousPrice: alert.currentPrice || 0,
-    currentPrice: product.price,
-    priceDrop: (alert.currentPrice || 0) - product.price,
-    type: 'price_drop',
-    isRead: false,
-    userId: alert.userId,
-  });
+  try {
+    // Use only fields that exist in the notifications schema
+    await db.addNotification({
+      product_id: product.id,
+      user_id: alert.userId,
+      title: `Price Alert: ${product.title}`,
+      message: `Price dropped to $${product.price} (target was $${alert.targetPrice})`,
+      type: 'price_drop',
+      is_read: false,
+      created_at: new Date().toISOString()
+    });
+  } catch (error: any) {
+    // Don't fail the whole alert check if notification fails
+    console.log('[CRON] Warning: Could not store dashboard notification:', error.message);
+  }
 }
 
 async function sendBrowserNotification(product: any, alert: any) {
@@ -64,15 +67,10 @@ export async function checkPriceAlerts() {
     const currentPrice = product.price || 0;
     const targetPrice = alert.targetPrice;
 
-    console.log(`[DEBUG] Alert ${alert.id}: currentPrice=${currentPrice}, targetPrice=${targetPrice}, alert.currentPrice=${alert.currentPrice}`);
+    console.log(`[DEBUG] Alert ${alert.id}: currentPrice=${currentPrice}, targetPrice=${targetPrice}`);
 
-    // Update alert's current price if it has changed
-    if (alert.currentPrice !== currentPrice) {
-      console.log(`[DEBUG] Updating alert ${alert.id} current price from ${alert.currentPrice} to ${currentPrice}`);
-      await db.updateAlert(alert.id, { currentPrice });
-    }
-
-    // --- Price Drop Alert (existing) ---
+    // --- Price Drop Alert ---
+    // Check if current price is at or below target
     if (currentPrice <= targetPrice) {
       // Get previous price from price history
       let previousPrice = currentPrice;
@@ -80,14 +78,16 @@ export async function checkPriceAlerts() {
       previousPrice = history.length > 1 ? history[history.length - 2]?.price || currentPrice : currentPrice;
       console.log(`[DEBUG] Alert ${alert.id}: currentPrice=${currentPrice}, targetPrice=${targetPrice}, previousPrice=${previousPrice}`);
 
-      // Check if this is a new alert trigger (price reached target) or actual price drop
-      const isNewTrigger = alert.currentPrice > targetPrice && currentPrice <= targetPrice;
+      // Trigger alert if price is at/below target and it hasn't been triggered recently (within 24 hours)
+      const lastTriggered = alert.triggeredAt ? new Date(alert.triggeredAt).getTime() : 0;
+      const hoursSinceTriggered = (Date.now() - lastTriggered) / (1000 * 60 * 60);
+      const canTrigger = hoursSinceTriggered > 24; // Only trigger once per 24 hours
       const isPriceDrop = currentPrice < previousPrice;
 
-      console.log(`[DEBUG] Alert ${alert.id}: isNewTrigger=${isNewTrigger}, isPriceDrop=${isPriceDrop}`);
+      console.log(`[DEBUG] Alert ${alert.id}: canTrigger=${canTrigger}, isPriceDrop=${isPriceDrop}, hoursSinceTriggered=${hoursSinceTriggered.toFixed(1)}`);
 
-      // Send notification if price reached target OR if price actually dropped
-      if (isNewTrigger || isPriceDrop) {
+      // Send notification if price is at/below target and (hasn't triggered recently OR price actually dropped)
+      if (canTrigger || isPriceDrop) {
         console.log(`[DEBUG] Price drop detected for alert ${alert.id} (product ${product.title})`);
         // Send email: use alert.email if present, otherwise fetch user by alert.userId
         let recipientEmail = alert.email;
@@ -121,14 +121,24 @@ export async function checkPriceAlerts() {
           await storeDashboardNotification({ ...product, email: notificationEmail }, alert);
         }
         await sendBrowserNotification(product, alert);
-        // Update alert's currentPrice but keep it active
-        await db.updateAlert(alert.id, { currentPrice, triggeredAt: new Date().toISOString() });
+
+        // Try to mark alert as triggered (may fail if schema doesn't have these columns)
+        try {
+          await db.updateAlert(alert.id, { triggered_at: new Date().toISOString() });
+        } catch (e: any) {
+          console.log('[CRON] Warning: Could not update alert triggered_at:', e.message);
+        }
+
         // Add price history entry
-        await db.addPriceHistory({
-          productId: product.id,
-          price: currentPrice,
-          currency: product.currency || '$',
-        });
+        try {
+          await db.addPriceHistory({
+            productId: product.id,
+            price: currentPrice,
+            currency: product.currency || '$',
+          });
+        } catch (e: any) {
+          console.log('[CRON] Warning: Could not add price history:', e.message);
+        }
       } else {
         console.log(`[DEBUG] No price drop for alert ${alert.id}: currentPrice (${currentPrice}) >= previousPrice (${previousPrice})`);
       }

@@ -75,7 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      const res = await fetch('https://price-tracker-with-cursor-web-app-s.vercel.app/api/users/me', {
+      const res = await fetch('/api/users/me', {
         headers: { Authorization: `Bearer ${t}` },
       });
       const data = await res.json();
@@ -171,7 +171,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (refreshToken) {
         (async () => {
           try {
-            const resp = await fetch('https://price-tracker-with-cursor-web-app-s.vercel.app/api/users/refresh', {
+            const resp = await fetch('/api/users/refresh', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ refreshToken })
@@ -284,7 +284,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
-      const res = await fetch('https://price-tracker-with-cursor-web-app-s.vercel.app/api/users/login', {
+      const res = await fetch('/api/users/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -306,7 +306,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signup = async (email: string, password: string) => {
     setLoading(true);
     try {
-      const res = await fetch('https://price-tracker-with-cursor-web-app-s.vercel.app/api/users/signup', {
+      const res = await fetch('/api/users/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),

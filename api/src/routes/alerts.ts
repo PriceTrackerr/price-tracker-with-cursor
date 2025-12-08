@@ -25,23 +25,44 @@ interface Alert {
 router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.uid;
-    
+
     if (req.user?.isAdmin) {
       const { data: allAlerts, error: alertsError } = await supabase
         .from(TABLES.ALERTS)
         .select('*')
         .order('created_at', { ascending: false });
-      
+
       if (alertsError) {
         console.error('Error fetching all alerts:', alertsError);
       } else {
         return res.json({ success: true, data: allAlerts || [] });
       }
     }
-    
+
     // Regular user: Get only their alerts
     const alerts = await db.getAlerts(userId);
-    return res.json({ success: true, data: alerts });
+
+    // Enrich alerts with current product prices (not stale cached prices)
+    const enrichedAlerts = await Promise.all(
+      alerts.map(async (alert: any) => {
+        try {
+          const product = await db.getProductById(alert.productId || alert.product_id);
+          if (product) {
+            return {
+              ...alert,
+              currentPrice: product.price, // Use live product price
+              productTitle: product.title || alert.productTitle || alert.product_title,
+              platform: product.platform
+            };
+          }
+        } catch (e) {
+          // If product not found, return alert as-is
+        }
+        return alert;
+      })
+    );
+
+    return res.json({ success: true, data: enrichedAlerts });
   } catch (error: unknown) {
     console.error('Error fetching alerts:', error);
     return res.status(500).json({ success: false, message: 'Failed to fetch alerts' });
@@ -56,16 +77,16 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
     if (!productId || !targetPrice) {
       return res.status(400).json({ success: false, message: 'Product ID and target price are required' });
     }
-    
+
     const product = await db.getProductById(productId);
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
-    
+
     if (product.userId !== userId) {
       return res.status(403).json({ success: false, message: 'Not authorized' });
     }
-    
+
     const newAlert = {
       productId,
       productTitle: product.title || 'Unknown Product',
@@ -76,22 +97,22 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
       notifyOnRestock: notifyOnRestock || false,
       userId,
     };
-    
+
     console.log('🔍 Creating alert with data:', newAlert);
     const alertId = await db.addAlert(newAlert);
     console.log('✅ Alert created successfully with ID:', alertId);
     return res.json({ success: true, data: { id: alertId, ...newAlert }, message: 'Alert created successfully' });
   } catch (error: unknown) {
     console.error('🚨 Error creating alert:', error);
-    
+
     // Provide more detailed error information
     let errorMessage = 'Failed to create alert';
     if (error instanceof Error) {
       errorMessage = `Failed to create alert: ${error.message}`;
     }
-    
-    return res.status(500).json({ 
-      success: false, 
+
+    return res.status(500).json({
+      success: false,
       message: errorMessage,
       error: error instanceof Error ? error.message : 'Unknown error'
     });
@@ -101,16 +122,16 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
 // Toggle alert status
 router.put('/:id/toggle', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-  const { id } = req.params;
+    const { id } = req.params;
     if (!id) {
       return res.status(400).json({ success: false, message: 'Alert ID is required' });
     }
-    
+
     const alert = await db.getAlertById(id);
     if (!alert) {
       return res.status(404).json({ success: false, message: 'Alert not found' });
     }
-    
+
     // Allow deletion if requester is: alert owner, product owner, or admin
     const requesterId = req.user!.uid;
     let isAuthorized = alert.userId === requesterId;
@@ -124,7 +145,7 @@ router.put('/:id/toggle', authMiddleware, async (req: AuthRequest, res: Response
     if (!isAuthorized) {
       return res.status(403).json({ success: false, message: 'Not authorized' });
     }
-    
+
     await db.updateAlert(id, { isActive: !alert.isActive });
     return res.json({ success: true, data: { ...alert, isActive: !alert.isActive, id } });
   } catch (error: unknown) {
@@ -140,16 +161,16 @@ router.delete('/:id', authMiddleware, async (req: AuthRequest, res: Response) =>
     if (!id) {
       return res.status(400).json({ success: false, message: 'Alert ID is required' });
     }
-    
+
     const alert = await db.getAlertById(id);
     if (!alert) {
       return res.status(404).json({ success: false, message: 'Alert not found' });
     }
-    
+
     if (alert.userId !== req.user!.uid) {
       return res.status(403).json({ success: false, message: 'Not authorized' });
     }
-    
+
     await db.deleteAlert(id);
     return res.json({ success: true, message: 'Alert deleted successfully' });
   } catch (error: unknown) {
@@ -165,16 +186,16 @@ router.get('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
     if (!id) {
       return res.status(400).json({ success: false, message: 'Alert ID is required' });
     }
-    
+
     const alert = await db.getAlertById(id);
     if (!alert) {
       return res.status(404).json({ success: false, message: 'Alert not found' });
     }
-    
+
     if (alert.userId !== req.user!.uid) {
       return res.status(403).json({ success: false, message: 'Not authorized' });
     }
-    
+
     return res.json({ success: true, data: { ...alert, id } });
   } catch (error: unknown) {
     console.error('Error fetching alert:', error);
@@ -188,10 +209,10 @@ router.post('/trigger-check', authMiddleware, async (req: AuthRequest, res: Resp
     const cronJobs = await import('../services/cronJobs');
     const checkPriceAlerts = cronJobs.checkPriceAlerts;
     console.log('🔔 Manual price drop check triggered');
-    
+
     // First, update price history for all products to capture manual price changes
     await updatePriceHistoryForAllProducts();
-    
+
     // Then run the price drop check
     try {
       await checkPriceAlerts();
@@ -212,12 +233,12 @@ async function updatePriceHistoryForAllProducts() {
   try {
     console.log('📊 Updating price history for all products...');
     const allProducts = await db.getProducts();
-    
+
     for (const product of allProducts) {
       // Get the latest price history entry
       const history = await db.getPriceHistory(product.id);
       const latestEntry = history[history.length - 1];
-      
+
       // If current price is different from latest history entry, add new entry
       if (!latestEntry || latestEntry.price !== product.price) {
         console.log(`📈 Price changed for ${product.title}: ${latestEntry?.price || 'N/A'} → ${product.price}`);
@@ -228,7 +249,7 @@ async function updatePriceHistoryForAllProducts() {
         });
       }
     }
-    
+
     console.log('✅ Price history updated for all products');
   } catch (error) {
     console.error('❌ Error updating price history:', error);
@@ -240,26 +261,26 @@ router.post('/update-price-history/:productId', authMiddleware, async (req: Auth
   try {
     const { productId } = req.params;
     const userId = req.user?.uid;
-    
+
     if (!productId) {
       return res.status(400).json({ success: false, message: 'Product ID is required' });
     }
-    
+
     // Get the product
     const product = await db.getProductById(productId);
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
-    
+
     // Check if user owns this product
     if (product.userId !== userId) {
       return res.status(403).json({ success: false, message: 'Not authorized' });
     }
-    
+
     // Get the latest price history entry
     const history = await db.getPriceHistory(productId);
     const latestEntry = history[history.length - 1];
-    
+
     // If current price is different from latest history entry, add new entry
     if (!latestEntry || latestEntry.price !== product.price) {
       console.log(`📈 Price changed for ${product.title}: ${latestEntry?.price || 'N/A'} → ${product.price}`);
@@ -268,9 +289,9 @@ router.post('/update-price-history/:productId', authMiddleware, async (req: Auth
         price: product.price,
         currency: product.currency || 'USD'
       });
-      
-      res.json({ 
-        success: true, 
+
+      res.json({
+        success: true,
         message: 'Price history updated',
         data: {
           previousPrice: latestEntry?.price || null,
@@ -279,8 +300,8 @@ router.post('/update-price-history/:productId', authMiddleware, async (req: Auth
         }
       });
     } else {
-      res.json({ 
-        success: true, 
+      res.json({
+        success: true,
         message: 'No price change detected',
         data: {
           currentPrice: product.price,
@@ -288,7 +309,7 @@ router.post('/update-price-history/:productId', authMiddleware, async (req: Auth
         }
       });
     }
-    
+
   } catch (error: unknown) {
     console.error('Error updating price history:', error);
     res.status(500).json({ success: false, message: 'Failed to update price history' });
@@ -311,13 +332,13 @@ router.post('/check-price-drops', authMiddleware, async (req: AuthRequest, res: 
       if (!product) continue;
       const currentPrice = product.price || 0;
       const targetPrice = alert.targetPrice;
-      
+
       // Update alert's current price if it has changed
       if (alert.currentPrice !== currentPrice) {
         console.log(`[DEBUG] Updating alert ${alert.id} current price from ${alert.currentPrice} to ${currentPrice}`);
         await db.updateAlert(alert.id, { currentPrice });
       }
-      
+
       // Check if price has dropped below target
       if (currentPrice <= targetPrice) {
         // Get previous price from price history
@@ -382,16 +403,16 @@ router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
     if (targetPrice === undefined && email === undefined) {
       return res.status(400).json({ success: false, message: 'Nothing to update' });
     }
-    
+
     const alert = await db.getAlertById(id);
     if (!alert) {
       return res.status(404).json({ success: false, message: 'Alert not found' });
     }
-    
+
     if (alert.userId !== req.user!.uid) {
       return res.status(403).json({ success: false, message: 'Not authorized' });
     }
-    
+
     const updateData: any = {};
     if (targetPrice !== undefined) updateData.targetPrice = typeof targetPrice === 'string' ? parseFloat(targetPrice) : targetPrice;
     if (email !== undefined) updateData.email = email;

@@ -1,6 +1,6 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import { getDb } from '../config/firebase';
+import { getDb } from '../config/database';
 
 interface ScrapingResult {
   success: boolean;
@@ -151,7 +151,7 @@ class ScrapingManager {
     try {
       const db = getDb();
       const cacheKey = `cache_${Buffer.from(url).toString('base64')}`;
-      
+
       // Check if we have cached data
       const cachedData = await db.getProductById(cacheKey);
       if (cachedData && cachedData.updatedAt) {
@@ -181,7 +181,7 @@ class ScrapingManager {
     try {
       const db = getDb();
       const cacheKey = `cache_${Buffer.from(url).toString('base64')}`;
-      
+
       await db.addProduct({
         url,
         title: result.title || 'Cached Product',
@@ -248,7 +248,7 @@ class ScrapingManager {
     for (let attempt = 1; attempt <= config.retryAttempts; attempt++) {
       try {
         const result = await this.attemptScraping(url, platform, config);
-        
+
         if (result.success) {
           // Save to cache
           if (config.fallbackToCache) {
@@ -258,7 +258,7 @@ class ScrapingManager {
         }
       } catch (error) {
         console.log(`Attempt ${attempt} failed for ${platform}:`, error.message);
-        
+
         if (attempt < config.retryAttempts) {
           await this.delay(2000 * attempt); // Exponential backoff
         }

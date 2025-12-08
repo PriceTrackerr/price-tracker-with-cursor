@@ -266,6 +266,247 @@ function CreateAlertModal({ product, isOpen, onClose }: { product: any, isOpen: 
   );
 }
 
+// 4. Add Product Modal Component (URL-only with manual fallback)
+function AddProductModal({ isOpen, onClose, onSuccess, token }: { isOpen: boolean, onClose: () => void, onSuccess: () => void, token: string | null }) {
+  const [url, setUrl] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [showManualInput, setShowManualInput] = useState(false);
+  const [title, setTitle] = useState('');
+  const [price, setPrice] = useState('');
+
+  // Detect platform from URL
+  const detectPlatform = (inputUrl: string): string | null => {
+    const lowerUrl = inputUrl.toLowerCase();
+    if (lowerUrl.includes('amazon')) return 'amazon';
+    if (lowerUrl.includes('ebay')) return 'ebay';
+    if (lowerUrl.includes('walmart')) return 'walmart';
+    if (lowerUrl.includes('target.com')) return 'target';
+    if (lowerUrl.includes('bestbuy')) return 'bestbuy';
+    if (lowerUrl.includes('aliexpress')) return 'aliexpress';
+    if (lowerUrl.includes('shein')) return 'shein';
+    return null;
+  };
+
+  const handleAddProduct = async () => {
+    if (!url.trim()) return;
+
+    setLoading(true);
+    setError('');
+
+    try {
+      // First try auto-scraping
+      console.log('[AddProduct] Trying auto-scrape...');
+      const response = await fetch('/api/products/track-url', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ url: url.trim() })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success(data.message || `Product added successfully!`);
+        resetAndClose();
+        onSuccess();
+      } else {
+        console.log('[AddProduct] Scraping failed, showing manual input...');
+        setError('Could not fetch product details automatically.');
+        setShowManualInput(true);
+      }
+    } catch (err) {
+      console.error('Error adding product:', err);
+      setError('Network error. Try entering details manually.');
+      setShowManualInput(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleManualAdd = async () => {
+    if (!url.trim() || !title.trim() || !price.trim()) return;
+
+    const platform = detectPlatform(url);
+    if (!platform) {
+      toast.error('Unsupported platform');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch('/api/products/track', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          url: url.trim(),
+          title: title.trim(),
+          price: parseFloat(price),
+          platform,
+          currency: '$',
+          imageUrl: '',
+          stockStatus: 'unknown'
+        })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        toast.success('Product added successfully!');
+        resetAndClose();
+        onSuccess();
+      } else {
+        toast.error(data.error || 'Failed to add product');
+      }
+    } catch (err) {
+      toast.error('Network error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetAndClose = () => {
+    setUrl('');
+    setTitle('');
+    setPrice('');
+    setError('');
+    setShowManualInput(false);
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-scale-in">
+        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-indigo-500 to-purple-500">
+          <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+            <Plus className="w-5 h-5" />
+            Add Product
+          </h3>
+          <button onClick={resetAndClose} className="text-white/80 hover:text-white transition-colors">
+            <XCircle className="w-6 h-6" />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-4">
+          {/* URL Input */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+              Product URL
+            </label>
+            <div className="relative">
+              <ExternalLink className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="url"
+                value={url}
+                onChange={(e) => { setUrl(e.target.value); setShowManualInput(false); setError(''); }}
+                onKeyDown={(e) => e.key === 'Enter' && !showManualInput && handleAddProduct()}
+                placeholder="Paste Amazon, eBay, Walmart URL..."
+                className="w-full pl-10 pr-4 py-3 bg-white dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                autoFocus
+                disabled={loading}
+              />
+            </div>
+            <p className="text-xs text-slate-500 mt-2">
+              Supported: Amazon, eBay, Walmart, Target, Best Buy, AliExpress, Shein
+            </p>
+          </div>
+
+          {/* Manual Input Fields (shown when scraping fails) */}
+          {showManualInput && (
+            <div className="space-y-4 animate-fade-in">
+              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl p-3">
+                <p className="text-sm text-amber-700 dark:text-amber-300">
+                  ⚠️ Auto-fetch failed. Please enter product details manually:
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  Product Title
+                </label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Enter product name..."
+                  className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                  disabled={loading}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  Current Price ($)
+                </label>
+                <div className="relative">
+                  <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleManualAdd()}
+                    placeholder="29.99"
+                    className="w-full pl-10 pr-4 py-3 bg-white dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Loading State */}
+          {loading && (
+            <div className="bg-indigo-50 dark:bg-indigo-900/30 rounded-xl p-4 flex items-center gap-3">
+              <RefreshCw className="w-5 h-5 text-indigo-500 animate-spin" />
+              <div>
+                <p className="text-sm font-medium text-indigo-700 dark:text-indigo-300">
+                  {showManualInput ? 'Adding product...' : 'Fetching product details...'}
+                </p>
+                <p className="text-xs text-indigo-500">This may take a few seconds</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="px-6 py-4 bg-slate-50 dark:bg-gray-700/50 border-t border-slate-100 dark:border-gray-600 flex justify-end gap-3">
+          <button
+            onClick={resetAndClose}
+            disabled={loading}
+            className="px-4 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-gray-600 rounded-lg transition-colors disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={showManualInput ? handleManualAdd : handleAddProduct}
+            disabled={loading || !url.trim() || (showManualInput && (!title.trim() || !price.trim()))}
+            className="px-4 py-2.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-indigo-500/20 flex items-center gap-2"
+          >
+            {loading ? (
+              <>
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                {showManualInput ? 'Adding...' : 'Fetching...'}
+              </>
+            ) : (
+              <>
+                <Plus className="w-4 h-4" />
+                {showManualInput ? 'Add Manually' : 'Add Product'}
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // --- Main Dashboard Component ---
 export default function Dashboard() {
   const { getAuthHeaders, user, loading: authLoading, token, logout } = useAuth();
@@ -285,6 +526,7 @@ export default function Dashboard() {
   const [isBanned, setIsBanned] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [showAlertModal, setShowAlertModal] = useState(false);
+  const [showAddProductModal, setShowAddProductModal] = useState(false);
 
   const fetchDashboardData = async () => {
     if (!token) {
@@ -296,6 +538,21 @@ export default function Dashboard() {
     try {
       const timestamp = Date.now();
       const randomParam = Math.random().toString(36).substring(7);
+
+      // Fetch seenPriceDropIds first to use in the calculation
+      let currentSeenIds = seenPriceDropIds;
+      try {
+        const seenRes = await fetch('/api/users/seen-price-drops', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const seenData = await seenRes.json();
+        if (seenData.success) {
+          currentSeenIds = seenData.data || [];
+          setSeenPriceDropIds(currentSeenIds);
+        }
+      } catch (e) {
+        console.log('Could not fetch seen price drops, using cached:', e);
+      }
 
       const [productsRes, alertsRes] = await Promise.all([
         fetch(`/api/products?t=${timestamp}&r=${randomParam}&fresh=true`, {
@@ -333,8 +590,7 @@ export default function Dashboard() {
         setProducts(productsArray);
         const totalValue = productsArray.reduce((sum: number, p: any) => sum + (p.price || 0), 0);
 
-        // Only calculate price drops if we have seen price drop IDs loaded
-        // This prevents temporary numbers from showing
+        // Use the freshly fetched seenIds for calculation (not stale state)
         const priceDrops = productsArray.filter((p: any) => {
           if (!p.priceHistory || p.priceHistory.length < 2) {
             return false;
@@ -348,13 +604,13 @@ export default function Dashboard() {
           const prev = sortedHistory[sortedHistory.length - 2];
 
           const hasDrop = last && prev && last.price < prev.price;
-          const isSeen = seenPriceDropIds.includes(p.id);
+          const isSeen = currentSeenIds.includes(p.id); // Use fresh data, not state
 
-          return hasDrop && !isSeen; // Only count unseen price drops
+          return hasDrop && !isSeen;
         }).length;
 
-        // Force immediate state update
-        console.log('Dashboard - Setting products in main component:', productsArray.length);
+        console.log('Dashboard - Price drops count:', priceDrops, 'seenIds:', currentSeenIds);
+
         setMetrics(prevMetrics => ({
           ...prevMetrics,
           totalProducts: productsArray.length,
@@ -442,12 +698,12 @@ export default function Dashboard() {
     }
   };
 
-  // Watch for changes in seenPriceDropIds and fetch dashboard data
+  // Fetch dashboard data when token is ready
   useEffect(() => {
     if (token && !authLoading) {
       fetchDashboardData();
     }
-  }, [seenPriceDropIds, token, authLoading]);
+  }, [token, authLoading]);
 
   // Handle price drops card click
   const handlePriceDropsClick = () => {
@@ -560,6 +816,13 @@ export default function Dashboard() {
           </div>
           <div className="flex gap-3">
             <button
+              onClick={() => setShowAddProductModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-md shadow-indigo-500/20 transition-all hover:shadow-lg"
+            >
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">Add Product</span>
+            </button>
+            <button
               onClick={triggerPriceCheck}
               className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 rounded-xl border border-slate-200 shadow-sm transition-all hover:shadow-md"
             >
@@ -661,15 +924,21 @@ export default function Dashboard() {
                   <div key={product.id} className="p-4 hover:bg-slate-50 transition-colors group">
                     <div className="flex items-center gap-4">
                       {/* Product Image */}
-                      <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-white border border-slate-200 flex-shrink-0 shadow-sm">
-                        <img
-                          src={product.imageUrl || 'https://via.placeholder.com/64x64'}
-                          alt={product.title}
-                          className="w-full h-full object-contain p-1"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = 'https://via.placeholder.com/64x64';
-                          }}
-                        />
+                      <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 flex-shrink-0 shadow-sm flex items-center justify-center">
+                        {product.imageUrl ? (
+                          <img
+                            src={product.imageUrl}
+                            alt={product.title}
+                            className="w-full h-full object-contain p-1"
+                            onError={(e) => {
+                              // Prevent infinite loop by removing the handler
+                              (e.target as HTMLImageElement).onerror = null;
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
+                        ) : (
+                          <Package className="w-6 h-6 text-slate-400" />
+                        )}
                       </div>
 
                       {/* Product Info */}
@@ -735,6 +1004,14 @@ export default function Dashboard() {
           setShowAlertModal(false);
           setSelectedProduct(null);
         }}
+      />
+
+      {/* Add Product Modal */}
+      <AddProductModal
+        isOpen={showAddProductModal}
+        onClose={() => setShowAddProductModal(false)}
+        onSuccess={fetchDashboardData}
+        token={token}
       />
     </div>
   );

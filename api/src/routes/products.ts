@@ -185,6 +185,162 @@ function canonicalizeUrl(url: string, platform: 'amazon' | 'aliexpress' | 'ebay'
 // Simple in-memory lock to avoid rapid duplicate inserts per user+url
 const trackLocks = new Map<string, number>();
 
+// ===== URL-ONLY TRACK ENDPOINT =====
+// Add product by URL only - auto-scrapes product details
+router.post('/track-url', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const { url } = req.body;
+    const userId = req.user!.uid;
+
+    if (!url || typeof url !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: 'Valid URL is required'
+      });
+    }
+
+    // Validate URL format
+    try {
+      new URL(url);
+    } catch {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid URL format'
+      });
+    }
+
+    // Import scraper
+    const scrapingManager = require('../services/scrapingManager').default;
+
+    // Detect platform from URL
+    const platform = detectPlatform(url);
+    if (!platform) {
+      return res.status(400).json({
+        success: false,
+        error: 'Unsupported platform. Supported: Amazon, eBay, Walmart, Target, Best Buy, AliExpress, Shein'
+      });
+    }
+
+    // Check subscription limits
+    const user = await db.getUserById(userId);
+    const subscriptionTier = user?.subscription_tier || 'free';
+    const productLimit = subscriptionTier === 'free' ? 5 : 999;
+
+    const products = await db.getProducts(userId);
+    if (products.length >= productLimit) {
+      return res.status(403).json({
+        success: false,
+        error: `Product limit reached (${products.length}/${productLimit}). ${subscriptionTier === 'free' ? 'Upgrade to Pro to track more products.' : ''}`,
+        limit: productLimit,
+        current: products.length
+      });
+    }
+
+    // Check for duplicates
+    const incomingCanonical = canonicalizeUrl(url, platform);
+    const existing = products.find((p: any) => canonicalizeUrl(p.url, p.platform) === incomingCanonical);
+    if (existing) {
+      return res.status(200).json({
+        success: true,
+        data: existing,
+        message: 'Product already tracked'
+      });
+    }
+
+    // Lock to prevent duplicate submissions
+    const lockKey = `${userId}:${incomingCanonical}`;
+    const now = Date.now();
+    const lockUntil = trackLocks.get(lockKey) || 0;
+    if (now < lockUntil) {
+      return res.status(200).json({ success: true, data: null, message: 'Already tracking in progress' });
+    }
+    trackLocks.set(lockKey, now + 30000); // 30s lock for scraping
+
+    console.log(`[track-url] Scraping product from: ${url}`);
+
+    // Scrape product details
+    let scrapedData;
+    try {
+      scrapedData = await scrapingManager.scrapeProduct(url);
+      console.log(`[track-url] Scrape result:`, { success: scrapedData.success, hasTitle: !!scrapedData.title, hasPrice: !!scrapedData.price, error: scrapedData.error });
+    } catch (scrapeError: any) {
+      console.error(`[track-url] Scraping error:`, scrapeError.message);
+      trackLocks.delete(lockKey);
+      return res.status(400).json({
+        success: false,
+        error: `Scraping failed: ${scrapeError.message}`
+      });
+    }
+
+    if (!scrapedData.success || !scrapedData.title || !scrapedData.price) {
+      trackLocks.delete(lockKey);
+      return res.status(400).json({
+        success: false,
+        error: scrapedData.error || 'Could not scrape product details. Please try again or use the extension.'
+      });
+    }
+
+    // Add the product
+    const id = await db.addProduct({
+      url: incomingCanonical,
+      title: scrapedData.title,
+      price: scrapedData.price,
+      currency: '$',
+      platform,
+      imageUrl: scrapedData.imageUrl || '',
+      userId,
+      stockStatus: scrapedData.stockStatus || 'unknown',
+      totalMatches: 0
+    });
+
+    // Add initial price history entry
+    await db.addPriceHistory({
+      productId: id,
+      price: scrapedData.price,
+      currency: '$'
+    });
+
+    trackLocks.delete(lockKey);
+
+    console.log(`[track-url] Successfully added product: ${scrapedData.title}`);
+
+    return res.status(201).json({
+      success: true,
+      data: {
+        id,
+        url: incomingCanonical,
+        title: scrapedData.title,
+        price: scrapedData.price,
+        currency: '$',
+        platform,
+        imageUrl: scrapedData.imageUrl || '',
+        userId,
+        stockStatus: scrapedData.stockStatus || 'unknown'
+      }
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[track-url] Error:', message);
+    return res.status(500).json({
+      success: false,
+      error: message
+    });
+  }
+});
+
+// Helper to detect platform from URL
+function detectPlatform(url: string): 'amazon' | 'aliexpress' | 'ebay' | 'walmart' | 'shein' | 'bestbuy' | 'target' | null {
+  const lowerUrl = url.toLowerCase();
+  if (lowerUrl.includes('amazon')) return 'amazon';
+  if (lowerUrl.includes('ebay')) return 'ebay';
+  if (lowerUrl.includes('walmart')) return 'walmart';
+  if (lowerUrl.includes('target.com')) return 'target';
+  if (lowerUrl.includes('bestbuy')) return 'bestbuy';
+  if (lowerUrl.includes('aliexpress')) return 'aliexpress';
+  if (lowerUrl.includes('shein')) return 'shein';
+  return null;
+}
+
 // Track a new product
 router.post('/track', authMiddleware, validateProduct, async (req: AuthRequest, res: Response) => {
   try {
@@ -729,6 +885,57 @@ router.get('/price-drops', authMiddleware, async (req: AuthRequest, res: Respons
 });
 
 
+
+// ===== TEST ENDPOINT: Simulate Price Drop (DEV ONLY) =====
+// Adds a lower price entry to a product's history to simulate a price drop
+router.post('/test-price-drop/:productId', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const { productId } = req.params;
+    const { newPrice } = req.body; // Optional: specify the new price, otherwise drops by 10-30%
+    const userId = req.user!.uid;
+
+    const product = await db.getProductById(productId);
+    if (!product) {
+      return res.status(404).json({ success: false, error: 'Product not found' });
+    }
+
+    if (product.userId !== userId) {
+      return res.status(403).json({ success: false, error: 'Not authorized' });
+    }
+
+    // Calculate new price (either provided or random 10-30% drop)
+    const currentPrice = product.price;
+    const dropPercent = 10 + Math.random() * 20; // 10-30% drop
+    const calculatedNewPrice = newPrice ? parseFloat(newPrice) : currentPrice * (1 - dropPercent / 100);
+    const finalPrice = Math.round(calculatedNewPrice * 100) / 100; // Round to 2 decimal places
+
+    // Add new price history entry
+    await db.addPriceHistory({
+      productId,
+      price: finalPrice,
+      currency: product.currency || '$'
+    });
+
+    // Update product's current price
+    await db.updateProduct(productId, { price: finalPrice });
+
+    console.log(`[TEST] Simulated price drop for "${product.title}": $${currentPrice} → $${finalPrice} (${dropPercent.toFixed(1)}% drop)`);
+
+    return res.json({
+      success: true,
+      message: `Price dropped from $${currentPrice} to $${finalPrice}`,
+      data: {
+        productId,
+        previousPrice: currentPrice,
+        newPrice: finalPrice,
+        dropPercent: dropPercent.toFixed(1)
+      }
+    });
+  } catch (error) {
+    console.error('Error simulating price drop:', error);
+    return res.status(500).json({ success: false, error: 'Failed to simulate price drop' });
+  }
+});
 
 // Link products manually
 router.post('/:productId/link/:targetProductId', authMiddleware, async (req: AuthRequest, res: Response) => {
