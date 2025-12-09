@@ -301,7 +301,7 @@ async function startServer() {
     await db.getProducts(); // Test connection
     console.log('✅ Database connected successfully');
 
-    // Deployment trigger: Dec 9, 2024
+    // Initialize cron jobs
     initializeCronJobs();
     console.log('✅ Cron jobs initialized (checking prices every 12 hours)');
 
