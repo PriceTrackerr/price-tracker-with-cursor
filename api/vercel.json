@@ -17,5 +17,10 @@
       "path": "/api/cron/update-prices",
       "schedule": "0 */12 * * *"
     }
-  ]
+  ],
+  "functions": {
+    "src/index.ts": {
+      "includeFiles": "data/**"
+    }
+  }
 }
