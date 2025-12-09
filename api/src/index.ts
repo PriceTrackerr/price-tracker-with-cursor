@@ -298,7 +298,7 @@ async function startServer() {
 
     // Test database connection
     const db = getDb();
-    await db.getProducts(); // Test connection
+    await db.getProducts(); // Test connections
     console.log('✅ Database connected successfully');
 
     // Initialize cron jobs
@@ -350,4 +350,5 @@ export default app;
 // Start the server only when not running in Vercel serverless
 if (!process.env.VERCEL) {
   startServer();
-}
+}/ /   w e b h o o k   t e s t  
+ 
