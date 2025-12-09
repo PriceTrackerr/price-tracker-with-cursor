@@ -1,5 +1,5 @@
 import axios from 'axios';
-import * as cheerio from 'cheerio';
+import cheerio from 'cheerio';
 import { getDb } from '../config/database';
 
 interface ScrapingResult {
@@ -325,7 +325,7 @@ class ScrapingManager {
     };
   }
 
-  private extractProductData($: cheerio.CheerioAPI, platform: string): Partial<ScrapingResult> {
+  private extractProductData($: ReturnType<typeof cheerio.load>, platform: string): Partial<ScrapingResult> {
     switch (platform) {
       case 'amazon':
         return this.extractAmazonData($);
@@ -344,7 +344,7 @@ class ScrapingManager {
     }
   }
 
-  private extractAmazonData($: cheerio.CheerioAPI): Partial<ScrapingResult> {
+  private extractAmazonData($: ReturnType<typeof cheerio.load>): Partial<ScrapingResult> {
     const price = $('.a-price-whole').first().text().replace(/[^\d.]/g, '');
     const title = $('#productTitle').text().trim();
     const imageUrl = $('#landingImage').attr('src') || $('.a-dynamic-image').attr('src');
@@ -359,7 +359,7 @@ class ScrapingManager {
     };
   }
 
-  private extractEbayData($: cheerio.CheerioAPI): Partial<ScrapingResult> {
+  private extractEbayData($: ReturnType<typeof cheerio.load>): Partial<ScrapingResult> {
     const price = $('.x-price-primary .ux-textspans').first().text().replace(/[^\d.]/g, '');
     const title = $('h1.x-item-title__mainTitle span').text().trim();
     const imageUrl = $('.ux-image-carousel-item img').attr('src');
@@ -374,7 +374,7 @@ class ScrapingManager {
     };
   }
 
-  private extractBestBuyData($: cheerio.CheerioAPI): Partial<ScrapingResult> {
+  private extractBestBuyData($: ReturnType<typeof cheerio.load>): Partial<ScrapingResult> {
     const price = $('.priceView-customer-price span').first().text().replace(/[^\d.]/g, '');
     const title = $('h1.heading-5').text().trim();
     const imageUrl = $('.primary-image img').attr('src');
@@ -389,7 +389,7 @@ class ScrapingManager {
     };
   }
 
-  private extractTargetData($: cheerio.CheerioAPI): Partial<ScrapingResult> {
+  private extractTargetData($: ReturnType<typeof cheerio.load>): Partial<ScrapingResult> {
     const price = $('[data-test="product-price"]').text().replace(/[^\d.]/g, '');
     const title = $('h1[data-test="product-title"]').text().trim();
     const imageUrl = $('.slideDeckPicture img').attr('src');
@@ -404,7 +404,7 @@ class ScrapingManager {
     };
   }
 
-  private extractWalmartData($: cheerio.CheerioAPI): Partial<ScrapingResult> {
+  private extractWalmartData($: ReturnType<typeof cheerio.load>): Partial<ScrapingResult> {
     const price = $('.price-characteristic').first().text().replace(/[^\d.]/g, '');
     const title = $('h1.prod-ProductTitle').text().trim();
     const imageUrl = $('.prod-hero-image-carousel img').attr('src');
@@ -419,7 +419,7 @@ class ScrapingManager {
     };
   }
 
-  private extractSheinData($: cheerio.CheerioAPI): Partial<ScrapingResult> {
+  private extractSheinData($: ReturnType<typeof cheerio.load>): Partial<ScrapingResult> {
     const price = $('.price-current').text().replace(/[^\d.]/g, '');
     const title = $('.product-intro__head-name').text().trim();
     const imageUrl = $('.product-intro__main-pic img').attr('src');
@@ -434,7 +434,7 @@ class ScrapingManager {
     };
   }
 
-  private extractGenericData($: cheerio.CheerioAPI): Partial<ScrapingResult> {
+  private extractGenericData($: ReturnType<typeof cheerio.load>): Partial<ScrapingResult> {
     // Generic price extraction patterns
     const pricePatterns = [
       /[\$£€](\d+(?:,\d{3})*(?:\.\d{2})?)/g,
