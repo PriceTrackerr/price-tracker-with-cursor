@@ -315,7 +315,7 @@ class ScrapingManager {
     }
 
     const $ = cheerio.load(response.data);
-    const result = this.extractProductData($, platform, url);
+    const result = this.extractProductData($, platform);
 
     return {
       ...result,
@@ -325,7 +325,7 @@ class ScrapingManager {
     };
   }
 
-  private extractProductData($: cheerio.CheerioAPI, platform: string, url: string): Partial<ScrapingResult> {
+  private extractProductData($: cheerio.CheerioAPI, platform: string): Partial<ScrapingResult> {
     switch (platform) {
       case 'amazon':
         return this.extractAmazonData($);
@@ -444,7 +444,7 @@ class ScrapingManager {
 
     let price: number | undefined;
     for (const pattern of pricePatterns) {
-      const matches = $.text().match(pattern);
+      const matches = $('body').text().match(pattern);
       if (matches && matches.length > 0) {
         const priceStr = matches[0].replace(/[\$£€,\s]/g, '');
         price = parseFloat(priceStr);

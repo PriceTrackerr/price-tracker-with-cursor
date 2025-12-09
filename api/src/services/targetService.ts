@@ -66,7 +66,7 @@ export class TargetService {
       await this.delay(this.delayBetweenRequests + Math.random() * 1000);
 
       const searchUrl = `${this.searchUrl}?searchTerm=${encodeURIComponent(query)}`;
-      
+
       const response = await axios.get(searchUrl, {
         headers: {
           'User-Agent': this.getRandomUserAgent(),
@@ -92,18 +92,18 @@ export class TargetService {
 
         try {
           const $el = $(element);
-          
+
           // Extract product data
           const title = $el.find('[data-test="product-title"]').text().trim();
           const priceText = $el.find('[data-test="product-price"]').text().trim();
           const price = this.extractPrice(priceText);
           const imageUrl = $el.find('img').attr('src') || $el.find('img').attr('data-src');
           const productUrl = $el.find('a').attr('href');
-                     const stockStatus = this.extractStockStatus($el.text());
+          const stockStatus = this.extractStockStatus($el.text());
 
           if (title && price && productUrl) {
             const fullUrl = productUrl.startsWith('http') ? productUrl : `${this.baseUrl}${productUrl}`;
-            
+
             products.push({
               id: `target_${Date.now()}_${index}`,
               url: fullUrl,
@@ -155,17 +155,17 @@ export class TargetService {
       const $ = cheerio.load(response.data);
 
       // Extract product details
-      const title = $('[data-test="product-title"]').text().trim() || 
-                   $('h1').first().text().trim();
-      
+      const title = $('[data-test="product-title"]').text().trim() ||
+        $('h1').first().text().trim();
+
       const priceText = $('[data-test="product-price"]').text().trim() ||
-                       $('.price').first().text().trim();
+        $('.price').first().text().trim();
       const price = this.extractPrice(priceText);
-      
+
       const imageUrl = $('[data-test="product-image"] img').attr('src') ||
-                      $('.product-image img').first().attr('src');
-      
-             const stockStatus = this.extractStockStatus($.text());
+        $('.product-image img').first().attr('src');
+
+      const stockStatus = this.extractStockStatus($('body').text());
 
       if (!title || !price) {
         return null;
@@ -188,27 +188,27 @@ export class TargetService {
 
   private extractPrice(priceText: string): number {
     if (!priceText) return 0;
-    
+
     // Remove currency symbols and extract numeric value
     const priceMatch = priceText.match(/[\$£€]?(\d+(?:,\d{3})*(?:\.\d{2})?)/);
     if (priceMatch) {
       return parseFloat(priceMatch[1].replace(/,/g, ''));
     }
-    
+
     return 0;
   }
 
   private extractStockStatus(text: string): 'in_stock' | 'out_of_stock' | 'unknown' {
     const lowerText = text.toLowerCase();
-    
+
     if (lowerText.includes('add to cart') || lowerText.includes('buy now')) {
       return 'in_stock';
     }
-    
+
     if (lowerText.includes('out of stock') || lowerText.includes('unavailable')) {
       return 'out_of_stock';
     }
-    
+
     return 'unknown';
   }
 

@@ -66,7 +66,7 @@ export class SheinService {
       await this.delay(this.delayBetweenRequests + Math.random() * 1000);
 
       const searchUrl = `${this.searchUrl}?keyword=${encodeURIComponent(query)}`;
-      
+
       const response = await axios.get(searchUrl, {
         headers: {
           'User-Agent': this.getRandomUserAgent(),
@@ -92,7 +92,7 @@ export class SheinService {
 
         try {
           const $el = $(element);
-          
+
           // Extract product data
           const title = $el.find('.product-name, .goods-name, [data-test="product-title"]').text().trim();
           const priceText = $el.find('.product-price, .goods-price, [data-test="product-price"]').text().trim();
@@ -103,7 +103,7 @@ export class SheinService {
 
           if (title && price && productUrl) {
             const fullUrl = productUrl.startsWith('http') ? productUrl : `${this.baseUrl}${productUrl}`;
-            
+
             products.push({
               id: `shein_${Date.now()}_${index}`,
               url: fullUrl,
@@ -155,17 +155,17 @@ export class SheinService {
       const $ = cheerio.load(response.data);
 
       // Extract product details
-      const title = $('.product-name, .goods-name, [data-test="product-title"]').text().trim() || 
-                   $('h1').first().text().trim();
-      
+      const title = $('.product-name, .goods-name, [data-test="product-title"]').text().trim() ||
+        $('h1').first().text().trim();
+
       const priceText = $('.product-price, .goods-price, [data-test="product-price"]').text().trim() ||
-                       $('.price').first().text().trim();
+        $('.price').first().text().trim();
       const price = this.extractPrice(priceText);
-      
+
       const imageUrl = $('.product-image img, .goods-image img').attr('src') ||
-                      $('.product-gallery img').first().attr('src');
-      
-      const stockStatus = this.extractStockStatus($.text());
+        $('.product-gallery img').first().attr('src');
+
+      const stockStatus = this.extractStockStatus($('body').text());
 
       if (!title || !price) {
         return null;
@@ -188,27 +188,27 @@ export class SheinService {
 
   private extractPrice(priceText: string): number {
     if (!priceText) return 0;
-    
+
     // Remove currency symbols and extract numeric value
     const priceMatch = priceText.match(/[\$£€]?(\d+(?:,\d{3})*(?:\.\d{2})?)/);
     if (priceMatch) {
       return parseFloat(priceMatch[1].replace(/,/g, ''));
     }
-    
+
     return 0;
   }
 
   private extractStockStatus(text: string): 'in_stock' | 'out_of_stock' | 'unknown' {
     const lowerText = text.toLowerCase();
-    
+
     if (lowerText.includes('add to cart') || lowerText.includes('buy now') || lowerText.includes('add to bag')) {
       return 'in_stock';
     }
-    
+
     if (lowerText.includes('out of stock') || lowerText.includes('unavailable') || lowerText.includes('sold out')) {
       return 'out_of_stock';
     }
-    
+
     return 'unknown';
   }
 
