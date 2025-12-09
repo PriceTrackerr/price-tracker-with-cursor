@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { getDb } from '../config/firebase';
+// import { getDb } from '../config/firebase';
 
 interface PriceCheckResult {
   success: boolean;
@@ -28,7 +28,7 @@ class SmartPriceChecker {
   private async checkRateLimit(platform: string): Promise<boolean> {
     const now = Date.now();
     const limit = this.rateLimits[platform as keyof typeof this.rateLimits];
-    
+
     // Reset counter if hour has passed
     if (now - limit.lastReset > 3600000) { // 1 hour
       limit.requests = 0;
@@ -61,7 +61,7 @@ class SmartPriceChecker {
 
   async checkPrice(url: string): Promise<PriceCheckResult> {
     const platform = this.getPlatformFromUrl(url);
-    
+
     if (!platform) {
       return {
         success: false,
@@ -100,7 +100,7 @@ class SmartPriceChecker {
       });
 
       const price = this.extractPrice(response.data, platform);
-      
+
       if (price) {
         return {
           success: true,
@@ -137,7 +137,7 @@ class SmartPriceChecker {
   private extractPrice(html: string, platform: string): number | null {
     // This is a simplified price extraction
     // In production, you'd want more sophisticated parsing
-    
+
     const pricePatterns = {
       amazon: /[\$£€](\d+(?:,\d{3})*(?:\.\d{2})?)/g,
       aliexpress: /[\$£€](\d+(?:,\d{3})*(?:\.\d{2})?)/g,
