@@ -18,36 +18,16 @@ try {
 // Initialize empty data file if it doesn't exist
 if (!fs.existsSync(DATA_FILE)) {
   try {
-    // On Vercel, try to copy the deployed data file if it exists
-    if (process.env.VERCEL) {
-      const sourceFile = path.join(__dirname, '../../data/data.json');
-      if (fs.existsSync(sourceFile)) {
-        console.log('[Storage] Copying deployed data file to /tmp');
-        fs.copyFileSync(sourceFile, DATA_FILE);
-      } else {
-        console.warn('[Storage] Deployed data file not found, initializing empty');
-        initializeEmptyData();
-      }
-    } else {
-      initializeEmptyData();
-    }
-  } catch (error) {
-    console.error('[Storage] Error initializing data file:', error);
-    // On Vercel cold start, /tmp should be writable; if not, reads will fallback to empty state
-  }
-}
-
-function initializeEmptyData() {
-  fs.writeFileSync(DATA_FILE, JSON.stringify({
-    products: [],
-    users: [],
-    alerts: [],
-    notifications: [],
-    priceHistory: [],
-    payments: [],
-    affiliateTransactions: [],
-    payoutRequests: [],
-    subscriptionPlans: [],
+    fs.writeFileSync(DATA_FILE, JSON.stringify({ 
+    products: [], 
+    users: [], 
+    alerts: [], 
+    notifications: [], 
+    priceHistory: [], 
+    payments: [], 
+    affiliateTransactions: [], 
+    payoutRequests: [], 
+    subscriptionPlans: [], 
     subscriptionPlansDeleted: [],
     coupons: [],
     couponStacks: [],
@@ -59,6 +39,9 @@ function initializeEmptyData() {
     globalMarketData: [],
     automationRules: []
   }));
+  } catch (error) {
+    // On Vercel cold start, /tmp should be writable; if not, reads will fallback to empty state
+  }
 }
 
 export interface Product {
@@ -77,7 +60,7 @@ export interface Product {
   matchedProducts?: string[]; // Array of product IDs that match this product
   totalMatches?: number; // Total number of matches found
   previousStockStatus?: 'in_stock' | 'out_of_stock' | 'unknown';
-
+  
   // Enhanced features
   condition?: 'new' | 'used' | 'refurbished' | 'open_box' | 'damaged';
   conditionScore?: number; // 0-100 quality score
@@ -86,7 +69,7 @@ export interface Product {
   sellerReviewCount?: number;
   warrantyCoverage?: string;
   returnPolicy?: string;
-
+  
   // Global pricing
   globalPrices?: {
     [countryCode: string]: {
@@ -99,21 +82,21 @@ export interface Product {
       availability: 'in_stock' | 'out_of_stock' | 'limited' | 'unknown';
     };
   };
-
+  
   // Coupon information
   availableCoupons?: CouponInfo[];
   bestStack?: CouponStack;
   finalPrice?: number; // Price after best coupon stack
-
+  
   // Community features
   credibilityScore?: number; // 0-100 deal credibility
   communityRating?: number; // User community rating
   communityVotes?: number;
   isVerified?: boolean; // Verified by expert curators
-
+  
   // Price guarantee tracking
   priceGuarantees?: PriceGuarantee[];
-
+  
   // Automation features
   autoBuyEnabled?: boolean;
   autoBuyTriggerPrice?: number;
@@ -450,7 +433,7 @@ interface DataFile {
   payoutRequests: PayoutRequest[];
   subscriptionPlans: SubscriptionPlan[];
   subscriptionPlansDeleted: string[];
-
+  
   // Advanced features data
   coupons: CouponInfo[];
   couponStacks: CouponStack[];
@@ -470,16 +453,16 @@ class FileStorage {
       return JSON.parse(data);
     } catch (error) {
       console.error('Error reading data file:', error);
-      return {
-        products: [],
-        users: [],
-        alerts: [],
-        notifications: [],
-        priceHistory: [],
-        payments: [],
-        affiliateTransactions: [],
-        payoutRequests: [],
-        subscriptionPlans: [],
+      return { 
+        products: [], 
+        users: [], 
+        alerts: [], 
+        notifications: [], 
+        priceHistory: [], 
+        payments: [], 
+        affiliateTransactions: [], 
+        payoutRequests: [], 
+        subscriptionPlans: [], 
         subscriptionPlansDeleted: [],
         coupons: [],
         couponStacks: [],
@@ -706,9 +689,9 @@ class FileStorage {
     const notification = data.notifications.find(n => n.id === id);
     if (!notification) return false;
     Object.assign(notification, update);
-    this.writeData(data);
-    return true;
-  }
+      this.writeData(data);
+      return true;
+    }
   async deleteNotification(id: string): Promise<boolean> {
     const data = this.readData();
     const initialLength = data.notifications.length;
@@ -794,7 +777,7 @@ class FileStorage {
 
   async getPayoutRequests(affiliateUserId?: string): Promise<PayoutRequest[]> {
     const data = this.readData();
-    return affiliateUserId
+    return affiliateUserId 
       ? data.payoutRequests.filter(p => p.affiliateUserId === affiliateUserId)
       : data.payoutRequests;
   }
