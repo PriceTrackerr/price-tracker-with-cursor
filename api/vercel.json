@@ -1,15 +1,14 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "src/index.ts",
-      "use": "@vercel/node"
+  "functions": {
+    "src/index.ts": {
+      "includeFiles": "data/**"
     }
-  ],
-  "routes": [
+  },
+  "rewrites": [
     {
-      "src": "/(.*)",
-      "dest": "src/index.ts"
+      "source": "/(.*)",
+      "destination": "/src/index.ts"
     }
   ],
   "crons": [
@@ -17,10 +16,5 @@
       "path": "/api/cron/update-prices",
       "schedule": "0 */12 * * *"
     }
-  ],
-  "functions": {
-    "src/index.ts": {
-      "includeFiles": "data/**"
-    }
-  }
+  ]
 }
