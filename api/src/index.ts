@@ -162,7 +162,7 @@ app.get('/health/database', async (req, res) => {
     const dbType = db.constructor.name;
     const supabaseConfigured = isSupabaseConfigured();
 
-    // Test database connection
+    // Test (DB)database connection
     let connectionTest = 'unknown';
     try {
       if (typeof db.getProducts === 'function') {
