@@ -1,5 +1,5 @@
 import axios from 'axios';
-// import { getDb } from '../config/firebase';
+// import { getDb } from '../config/firebase'; we dont have firebase
 
 interface PriceCheckResult {
   success: boolean;
