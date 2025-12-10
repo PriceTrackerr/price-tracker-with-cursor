@@ -250,3 +250,17 @@
     animation: float 3s ease-in-out infinite;
   }
 }
+/* Dark mode text readability fixes */
+.dark .text-gray-400,
+.dark .text-slate-400 {
+  color: #a1a1aa !important; /* zinc-400 - more visible */
+}
+
+.dark .text-gray-500,
+.dark .text-slate-500 {
+  color: #a1a1aa !important; /* boost muted text visibility */
+}
+
+.dark .text-sm {
+  letter-spacing: 0.01em; /* slight spacing for readability */
+}

@@ -381,8 +381,8 @@ export default function Layout({ children }: LayoutProps) {
           {!sidebarCollapsed ? (
             <div className="flex items-center justify-between">
               <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-                <div className="w-8 h-8 bg-gradient-to-br from-indigo-600 to-violet-600 rounded-lg flex items-center justify-center">
-                  <svg width="20" height="20" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-violet-600 rounded-lg flex items-center justify-center shadow-md shadow-indigo-500/20">
+                  <svg width="24" height="24" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M25 70 C35 50, 65 50, 75 30" stroke="white" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
                     <circle cx="75" cy="30" r="6" fill="white" />
                   </svg>
@@ -430,7 +430,7 @@ export default function Layout({ children }: LayoutProps) {
                   key={item.id}
                   to={item.href}
                   className={`w-full flex items-center rounded-xl transition-all duration-200 ${isActive
-                    ? "bg-blue-500 text-white"
+                    ? "bg-slate-900 text-white"
                     : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
                     } ${sidebarCollapsed ? "justify-center h-11 px-2" : "gap-3 h-11 px-4"}`}
                   title={sidebarCollapsed ? item.label : undefined}
@@ -468,16 +468,24 @@ export default function Layout({ children }: LayoutProps) {
           {/* User Profile */}
           {!sidebarCollapsed ? (
             <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
-              <Link to="/settings" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+              <Link to="/subscription" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
                 <img
                   src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username || user?.email || 'User'}`}
                   alt="User avatar"
                   className="w-10 h-10 rounded-full bg-gray-100"
                 />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                    {user?.username || 'User name'}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                      {user?.username || 'User name'}
+                    </p>
+                    <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded ${user?.subscription?.tier === 'pro'
+                      ? 'bg-gradient-to-r from-indigo-500 to-violet-500 text-white'
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                      }`}>
+                      {user?.subscription?.tier === 'pro' ? 'PRO' : 'FREE'}
+                    </span>
+                  </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                     {user?.email || 'user@gmail.com'}
                   </p>

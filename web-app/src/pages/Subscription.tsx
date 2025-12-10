@@ -136,7 +136,7 @@ const Subscription: React.FC = () => {
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {/* Free Plan */}
           {freePlan && (
-            <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl shadow-xl overflow-hidden border-2 border-gray-700">
+            <div className="bg-white dark:bg-gradient-to-br dark:from-gray-900 dark:to-gray-800 rounded-2xl shadow-xl overflow-hidden border-2 border-gray-200 dark:border-gray-700">
               <div className="p-8">
                 {/* Plan Header */}
                 <div className="mb-6">
