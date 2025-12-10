@@ -19,6 +19,8 @@ import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../components/ThemeContext';
 import { useTranslation } from 'react-i18next';
 
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001/api';
+
 export default function Settings() {
   const { t, i18n } = useTranslation();
   const { user, logout, token } = useAuth();
@@ -80,7 +82,7 @@ export default function Settings() {
         toast.error('Not authenticated');
         return;
       }
-      const res = await fetch('/api/users/preferences', {
+      const res = await fetch(`${API_BASE}/users/preferences`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -107,7 +109,7 @@ export default function Settings() {
         toast.error('Not authenticated');
         return;
       }
-      const res = await fetch('/api/users/preferences', {
+      const res = await fetch(`${API_BASE}/users/preferences`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -134,7 +136,7 @@ export default function Settings() {
         toast.error('Not authenticated');
         return;
       }
-      const res = await fetch('/api/users/preferences', {
+      const res = await fetch(`${API_BASE}/users/preferences`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -170,7 +172,7 @@ export default function Settings() {
         setPasswordLoading(false);
         return;
       }
-      const res = await fetch('/api/users/change-password', {
+      const res = await fetch(`${API_BASE}/users/change-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -213,7 +215,7 @@ export default function Settings() {
         setShowDeleteModal(false);
         return;
       }
-      const res = await fetch('/api/users/delete-account', {
+      const res = await fetch(`${API_BASE}/users/delete-account`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
