@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Package, DollarSign, Bell, Users } from 'lucide-react';
+import axios from 'axios';
+
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001/api';
 
 interface MetricCardProps {
   title: string;
@@ -69,37 +72,54 @@ const ProductTable = ({ products }: ProductTableProps) => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {products.map((product, index) => (
-              <tr key={index} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <img 
-                      src={product.imageUrl || 'https://via.placeholder.com/40'} 
-                      alt={product.title}
-                      className="w-10 h-10 rounded-lg object-cover mr-3"
-                    />
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{product.title}</div>
-                      <div className="text-sm text-gray-500">{product.platform}</div>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{product.platform}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${product.currentPrice}</td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                    product.status === 'active' ? 'bg-green-100 text-green-800' :
-                    product.status === 'inactive' ? 'bg-gray-100 text-gray-800' :
-                    'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {product.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <button className="text-blue-600 hover:text-blue-900">View</button>
+            {products.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                  No products tracked yet
                 </td>
               </tr>
-            ))}
+            ) : (
+              products.map((product, index) => (
+                <tr key={index} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <img
+                        src={product.image_url || product.imageUrl || 'https://via.placeholder.com/40'}
+                        alt={product.title}
+                        className="w-10 h-10 rounded-lg object-cover mr-3"
+                        onError={(e) => { (e.target as HTMLImageElement).src = 'https://via.placeholder.com/40'; }}
+                      />
+                      <div>
+                        <div className="text-sm font-medium text-gray-900 max-w-xs truncate">{product.title}</div>
+                        <div className="text-sm text-gray-500">{product.platform}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{product.platform}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${product.price || product.currentPrice || 0}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${product.stock_status === 'in_stock' || product.status === 'active' ? 'bg-green-100 text-green-800' :
+                        product.stock_status === 'out_of_stock' ? 'bg-red-100 text-red-800' :
+                          'bg-yellow-100 text-yellow-800'
+                      }`}>
+                      {product.stock_status === 'in_stock' ? 'Active' :
+                        product.stock_status === 'out_of_stock' ? 'Out of Stock' :
+                          product.status || 'Unknown'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <a
+                      href={product.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-900"
+                    >
+                      View
+                    </a>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -112,59 +132,67 @@ export default function Dashboard() {
     totalProducts: 0,
     totalUsers: 0,
     totalValue: 0,
-    activeAlerts: 0
+    activeAlerts: 0,
+    userGrowth: 0,
+    productGrowth: 0
   });
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Mock data for now
-        setStats({
-          totalProducts: 156,
-          totalUsers: 1247,
-          totalValue: 3247,
-          activeAlerts: 8
-        });
-        
-        setProducts([
-          {
-            title: "iPhone 15 Pro",
-            platform: "Amazon",
-            currentPrice: 999,
-            status: "active",
-            imageUrl: "https://via.placeholder.com/40"
-          },
-          {
-            title: "Samsung Galaxy S24",
-            platform: "eBay",
-            currentPrice: 799,
-            status: "active",
-            imageUrl: "https://via.placeholder.com/40"
-          },
-          {
-            title: "MacBook Pro M3",
-            platform: "Apple Store",
-            currentPrice: 1999,
-            status: "active",
-            imageUrl: "https://via.placeholder.com/40"
-          }
-        ]);
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
   }, []);
+
+  const fetchData = async () => {
+    try {
+      const token = localStorage.getItem('token');
+
+      // Fetch analytics data
+      const analyticsResponse = await axios.get(`${API_BASE}/users/admin/analytics`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (analyticsResponse.data.success) {
+        const data = analyticsResponse.data.data;
+        setStats({
+          totalProducts: data.totalProducts || 0,
+          totalUsers: data.totalUsers || 0,
+          totalValue: data.avgPrice * data.totalProducts || 0,
+          activeAlerts: data.activeAlerts || 0,
+          userGrowth: data.userGrowth || 0,
+          productGrowth: data.productGrowth || 0
+        });
+        setProducts(data.recentProducts || []);
+      }
+    } catch (err: any) {
+      console.error('Error fetching dashboard data:', err);
+      setError(err.response?.data?.message || 'Failed to load dashboard');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <p className="text-red-600 mb-2">{error}</p>
+          <button
+            onClick={fetchData}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     );
   }
@@ -182,31 +210,30 @@ export default function Dashboard() {
         <MetricCard
           title="Total Products"
           value={stats.totalProducts}
-          subtitle="Across 5 platforms"
+          subtitle="Tracked products"
           icon={Package}
-          trend={{ value: "12%", isPositive: true }}
+          trend={{ value: `${stats.productGrowth}%`, isPositive: stats.productGrowth >= 0 }}
           color="blue"
         />
         <MetricCard
           title="Total Users"
           value={stats.totalUsers}
-          subtitle="Active users"
+          subtitle="Registered users"
           icon={Users}
-          trend={{ value: "8%", isPositive: true }}
+          trend={{ value: `${stats.userGrowth}%`, isPositive: stats.userGrowth >= 0 }}
           color="green"
         />
         <MetricCard
           title="Total Value"
-          value={`$${stats.totalValue.toLocaleString()}`}
-          subtitle="Tracked value"
+          value={`$${Math.round(stats.totalValue).toLocaleString()}`}
+          subtitle="Combined product value"
           icon={DollarSign}
-          trend={{ value: "15%", isPositive: true }}
           color="orange"
         />
         <MetricCard
           title="Active Alerts"
           value={stats.activeAlerts}
-          subtitle="Monitoring"
+          subtitle="Price monitoring"
           icon={Bell}
           color="purple"
         />
@@ -216,4 +243,4 @@ export default function Dashboard() {
       <ProductTable products={products} />
     </div>
   );
-} 
+}
