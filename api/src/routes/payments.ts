@@ -31,7 +31,7 @@ router.get('/plans', async (req: Request, res: Response) => {
     const userCountry = req.headers['cf-ipcountry'] || req.query.country || 'US';
     const availablePaymentMethods = paymentService.getAvailablePaymentMethods(userCountry as string);
     const plans = await getEffectivePlans();
-    
+
     res.json({
       success: true,
       data: {
@@ -51,9 +51,8 @@ router.get('/plans', async (req: Request, res: Response) => {
 // Admin: create a new plan
 router.post('/plans', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    // simple role check: allow admins only if role exists
-    const admin = await db.getUserById(String(req.user!.uid));
-    if (!admin || admin.role !== 'admin') {
+    // Use isAdmin from auth middleware
+    if (!req.user!.isAdmin) {
       return res.status(403).json({ success: false, message: 'Forbidden' });
     }
 
@@ -82,8 +81,7 @@ router.post('/plans', authMiddleware, async (req: AuthRequest, res: Response) =>
 // Admin: update a plan
 router.put('/plans/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const admin = await db.getUserById(String(req.user!.uid));
-    if (!admin || admin.role !== 'admin') {
+    if (!req.user!.isAdmin) {
       return res.status(403).json({ success: false, message: 'Forbidden' });
     }
     const planId = String(req.params.id);
@@ -101,8 +99,7 @@ router.put('/plans/:id', authMiddleware, async (req: AuthRequest, res: Response)
 // Admin: delete a plan
 router.delete('/plans/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const admin = await db.getUserById(String(req.user!.uid));
-    if (!admin || admin.role !== 'admin') {
+    if (!req.user!.isAdmin) {
       return res.status(403).json({ success: false, message: 'Forbidden' });
     }
     const planId = String(req.params.id);
@@ -129,14 +126,14 @@ router.get('/subscription', authMiddleware, async (req: AuthRequest, res: Respon
 
     // Fetch real user data
     const userProducts = await db.getProducts(user.id);
-    const userAlerts = await db.getAllAlerts().then((alerts: any[]) => 
+    const userAlerts = await db.getAllAlerts().then((alerts: any[]) =>
       alerts.filter((alert: any) => alert.userId === user.id)
     );
-    
+
     // Count alerts this month
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const alertsThisMonth = userAlerts.filter((alert: any) => 
+    const alertsThisMonth = userAlerts.filter((alert: any) =>
       new Date(alert.createdAt) >= startOfMonth
     ).length;
 
@@ -148,7 +145,7 @@ router.get('/subscription', authMiddleware, async (req: AuthRequest, res: Respon
 
     return res.json({
       success: true,
-      data: { 
+      data: {
         subscription: subscriptionStatus,
         isFreePeriod: subscriptionStatus.isFreePeriod,
         daysRemaining: subscriptionStatus.daysRemaining,
@@ -166,11 +163,11 @@ router.get('/subscription', authMiddleware, async (req: AuthRequest, res: Respon
 router.post('/subscribe', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const { planId, paymentMethod } = req.body;
-    
+
     if (!planId || !paymentMethod) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Plan ID and payment method are required' 
+      return res.status(400).json({
+        success: false,
+        message: 'Plan ID and payment method are required'
       });
     }
 
@@ -199,9 +196,9 @@ router.post('/subscribe', authMiddleware, async (req: AuthRequest, res: Response
     }
 
     if (!paymentResult.success) {
-      return res.status(400).json({ 
-        success: false, 
-        message: paymentResult.error 
+      return res.status(400).json({
+        success: false,
+        message: paymentResult.error
       });
     }
 
@@ -323,11 +320,11 @@ router.get('/affiliate/dashboard', authMiddleware, async (req: AuthRequest, res:
 router.post('/affiliate/enable', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const { payoutMethod, payoutDetails } = req.body;
-    
+
     if (!payoutMethod) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Payout method is required' 
+      return res.status(400).json({
+        success: false,
+        message: 'Payout method is required'
       });
     }
 
@@ -363,11 +360,11 @@ router.post('/affiliate/enable', authMiddleware, async (req: AuthRequest, res: R
 router.post('/affiliate/payout', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const { amount } = req.body;
-    
+
     if (!amount || amount <= 0) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Valid amount is required' 
+      return res.status(400).json({
+        success: false,
+        message: 'Valid amount is required'
       });
     }
 
@@ -377,16 +374,16 @@ router.post('/affiliate/payout', authMiddleware, async (req: AuthRequest, res: R
     }
 
     if (amount > (user.affiliate.pendingEarnings || 0)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Insufficient balance' 
+      return res.status(400).json({
+        success: false,
+        message: 'Insufficient balance'
       });
     }
 
     if (amount < 50) { // Minimum payout
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Minimum payout amount is $50' 
+      return res.status(400).json({
+        success: false,
+        message: 'Minimum payout amount is $50'
       });
     }
 

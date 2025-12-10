@@ -1326,8 +1326,8 @@ export default function Products() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-3 md:p-6">
-      <div className="max-w-7xl mx-auto space-y-4 md:space-y-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-3 md:p-6">
+      <div className="max-w-7xl mx-auto bg-white dark:bg-gray-800 rounded-2xl border-2 border-blue-200 dark:border-blue-800 shadow-lg p-4 md:p-6 space-y-4 md:space-y-6">
         {/* Header */}
         <div className="flex flex-col gap-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

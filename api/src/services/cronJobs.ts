@@ -7,15 +7,14 @@ const db = getDb();
 
 async function storeDashboardNotification(product: any, alert: any) {
   try {
-    // Use only fields that exist in the notifications schema
+    // Use camelCase fields - storage layer maps to snake_case
     await db.addNotification({
-      product_id: product.id,
-      user_id: alert.userId,
+      productId: product.id,
+      userId: alert.userId,
       title: `Price Alert: ${product.title}`,
       message: `Price dropped to $${product.price} (target was $${alert.targetPrice})`,
       type: 'price_drop',
-      is_read: false,
-      created_at: new Date().toISOString()
+      isRead: false
     });
   } catch (error: any) {
     // Don't fail the whole alert check if notification fails

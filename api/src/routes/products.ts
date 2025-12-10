@@ -669,14 +669,13 @@ router.delete('/:productId', authMiddleware, async (req: AuthRequest, res: Respo
     }
 
     const product = await db.getProductById(productId);
-    const user = await db.getUserById(userId) as UserWithRole | undefined;
 
     if (!product) {
       return res.status(404).json({ success: false, error: 'Product not found' });
     }
 
     // Check if user is admin or owns the product
-    if (!user || (user.role !== 'admin' && product.userId !== userId)) {
+    if (!req.user!.isAdmin && product.userId !== userId) {
       return res.status(403).json({ success: false, error: 'Not authorized' });
     }
 
