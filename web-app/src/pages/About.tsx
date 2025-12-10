@@ -1,12 +1,12 @@
 import React from 'react';
 import { Users, Target, Heart, Globe } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { PublicNavigation } from '../components/PublicNavigation';
+import { LandingNav, LandingFooter } from '../components/LandingLayout';
 
 const About = () => {
     return (
         <>
-            <PublicNavigation />
+            <LandingNav />
             <div className="min-h-screen bg-gray-50 pt-24">
                 <div className="max-w-4xl mx-auto px-4 py-12">
                     <div className="text-center mb-16">
@@ -61,6 +61,7 @@ const About = () => {
                     </div>
                 </div>
             </div>
+            <LandingFooter />
         </>
     );
 };

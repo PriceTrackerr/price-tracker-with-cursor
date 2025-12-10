@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BarChart3, TrendingUp, TrendingDown, Users, Package, DollarSign, Activity } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import axios from 'axios';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001/api';
@@ -214,8 +214,8 @@ export default function Analytics() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center ${activity.type === 'user' ? 'bg-blue-100' :
-                      activity.type === 'product' ? 'bg-green-100' :
-                        'bg-orange-100'
+                    activity.type === 'product' ? 'bg-green-100' :
+                      'bg-orange-100'
                     }`}>
                     {activity.type === 'user' && <Users className="w-4 h-4 text-blue-600" />}
                     {activity.type === 'product' && <Package className="w-4 h-4 text-green-600" />}

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Mail, MessageSquare, Send, MapPin, CheckCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { PublicNavigation } from '../components/PublicNavigation';
+import { LandingNav, LandingFooter } from '../components/LandingLayout';
 
 const Contact = () => {
     const [formData, setFormData] = useState({
@@ -50,7 +50,7 @@ const Contact = () => {
 
     return (
         <>
-            <PublicNavigation />
+            <LandingNav />
             <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-24 pb-12">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
@@ -220,6 +220,7 @@ const Contact = () => {
                     </div>
                 </div>
             </div>
+            <LandingFooter />
         </>
     );
 };
