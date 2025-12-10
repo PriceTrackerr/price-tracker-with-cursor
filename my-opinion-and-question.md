@@ -601,3 +601,22 @@ now i think this is what i left to do
 - make some buttons in footer functional (some are but some aren't)
 - once user login there is no button to turn back to landing page so we'll add home button or the logo button clickable
 - for pricing section take a look at my subscription page i want the exact style and content from there no basic and premium just free and pro (monthly and yearly)
+
+
+
+
+
+
+before launch lets do somethings
+* in landing page:
+- i like the color combo in my landing page so i want the logo color to be the same in all pages
+- in that page at bottom (footer) the logo is p so change that logo (same as main logo)
+- so what do u think about the button colors, in landing page you made it black my theme color was like a blue thing so i dont hate the black color it makes it really cool and modern so can we make all buttons in all pages including dashboard products price history...i mean all pages color to be black and if that doesnt look good then we'll revert it
+* side bar 
+- change the logo color to the same color as landing page logo
+- i really hate the overall design of the side bar it looks very cheap and free tool from 2013 so can you please redesing that and make it modern and cool but dont change the buttons and functionality i just want u to redesign
+- 1 more idea is it good to add the subscription type in side bar? like at bottom a circle thing with user name and subscription type (free or pro monthly or yearly) and if user is pro then it should be green and if free then it should be red or u can redesign the color 
+
+** im polishing now so thats why i want to make every color and fonts uniform 
+
+lets do this and we'll add more if needed or launch it

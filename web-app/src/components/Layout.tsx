@@ -14,6 +14,8 @@ import {
   LogOut,
   Search,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Home,
   History,
   CreditCard
@@ -364,81 +366,135 @@ export default function Layout({ children }: LayoutProps) {
     }
   };
 
+  const handleLogout = () => {
+    logout();
+    navigate('/auth');
+    toast.success('Logged out successfully');
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Sidebar (Desktop) */}
-      <aside className={`fixed left-0 top-0 h-full bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 z-50 hidden md:block ${sidebarCollapsed ? "w-16" : "w-64"
-        }`}>
-        <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className={`border-b border-gray-200 dark:border-gray-700 ${sidebarCollapsed ? 'p-2' : 'p-4'}`}>
-            {!sidebarCollapsed && (
-              <>
-                <Link to="/" className="flex flex-col items-center gap-3 hover:opacity-80 transition-opacity">
-                  <div className="w-16 h-16 bg-[#2563EB] rounded-lg flex items-center justify-center shadow-sm">
-                    <svg width="40" height="40" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <rect x="0" y="0" width="100" height="100" rx="20" fill="#2563EB" />
-                      <path d="M25 70 C35 50, 65 50, 75 30" stroke="white" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
-                      <circle cx="75" cy="30" r="6" fill="white" />
-                    </svg>
-                  </div>
-                  <span className="font-bold text-lg text-gray-900 dark:text-white text-center">Price Tracker</span>
-                </Link>
-                <button
-                  onClick={() => setSidebarCollapsed(true)}
-                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                  title="Collapse sidebar"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </>
-            )}
-            {sidebarCollapsed && (
-              <>
-                <Link to="/" className="flex flex-col items-center gap-3 hover:opacity-80 transition-opacity">
-                  <div className="w-12 h-12 bg-[#2563EB] rounded-lg flex items-center justify-center shadow-sm">
-                    <svg width="28" height="28" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <rect x="0" y="0" width="100" height="100" rx="20" fill="#2563EB" />
-                      <path d="M25 70 C35 50, 65 50, 75 30" stroke="white" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
-                      <circle cx="75" cy="30" r="6" fill="white" />
-                    </svg>
-                  </div>
-                </Link>
-                <button
-                  onClick={() => setSidebarCollapsed(false)}
-                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                  title="Expand sidebar"
-                >
-                  <Menu className="w-4 h-4" />
-                </button>
-              </>
-            )}
-          </div>
-
-          {/* Navigation */}
-          <nav className={`flex-1 ${sidebarCollapsed ? 'p-2' : 'p-4'}`}>
-            <div className="space-y-2">
-              {navigation.map((item) => {
-                const Icon = item.icon;
-                const isActive = location.pathname === item.href;
-
-                return (
-                  <Link
-                    key={item.id}
-                    to={item.href}
-                    className={`w-full flex items-center rounded-lg transition-all duration-200 ${isActive
-                      ? "bg-blue-600 text-white shadow-lg shadow-blue-600/25"
-                      : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
-                      } ${sidebarCollapsed ? "justify-center h-12 px-2" : "gap-3 h-12 px-3"}`}
-                    title={sidebarCollapsed ? item.label : undefined}
-                  >
-                    <Icon className={`${sidebarCollapsed ? "w-6 h-6" : "w-5 h-5"}`} />
-                    {!sidebarCollapsed && <span>{item.label}</span>}
-                  </Link>
-                );
-              })}
+      <aside className={`fixed left-4 top-4 bottom-4 bg-white dark:bg-gray-900 rounded-2xl border-2 border-blue-200 dark:border-blue-800 shadow-lg transition-all duration-300 z-50 hidden md:flex flex-col ${sidebarCollapsed ? "w-16" : "w-64"}`}>
+        {/* Header with Logo */}
+        <div className={`${sidebarCollapsed ? 'p-3' : 'p-5'} border-b border-gray-100 dark:border-gray-800`}>
+          {!sidebarCollapsed ? (
+            <div className="flex items-center justify-between">
+              <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                <div className="w-8 h-8 bg-gradient-to-br from-indigo-600 to-violet-600 rounded-lg flex items-center justify-center">
+                  <svg width="20" height="20" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M25 70 C35 50, 65 50, 75 30" stroke="white" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
+                    <circle cx="75" cy="30" r="6" fill="white" />
+                  </svg>
+                </div>
+                <span className="font-semibold text-gray-900 dark:text-white">Price Tracker</span>
+              </Link>
+              <button
+                onClick={() => setSidebarCollapsed(true)}
+                className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                title="Collapse sidebar"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
             </div>
-          </nav>
+          ) : (
+            <div className="flex flex-col items-center gap-2">
+              <Link to="/" className="hover:opacity-80 transition-opacity">
+                <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-violet-600 rounded-lg flex items-center justify-center">
+                  <svg width="24" height="24" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M25 70 C35 50, 65 50, 75 30" stroke="white" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
+                    <circle cx="75" cy="30" r="6" fill="white" />
+                  </svg>
+                </div>
+              </Link>
+              <button
+                onClick={() => setSidebarCollapsed(false)}
+                className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                title="Expand sidebar"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Navigation */}
+        <nav className={`flex-1 overflow-y-auto ${sidebarCollapsed ? 'p-2' : 'p-4'}`}>
+          <div className="space-y-1">
+            {navigation.map((item) => {
+              const Icon = item.icon;
+              const isActive = location.pathname === item.href;
+
+              return (
+                <Link
+                  key={item.id}
+                  to={item.href}
+                  className={`w-full flex items-center rounded-xl transition-all duration-200 ${isActive
+                    ? "bg-blue-500 text-white"
+                    : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                    } ${sidebarCollapsed ? "justify-center h-11 px-2" : "gap-3 h-11 px-4"}`}
+                  title={sidebarCollapsed ? item.label : undefined}
+                >
+                  <Icon className={`${sidebarCollapsed ? "w-5 h-5" : "w-5 h-5"}`} />
+                  {!sidebarCollapsed && <span className="font-medium">{item.label}</span>}
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
+
+        {/* Bottom Section - Settings, Logout, User Profile */}
+        <div className={`border-t border-gray-100 dark:border-gray-800 ${sidebarCollapsed ? 'p-2' : 'p-4'}`}>
+          {/* Settings */}
+          <Link
+            to="/settings"
+            className={`w-full flex items-center rounded-xl transition-all duration-200 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 ${sidebarCollapsed ? "justify-center h-11 px-2 mb-1" : "gap-3 h-11 px-4 mb-1"}`}
+            title={sidebarCollapsed ? "Settings" : undefined}
+          >
+            <Settings className="w-5 h-5" />
+            {!sidebarCollapsed && <span className="font-medium">Setting</span>}
+          </Link>
+
+          {/* Logout */}
+          <button
+            onClick={handleLogout}
+            className={`w-full flex items-center rounded-xl transition-all duration-200 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 ${sidebarCollapsed ? "justify-center h-11 px-2" : "gap-3 h-11 px-4"}`}
+            title={sidebarCollapsed ? "Log out" : undefined}
+          >
+            <LogOut className="w-5 h-5" />
+            {!sidebarCollapsed && <span className="font-medium">Log out</span>}
+          </button>
+
+          {/* User Profile */}
+          {!sidebarCollapsed ? (
+            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+              <Link to="/settings" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                <img
+                  src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username || user?.email || 'User'}`}
+                  alt="User avatar"
+                  className="w-10 h-10 rounded-full bg-gray-100"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                    {user?.username || 'User name'}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                    {user?.email || 'user@gmail.com'}
+                  </p>
+                </div>
+              </Link>
+            </div>
+          ) : (
+            <div className="mt-2 flex justify-center">
+              <Link to="/settings">
+                <img
+                  src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username || user?.email || 'User'}`}
+                  alt="User avatar"
+                  className="w-9 h-9 rounded-full bg-gray-100"
+                />
+              </Link>
+            </div>
+          )}
         </div>
       </aside>
 
@@ -447,25 +503,24 @@ export default function Layout({ children }: LayoutProps) {
         mobileMenuOpen && (
           <div className="fixed inset-0 z-50 md:hidden">
             <div className="absolute inset-0 bg-black/40" onClick={() => setMobileMenuOpen(false)} />
-            <aside className="relative h-full w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 shadow-xl">
+            <aside className="relative h-full w-64 bg-white dark:bg-gray-900 shadow-xl">
               <div className="flex flex-col h-full">
-                <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                  <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                    <div className="w-10 h-10 bg-[#2563EB] rounded-lg flex items-center justify-center shadow-sm">
-                      <svg width="24" height="24" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="0" y="0" width="100" height="100" rx="20" fill="#2563EB" />
+                <div className="p-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+                  <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                    <div className="w-8 h-8 bg-gradient-to-br from-indigo-600 to-violet-600 rounded-lg flex items-center justify-center">
+                      <svg width="20" height="20" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M25 70 C35 50, 65 50, 75 30" stroke="white" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
                         <circle cx="75" cy="30" r="6" fill="white" />
                       </svg>
                     </div>
-                    <span className="font-bold text-lg text-gray-900 dark:text-white">Price Tracker</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">Price Tracker</span>
                   </Link>
-                  <button onClick={() => setMobileMenuOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg" aria-label="Close menu">
+                  <button onClick={() => setMobileMenuOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg" aria-label="Close menu">
                     <X className="w-5 h-5" />
                   </button>
                 </div>
                 <nav className="flex-1 p-4">
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     {navigation.map((item) => {
                       const Icon = item.icon;
                       const isActive = location.pathname === item.href;
@@ -473,19 +528,55 @@ export default function Layout({ children }: LayoutProps) {
                         <Link
                           key={item.id}
                           to={item.href}
-                          className={`w-full flex items-center gap-3 h-12 px-3 rounded-lg transition-all duration-200 ${isActive
-                            ? "bg-blue-600 text-white shadow-lg shadow-blue-600/25"
-                            : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
+                          className={`w-full flex items-center gap-3 h-11 px-4 rounded-xl transition-all duration-200 ${isActive
+                            ? "bg-blue-500 text-white"
+                            : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
                             }`}
                           onClick={() => setMobileMenuOpen(false)}
                         >
                           <Icon className="w-5 h-5" />
-                          <span>{item.label}</span>
+                          <span className="font-medium">{item.label}</span>
                         </Link>
                       );
                     })}
                   </div>
                 </nav>
+                {/* Bottom Section */}
+                <div className="border-t border-gray-100 dark:border-gray-800 p-4">
+                  <Link
+                    to="/settings"
+                    className="w-full flex items-center gap-3 h-11 px-4 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 mb-1"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Settings className="w-5 h-5" />
+                    <span className="font-medium">Setting</span>
+                  </Link>
+                  <button
+                    onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
+                    className="w-full flex items-center gap-3 h-11 px-4 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  >
+                    <LogOut className="w-5 h-5" />
+                    <span className="font-medium">Log out</span>
+                  </button>
+                  {/* User Profile */}
+                  <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+                    <Link to="/settings" className="flex items-center gap-3" onClick={() => setMobileMenuOpen(false)}>
+                      <img
+                        src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username || user?.email || 'User'}`}
+                        alt="User avatar"
+                        className="w-10 h-10 rounded-full bg-gray-100"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                          {user?.username || 'User name'}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                          {user?.email || 'user@gmail.com'}
+                        </p>
+                      </div>
+                    </Link>
+                  </div>
+                </div>
               </div>
             </aside>
           </div>
@@ -493,11 +584,11 @@ export default function Layout({ children }: LayoutProps) {
       }
 
       {/* Main Content Area */}
-      <div className={`transition-all duration-300 min-h-screen ${sidebarCollapsed ? "md:ml-16" : "md:ml-64"
-        } ml-0`}>
+      <div className={`transition-all duration-300 min-h-screen ${sidebarCollapsed ? "md:ml-24" : "md:ml-[280px]"
+        } ml-0 md:mr-4 flex flex-col gap-4 py-4`}>
         {/* Top Header */}
-        <header className="sticky top-0 z-40 w-full border-b border-gray-200 dark:border-gray-700 bg-white/95 dark:bg-gray-800/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-gray-800/60">
-          <div className="flex h-16 items-center justify-between px-4 sm:px-6">
+        <header className="sticky top-4 z-40 bg-white dark:bg-gray-900 rounded-2xl border-2 border-blue-200 dark:border-blue-800 shadow-lg">
+          <div className="flex h-16 items-center justify-between px-6">
             {/* Left side - Page title and breadcrumb */}
             <div className="flex items-center space-x-4">
               {/* Mobile menu button */}
@@ -753,7 +844,7 @@ export default function Layout({ children }: LayoutProps) {
         </header>
 
         {/* Page Content */}
-        <main className="p-6 lg:p-8">
+        <main className="flex-1">
           {children}
         </main>
       </div>

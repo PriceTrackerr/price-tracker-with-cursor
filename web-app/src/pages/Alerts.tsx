@@ -233,7 +233,7 @@ function CreateAlertDialog({
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-[0.625rem] hover:bg-blue-700 transition-colors font-medium shadow-sm"
+        className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-[0.625rem] hover:bg-slate-800 transition-colors font-medium shadow-sm"
       >
         <Plus size={16} />
         Create Alert
@@ -331,7 +331,7 @@ function CreateAlertDialog({
                 <button
                   type="submit"
                   disabled={!selectedProductId || !targetPrice}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-[0.625rem] hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                  className="flex-1 px-4 py-2 bg-slate-900 text-white rounded-[0.625rem] hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                 >
                   Create Alert
                 </button>

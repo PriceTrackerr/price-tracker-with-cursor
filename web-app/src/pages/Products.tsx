@@ -1458,7 +1458,7 @@ export default function Products() {
                   }}
                   className={`inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white ${(user?.subscription?.tier || 'free') === 'free' && products.length >= 5
                     ? 'bg-gray-600 hover:bg-gray-700'
-                    : 'bg-blue-600 hover:bg-blue-700'
+                    : 'bg-slate-900 hover:bg-slate-800'
                     }`}
                 >
                   <Plus className="-ml-1 mr-2 h-5 w-5" />
@@ -1548,7 +1548,7 @@ export default function Products() {
               <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                  className="flex-1 bg-slate-900 text-white py-2 px-4 rounded-lg hover:bg-slate-800 transition-colors"
                 >
                   Add Product
                 </button>
@@ -1648,7 +1648,7 @@ export default function Products() {
           }}
           className={`${(user?.subscription?.tier || 'free') === 'free' && products.length >= 5
             ? 'bg-gray-600 hover:bg-gray-700'
-            : 'bg-blue-600 hover:bg-blue-700'
+            : 'bg-slate-900 hover:bg-slate-800'
             } text-white p-3 md:p-4 rounded-full shadow-lg transition-colors`}
           title={
             (user?.subscription?.tier || 'free') === 'free' && products.length >= 5

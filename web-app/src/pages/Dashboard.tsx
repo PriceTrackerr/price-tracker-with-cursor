@@ -35,79 +35,7 @@ import {
 
 // --- Components ---
 
-// 1. Navigation
-function DashboardNav() {
-  const { logout, user } = useAuth();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  return (
-    <nav className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-gray-700/50 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-indigo-600 to-violet-600 rounded-lg flex items-center justify-center shadow-md shadow-indigo-500/20">
-              <svg width="20" height="20" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="0" y="0" width="100" height="100" rx="20" fill="transparent" />
-                <path d="M25 70 C35 50, 65 50, 75 30" stroke="white" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
-                <circle cx="75" cy="30" r="6" fill="white" />
-              </svg>
-            </div>
-            <span className="text-lg font-bold text-slate-900 tracking-tight">Price Tracker</span>
-          </Link>
-
-          {/* Desktop Actions */}
-          <div className="hidden md:flex items-center gap-4">
-            <div className="flex items-center gap-3 px-3 py-1.5 bg-slate-50 rounded-full border border-slate-200/50">
-              <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-semibold text-sm">
-                {user?.email?.charAt(0).toUpperCase() || 'U'}
-              </div>
-              <span className="text-sm font-medium text-slate-700 pr-2">{user?.email}</span>
-            </div>
-            <button
-              onClick={logout}
-              className="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-              title="Logout"
-            >
-              <LogOut className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* Mobile Menu Button */}
-          <button
-            className="md:hidden p-2 text-slate-600"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-          >
-            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile Menu */}
-      {isMenuOpen && (
-        <div className="md:hidden border-t border-slate-100 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-4 shadow-xl">
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 px-3 py-2 bg-slate-50 rounded-lg">
-              <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-semibold text-sm">
-                {user?.email?.charAt(0).toUpperCase() || 'U'}
-              </div>
-              <span className="text-sm font-medium text-slate-700">{user?.email}</span>
-            </div>
-            <button
-              onClick={logout}
-              className="w-full flex items-center gap-2 px-3 py-2 text-slate-600 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-              <span>Logout</span>
-            </button>
-          </div>
-        </div>
-      )}
-    </nav>
-  );
-}
-
-// 2. Metric Card Component
+// 1. Metric Card Component
 interface MetricCardProps {
   title: string;
   value: string | number;
@@ -160,7 +88,7 @@ function MetricCard({ title, value, subtitle, icon: Icon, trend, color, onClick 
   );
 }
 
-// 3. Create Alert Modal Component
+// 2. Create Alert Modal Component
 function CreateAlertModal({ product, isOpen, onClose }: { product: any, isOpen: boolean, onClose: () => void }) {
   const [targetPrice, setTargetPrice] = useState('');
   const [loading, setLoading] = useState(false);
@@ -266,7 +194,7 @@ function CreateAlertModal({ product, isOpen, onClose }: { product: any, isOpen: 
   );
 }
 
-// 4. Add Product Modal Component (URL-only with manual fallback)
+// 3. Add Product Modal Component (URL-only with manual fallback)
 function AddProductModal({ isOpen, onClose, onSuccess, token }: { isOpen: boolean, onClose: () => void, onSuccess: () => void, token: string | null }) {
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
@@ -779,220 +707,222 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans selection:bg-indigo-100 selection:text-indigo-900">
-      <DashboardNav />
-
       {/* Background Elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
         <div className="absolute top-0 left-1/4 w-[800px] h-[800px] bg-indigo-500/5 rounded-full blur-[120px]" />
         <div className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-violet-500/5 rounded-full blur-[100px]" />
       </div>
 
-      <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Main Content Container with Blue Border */}
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border-2 border-blue-200 dark:border-blue-800 shadow-lg p-6 sm:p-8 space-y-8">
 
-        {/* Banned User Banner */}
-        {isBanned && (
-          <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 flex items-center gap-3 animate-fade-in">
-            <AlertCircle className="w-5 h-5 text-rose-600" />
-            <div className="flex-1">
-              <h3 className="text-sm font-medium text-rose-900">Account Suspended</h3>
-              <p className="text-sm text-rose-700 mt-1">
-                Your account has been suspended. Please contact support for assistance.
-              </p>
-            </div>
-            <button
-              onClick={() => window.open('mailto:support@pricetracker.com', '_blank')}
-              className="text-sm font-medium text-rose-600 hover:text-rose-800 underline"
-            >
-              Contact Support
-            </button>
-          </div>
-        )}
-
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Dashboard</h1>
-            <p className="text-slate-500 mt-1">Overview of your tracked products and savings</p>
-          </div>
-          <div className="flex gap-3">
-            <button
-              onClick={() => setShowAddProductModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-md shadow-indigo-500/20 transition-all hover:shadow-lg"
-            >
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Add Product</span>
-            </button>
-            <button
-              onClick={triggerPriceCheck}
-              className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 rounded-xl border border-slate-200 shadow-sm transition-all hover:shadow-md"
-            >
-              <RefreshCw className="w-4 h-4" />
-              <span className="hidden sm:inline">Check Prices</span>
-            </button>
-            <button
-              onClick={updatePriceHistory}
-              className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 rounded-xl border border-slate-200 shadow-sm transition-all hover:shadow-md"
-            >
-              <Clock className="w-4 h-4" />
-              <span className="hidden sm:inline">Update History</span>
-            </button>
-            <button
-              onClick={() => fetchSeenPriceDrops()}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-500/20 transition-all hover:shadow-indigo-500/30 hover:-translate-y-0.5"
-            >
-              <RefreshCw className="w-4 h-4" />
-              <span>Refresh</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Metrics Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <MetricCard
-            title="Total Products"
-            value={metrics.totalProducts}
-            subtitle="Across 5 platforms"
-            icon={Package}
-            trend={{ value: "12%", isPositive: true }}
-            color="blue"
-            onClick={() => navigate('/products')}
-          />
-          <MetricCard
-            title="Total Value"
-            value={`$${metrics.totalValue.toLocaleString()}`}
-            subtitle="Tracked value"
-            icon={DollarSign}
-            trend={{ value: "8%", isPositive: true }}
-            color="green"
-            onClick={() => navigate('/products')}
-          />
-          <MetricCard
-            title="Price Drops"
-            value={metrics.priceDrops}
-            subtitle="This week"
-            icon={TrendingDown}
-            trend={{ value: "15%", isPositive: true }}
-            color="orange"
-            onClick={handlePriceDropsClick}
-          />
-          <MetricCard
-            title="Active Alerts"
-            value={metrics.activeAlerts}
-            subtitle="Monitoring"
-            icon={Bell}
-            color="purple"
-            onClick={() => navigate('/alerts')}
-          />
-        </div>
-
-        {/* Recent Products Section */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-            <div>
-              <h2 className="text-lg font-bold text-slate-900">Recent Tracked Products</h2>
-              <p className="text-sm text-slate-500 mt-0.5">Monitor price changes across platforms</p>
-            </div>
-            <button
-              onClick={() => navigate('/products')}
-              className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
-            >
-              View All <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
-
-          <div className="divide-y divide-slate-100">
-            {products.length === 0 ? (
-              <div className="p-16 text-center">
-                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Package className="w-8 h-8 text-slate-400" />
-                </div>
-                <h3 className="text-lg font-medium text-slate-900 mb-1">No products tracked yet</h3>
-                <p className="text-slate-500 mb-6">Start tracking products to see them here</p>
-                <button
-                  onClick={() => window.open('https://chrome.google.com/webstore', '_blank')}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-medium shadow-lg shadow-indigo-500/20 hover:bg-indigo-700 transition-all"
-                >
-                  <Plus className="w-5 h-5" />
-                  Install Extension
-                </button>
+          {/* Banned User Banner */}
+          {isBanned && (
+            <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 flex items-center gap-3 animate-fade-in">
+              <AlertCircle className="w-5 h-5 text-rose-600" />
+              <div className="flex-1">
+                <h3 className="text-sm font-medium text-rose-900">Account Suspended</h3>
+                <p className="text-sm text-rose-700 mt-1">
+                  Your account has been suspended. Please contact support for assistance.
+                </p>
               </div>
-            ) : (
-              products.map((product) => {
-                const platform = platformColors[product.platform as keyof typeof platformColors] || platformColors.amazon;
+              <button
+                onClick={() => window.open('mailto:support@pricetracker.com', '_blank')}
+                className="text-sm font-medium text-rose-600 hover:text-rose-800 underline"
+              >
+                Contact Support
+              </button>
+            </div>
+          )}
 
-                return (
-                  <div key={product.id} className="p-4 hover:bg-slate-50 transition-colors group">
-                    <div className="flex items-center gap-4">
-                      {/* Product Image */}
-                      <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 flex-shrink-0 shadow-sm flex items-center justify-center">
-                        {product.imageUrl ? (
-                          <img
-                            src={product.imageUrl}
-                            alt={product.title}
-                            className="w-full h-full object-contain p-1"
-                            onError={(e) => {
-                              // Prevent infinite loop by removing the handler
-                              (e.target as HTMLImageElement).onerror = null;
-                              (e.target as HTMLImageElement).style.display = 'none';
+          {/* Header Section */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Dashboard</h1>
+              <p className="text-slate-500 mt-1">Overview of your tracked products and savings</p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowAddProductModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl shadow-md shadow-slate-900/20 transition-all hover:shadow-lg"
+              >
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">Add Product</span>
+              </button>
+              <button
+                onClick={triggerPriceCheck}
+                className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 rounded-xl border border-slate-200 shadow-sm transition-all hover:shadow-md"
+              >
+                <RefreshCw className="w-4 h-4" />
+                <span className="hidden sm:inline">Check Prices</span>
+              </button>
+              <button
+                onClick={updatePriceHistory}
+                className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 rounded-xl border border-slate-200 shadow-sm transition-all hover:shadow-md"
+              >
+                <Clock className="w-4 h-4" />
+                <span className="hidden sm:inline">Update History</span>
+              </button>
+              <button
+                onClick={() => fetchSeenPriceDrops()}
+                className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl shadow-lg shadow-slate-900/20 transition-all hover:shadow-slate-900/30 hover:-translate-y-0.5"
+              >
+                <RefreshCw className="w-4 h-4" />
+                <span>Refresh</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Metrics Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <MetricCard
+              title="Total Products"
+              value={metrics.totalProducts}
+              subtitle="Across 5 platforms"
+              icon={Package}
+              trend={{ value: "12%", isPositive: true }}
+              color="blue"
+              onClick={() => navigate('/products')}
+            />
+            <MetricCard
+              title="Total Value"
+              value={`$${metrics.totalValue.toLocaleString()}`}
+              subtitle="Tracked value"
+              icon={DollarSign}
+              trend={{ value: "8%", isPositive: true }}
+              color="green"
+              onClick={() => navigate('/products')}
+            />
+            <MetricCard
+              title="Price Drops"
+              value={metrics.priceDrops}
+              subtitle="This week"
+              icon={TrendingDown}
+              trend={{ value: "15%", isPositive: true }}
+              color="orange"
+              onClick={handlePriceDropsClick}
+            />
+            <MetricCard
+              title="Active Alerts"
+              value={metrics.activeAlerts}
+              subtitle="Monitoring"
+              icon={Bell}
+              color="purple"
+              onClick={() => navigate('/alerts')}
+            />
+          </div>
+
+          {/* Recent Products Section */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm overflow-hidden">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">Recent Tracked Products</h2>
+                <p className="text-sm text-slate-500 mt-0.5">Monitor price changes across platforms</p>
+              </div>
+              <button
+                onClick={() => navigate('/products')}
+                className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
+              >
+                View All <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="divide-y divide-slate-100">
+              {products.length === 0 ? (
+                <div className="p-16 text-center">
+                  <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Package className="w-8 h-8 text-slate-400" />
+                  </div>
+                  <h3 className="text-lg font-medium text-slate-900 mb-1">No products tracked yet</h3>
+                  <p className="text-slate-500 mb-6">Start tracking products to see them here</p>
+                  <button
+                    onClick={() => window.open('https://chrome.google.com/webstore', '_blank')}
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-xl font-medium shadow-lg shadow-slate-900/20 hover:bg-slate-800 transition-all"
+                  >
+                    <Plus className="w-5 h-5" />
+                    Install Extension
+                  </button>
+                </div>
+              ) : (
+                products.map((product) => {
+                  const platform = platformColors[product.platform as keyof typeof platformColors] || platformColors.amazon;
+
+                  return (
+                    <div key={product.id} className="p-4 hover:bg-slate-50 transition-colors group">
+                      <div className="flex items-center gap-4">
+                        {/* Product Image */}
+                        <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 flex-shrink-0 shadow-sm flex items-center justify-center">
+                          {product.imageUrl ? (
+                            <img
+                              src={product.imageUrl}
+                              alt={product.title}
+                              className="w-full h-full object-contain p-1"
+                              onError={(e) => {
+                                // Prevent infinite loop by removing the handler
+                                (e.target as HTMLImageElement).onerror = null;
+                                (e.target as HTMLImageElement).style.display = 'none';
+                              }}
+                            />
+                          ) : (
+                            <Package className="w-6 h-6 text-slate-400" />
+                          )}
+                        </div>
+
+                        {/* Product Info */}
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <h3 className="font-medium text-slate-900 truncate group-hover:text-indigo-600 transition-colors">
+                            {product.title}
+                          </h3>
+                          <div className="flex items-center gap-2">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${platform.bg} ${platform.border} border`}>
+                              {platform.name}
+                            </span>
+                            <span className="text-xs text-slate-400">Added {new Date(product.createdAt || Date.now()).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+
+                        {/* Price Info */}
+                        <div className="text-right space-y-1 flex-shrink-0">
+                          <div className="flex items-center gap-2 justify-end">
+                            <span className="text-lg font-bold text-slate-900">
+                              ${product.price}
+                            </span>
+                          </div>
+                          {product.originalPrice && product.originalPrice > product.price && (
+                            <span className="text-sm text-slate-400 line-through block">
+                              ${product.originalPrice}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex items-center gap-2 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity pl-4">
+                          <button
+                            onClick={() => {
+                              setSelectedProduct(product);
+                              setShowAlertModal(true);
                             }}
-                          />
-                        ) : (
-                          <Package className="w-6 h-6 text-slate-400" />
-                        )}
-                      </div>
-
-                      {/* Product Info */}
-                      <div className="flex-1 min-w-0 space-y-1">
-                        <h3 className="font-medium text-slate-900 truncate group-hover:text-indigo-600 transition-colors">
-                          {product.title}
-                        </h3>
-                        <div className="flex items-center gap-2">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${platform.bg} ${platform.border} border`}>
-                            {platform.name}
-                          </span>
-                          <span className="text-xs text-slate-400">Added {new Date(product.createdAt || Date.now()).toLocaleDateString()}</span>
+                            className="p-2 hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 rounded-lg transition-colors"
+                            title="Create Alert"
+                          >
+                            <Bell className="w-4 h-4" />
+                          </button>
+                          <button className="p-2 hover:bg-slate-100 text-slate-400 hover:text-slate-900 rounded-lg transition-colors">
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button className="p-2 hover:bg-slate-100 text-slate-400 hover:text-slate-900 rounded-lg transition-colors">
+                            <MoreVertical className="w-4 h-4" />
+                          </button>
                         </div>
-                      </div>
-
-                      {/* Price Info */}
-                      <div className="text-right space-y-1 flex-shrink-0">
-                        <div className="flex items-center gap-2 justify-end">
-                          <span className="text-lg font-bold text-slate-900">
-                            ${product.price}
-                          </span>
-                        </div>
-                        {product.originalPrice && product.originalPrice > product.price && (
-                          <span className="text-sm text-slate-400 line-through block">
-                            ${product.originalPrice}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Action Buttons */}
-                      <div className="flex items-center gap-2 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity pl-4">
-                        <button
-                          onClick={() => {
-                            setSelectedProduct(product);
-                            setShowAlertModal(true);
-                          }}
-                          className="p-2 hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 rounded-lg transition-colors"
-                          title="Create Alert"
-                        >
-                          <Bell className="w-4 h-4" />
-                        </button>
-                        <button className="p-2 hover:bg-slate-100 text-slate-400 hover:text-slate-900 rounded-lg transition-colors">
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button className="p-2 hover:bg-slate-100 text-slate-400 hover:text-slate-900 rounded-lg transition-colors">
-                          <MoreVertical className="w-4 h-4" />
-                        </button>
                       </div>
                     </div>
-                  </div>
-                );
-              })
-            )}
+                  );
+                })
+              )}
+            </div>
           </div>
+
         </div>
       </main>
 
