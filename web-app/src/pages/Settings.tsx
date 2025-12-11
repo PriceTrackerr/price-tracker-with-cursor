@@ -147,6 +147,10 @@ export default function Settings() {
       const data = await res.json();
       if (data.success) {
         toast.success('Preference updated');
+        // Immediate update for language
+        if (key === 'language') {
+          i18n.changeLanguage(value);
+        }
       } else {
         toast.error(data.message || 'Failed to update preference');
       }
