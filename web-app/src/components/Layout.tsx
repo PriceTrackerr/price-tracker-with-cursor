@@ -30,12 +30,12 @@ interface LayoutProps {
 }
 
 const navigation = [
-  { id: 'dashboard', label: 'Dashboard', icon: Home, href: '/dashboard' },
-  { id: 'products', label: 'Products', icon: Package, href: '/products' },
-  { id: 'history', label: 'Price History', icon: History, href: '/history' },
-  { id: 'alerts', label: 'Alerts', icon: Bell, href: '/alerts' },
-  { id: 'subscription', label: 'Subscription', icon: CreditCard, href: '/subscription' },
-  { id: 'settings', label: 'Settings', icon: Settings, href: '/settings' },
+  { id: 'dashboard', labelKey: 'dashboard', icon: Home, href: '/dashboard' },
+  { id: 'products', labelKey: 'products', icon: Package, href: '/products' },
+  { id: 'history', labelKey: 'priceHistory', icon: History, href: '/history' },
+  { id: 'alerts', labelKey: 'alerts', icon: Bell, href: '/alerts' },
+  { id: 'subscription', labelKey: 'subscription', icon: CreditCard, href: '/subscription' },
+  { id: 'settings', labelKey: 'settings', icon: Settings, href: '/settings' },
 ];
 
 export default function Layout({ children }: LayoutProps) {
@@ -335,34 +335,38 @@ export default function Layout({ children }: LayoutProps) {
   const getPageTitle = (pathname: string) => {
     switch (pathname) {
       case "/dashboard":
-        return "Dashboard";
+        return t('dashboard');
       case "/products":
-        return "Products";
+        return t('products');
       case "/history":
-        return "Price History";
+        return t('priceHistory');
       case "/alerts":
-        return "Alerts";
+        return t('alerts');
       case "/settings":
-        return "Settings";
+        return t('settings');
+      case "/subscription":
+        return t('subscription') || 'Subscription';
       default:
-        return "Dashboard";
+        return t('dashboard');
     }
   };
 
   const getPageDescription = (pathname: string) => {
     switch (pathname) {
       case "/dashboard":
-        return "Overview of your tracked products";
+        return t('trackProductsDesc');
       case "/products":
-        return "Manage and track all your products";
+        return t('trackProductsDesc');
       case "/history":
-        return "Track price changes over time";
+        return t('priceHistoryDesc');
       case "/alerts":
-        return "Stay notified about price changes";
+        return t('notificationsDesc');
       case "/settings":
-        return "Manage your account and preferences";
+        return t('preferences');
+      case "/subscription":
+        return t('subscription') || 'Manage your subscription';
       default:
-        return "Overview of your tracked products";
+        return t('trackProductsDesc');
     }
   };
 
@@ -433,10 +437,10 @@ export default function Layout({ children }: LayoutProps) {
                     ? "bg-slate-900 text-white"
                     : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
                     } ${sidebarCollapsed ? "justify-center h-11 px-2" : "gap-3 h-11 px-4"}`}
-                  title={sidebarCollapsed ? item.label : undefined}
+                  title={sidebarCollapsed ? t(item.labelKey) : undefined}
                 >
                   <Icon className={`${sidebarCollapsed ? "w-5 h-5" : "w-5 h-5"}`} />
-                  {!sidebarCollapsed && <span className="font-medium">{item.label}</span>}
+                  {!sidebarCollapsed && <span className="font-medium">{t(item.labelKey)}</span>}
                 </Link>
               );
             })}
@@ -449,20 +453,20 @@ export default function Layout({ children }: LayoutProps) {
           <Link
             to="/settings"
             className={`w-full flex items-center rounded-xl transition-all duration-200 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 ${sidebarCollapsed ? "justify-center h-11 px-2 mb-1" : "gap-3 h-11 px-4 mb-1"}`}
-            title={sidebarCollapsed ? "Settings" : undefined}
+            title={sidebarCollapsed ? t('settings') : undefined}
           >
             <Settings className="w-5 h-5" />
-            {!sidebarCollapsed && <span className="font-medium">Setting</span>}
+            {!sidebarCollapsed && <span className="font-medium">{t('settings')}</span>}
           </Link>
 
           {/* Logout */}
           <button
             onClick={handleLogout}
             className={`w-full flex items-center rounded-xl transition-all duration-200 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 ${sidebarCollapsed ? "justify-center h-11 px-2" : "gap-3 h-11 px-4"}`}
-            title={sidebarCollapsed ? "Log out" : undefined}
+            title={sidebarCollapsed ? t('logout') : undefined}
           >
             <LogOut className="w-5 h-5" />
-            {!sidebarCollapsed && <span className="font-medium">Log out</span>}
+            {!sidebarCollapsed && <span className="font-medium">{t('logout')}</span>}
           </button>
 
           {/* User Profile */}
@@ -543,7 +547,7 @@ export default function Layout({ children }: LayoutProps) {
                           onClick={() => setMobileMenuOpen(false)}
                         >
                           <Icon className="w-5 h-5" />
-                          <span className="font-medium">{item.label}</span>
+                          <span className="font-medium">{t(item.labelKey)}</span>
                         </Link>
                       );
                     })}
@@ -557,14 +561,14 @@ export default function Layout({ children }: LayoutProps) {
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <Settings className="w-5 h-5" />
-                    <span className="font-medium">Setting</span>
+                    <span className="font-medium">{t('settings')}</span>
                   </Link>
                   <button
                     onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
                     className="w-full flex items-center gap-3 h-11 px-4 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
                   >
                     <LogOut className="w-5 h-5" />
-                    <span className="font-medium">Log out</span>
+                    <span className="font-medium">{t('logout')}</span>
                   </button>
                   {/* User Profile */}
                   <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
