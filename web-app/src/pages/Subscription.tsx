@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Check, Zap, TrendingUp, Download, Bell, Sparkles, Crown } from 'lucide-react';
+import { Check, Zap, TrendingUp, Download, Bell, Sparkles, Crown, Globe } from 'lucide-react';
 import { useAuth } from '../components/AuthContext';
+import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
@@ -23,6 +24,7 @@ interface Plan {
 
 const Subscription: React.FC = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingPlan, setProcessingPlan] = useState<string | null>(null);
@@ -119,15 +121,15 @@ const Subscription: React.FC = () => {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-            Choose Your Plan
+            {t('choosePlan')}
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300">
-            Start with a free plan, upgrade when you need more
+            {t('startFreePlan')}
           </p>
           {currentTier !== 'free' && (
             <div className="mt-4 inline-flex items-center px-4 py-2 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full">
               <Crown className="w-5 h-5 mr-2" />
-              Current Plan: {currentTier.toUpperCase()}
+              {t('currentPlan')}: {currentTier.toUpperCase()}
             </div>
           )}
         </div>
@@ -165,28 +167,28 @@ const Subscription: React.FC = () => {
                   <li className="flex items-start">
                     <Check className="w-5 h-5 mr-3 flex-shrink-0 text-green-600" />
                     <span className="text-gray-700 dark:text-gray-200">
-                      <strong>{freePlan.features.productLimit}</strong> products tracked per day
+                      <strong>{freePlan.features.productLimit}</strong> {t('productsPerDay')}
                     </span>
                   </li>
                   <li className="flex items-start">
                     <Check className="w-5 h-5 mr-3 flex-shrink-0 text-green-600" />
                     <span className="text-gray-700 dark:text-gray-200">
-                      <strong>{freePlan.features.notificationsPerDay}</strong> price drop notification per day
+                      <strong>{freePlan.features.notificationsPerDay}</strong> {t('notificationsPerDay')}
                     </span>
                   </li>
                   <li className="flex items-start">
                     <span className="w-5 h-5 mr-3 flex-shrink-0 text-gray-400">✕</span>
-                    <span className="text-gray-400 dark:text-gray-500">AI Smart Recommendations</span>
+                    <span className="text-gray-400 dark:text-gray-500">{t('aiSmartRecommendations')}</span>
                   </li>
                   <li className="flex items-start">
                     <span className="w-5 h-5 mr-3 flex-shrink-0 text-gray-400">✕</span>
-                    <span className="text-gray-400 dark:text-gray-500">Export Data</span>
+                    <span className="text-gray-400 dark:text-gray-500">{t('exportData')}</span>
                   </li>
                   <li className="flex items-start">
                     <Check className="w-5 h-5 mr-3 flex-shrink-0 text-green-600" />
                     <span className="text-gray-700 dark:text-gray-200">
                       <TrendingUp className="w-4 h-4 inline mr-1" />
-                      Price History Tracking
+                      {t('priceHistoryTracking')}
                     </span>
                   </li>
                 </ul>
@@ -196,7 +198,7 @@ const Subscription: React.FC = () => {
                   disabled
                   className="w-full py-3 px-6 rounded-lg font-semibold bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed"
                 >
-                  {currentTier === 'free' ? 'Current Plan' : 'Always Free'}
+                  {currentTier === 'free' ? t('currentPlan') : t('currentPlan')}
                 </button>
               </div>
             </div>
@@ -249,7 +251,7 @@ const Subscription: React.FC = () => {
                     )}
                     {!isMonthly && (
                       <p className="mt-2 text-sm text-yellow-300 font-semibold">
-                        Save $20 per year!
+                        {t('savePerYear')}
                       </p>
                     )}
                   </div>
@@ -259,41 +261,48 @@ const Subscription: React.FC = () => {
                     <li className="flex items-start">
                       <Check className="w-5 h-5 mr-3 flex-shrink-0 text-green-300" />
                       <span>
-                        <strong>Unlimited</strong> product tracking
+                        {t('unlimitedTracking')}
                       </span>
                     </li>
                     <li className="flex items-start">
                       <Check className="w-5 h-5 mr-3 flex-shrink-0 text-green-300" />
                       <span>
-                        <strong>Unlimited</strong> price drop notifications
+                        {t('unlimitedNotifications')}
                       </span>
                     </li>
                     <li className="flex items-start">
                       <Check className="w-5 h-5 mr-3 flex-shrink-0 text-green-300" />
                       <span>
                         <Sparkles className="w-4 h-4 inline mr-1" />
-                        AI Smart Recommendations
+                        {t('aiSmartRecommendations')}
                       </span>
                     </li>
                     <li className="flex items-start">
                       <Check className="w-5 h-5 mr-3 flex-shrink-0 text-green-300" />
                       <span>
                         <Download className="w-4 h-4 inline mr-1" />
-                        Export Data (CSV, PDF)
+                        {t('exportData')} (CSV)
+                      </span>
+                    </li>
+                    <li className="flex items-start">
+                      <Check className="w-5 h-5 mr-3 flex-shrink-0 text-green-300" />
+                      <span>
+                        <Globe className="w-4 h-4 inline mr-1" />
+                        {t('globalPriceComparison')}
                       </span>
                     </li>
                     <li className="flex items-start">
                       <Check className="w-5 h-5 mr-3 flex-shrink-0 text-green-300" />
                       <span>
                         <TrendingUp className="w-4 h-4 inline mr-1" />
-                        Price History Tracking
+                        {t('priceHistoryTracking')}
                       </span>
                     </li>
                     <li className="flex items-start">
                       <Check className="w-5 h-5 mr-3 flex-shrink-0 text-green-300" />
                       <span>
                         <Bell className="w-4 h-4 inline mr-1" />
-                        Email Alerts
+                        {t('emailAlerts')}
                       </span>
                     </li>
                   </ul>
@@ -313,11 +322,11 @@ const Subscription: React.FC = () => {
                         Processing...
                       </span>
                     ) : isCurrentPlan ? (
-                      'Current Plan'
+                      t('currentPlan')
                     ) : (
                       <>
                         <Zap className="w-5 h-5 inline mr-2" />
-                        Upgrade to Pro
+                        {t('upgradeToPro')}
                       </>
                     )}
                   </button>
@@ -330,10 +339,10 @@ const Subscription: React.FC = () => {
         {/* FAQ or Additional Info */}
         <div className="mt-16 text-center">
           <p className="text-gray-600 dark:text-gray-400">
-            All plans include 7 platform support (Amazon, eBay, AliExpress, Walmart, Target, BestBuy, Shein)
+            {t('allPlansInclude')}
           </p>
           <p className="mt-2 text-sm text-gray-500 dark:text-gray-500">
-            Need help choosing? <a href="/contact" className="text-blue-600 hover:underline">Contact us</a>
+            {t('needHelp')} <a href="/contact" className="text-blue-600 hover:underline">{t('contactUs')}</a>
           </p>
         </div>
       </div>

@@ -739,8 +739,8 @@ export default function Dashboard() {
           {/* Header Section */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Dashboard</h1>
-              <p className="text-slate-500 mt-1">Overview of your tracked products and savings</p>
+              <h1 className="text-3xl font-bold text-slate-900 tracking-tight">{t('dashboard')}</h1>
+              <p className="text-slate-500 mt-1">{t('trackProductsDesc')}</p>
             </div>
             <div className="flex gap-3">
               <button
@@ -777,7 +777,7 @@ export default function Dashboard() {
           {/* Metrics Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <MetricCard
-              title="Total Products"
+              title={t('totalProducts')}
               value={metrics.totalProducts}
               subtitle="Across 5 platforms"
               icon={Package}
@@ -786,7 +786,7 @@ export default function Dashboard() {
               onClick={() => navigate('/products')}
             />
             <MetricCard
-              title="Total Value"
+              title={t('totalValue')}
               value={`$${metrics.totalValue.toLocaleString()}`}
               subtitle="Tracked value"
               icon={DollarSign}
@@ -795,7 +795,7 @@ export default function Dashboard() {
               onClick={() => navigate('/products')}
             />
             <MetricCard
-              title="Price Drops"
+              title={t('priceDrops')}
               value={metrics.priceDrops}
               subtitle="This week"
               icon={TrendingDown}
@@ -804,7 +804,7 @@ export default function Dashboard() {
               onClick={handlePriceDropsClick}
             />
             <MetricCard
-              title="Active Alerts"
+              title={t('activeAlerts')}
               value={metrics.activeAlerts}
               subtitle="Monitoring"
               icon={Bell}
@@ -817,8 +817,8 @@ export default function Dashboard() {
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm overflow-hidden">
             <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <div>
-                <h2 className="text-lg font-bold text-slate-900">Recent Tracked Products</h2>
-                <p className="text-sm text-slate-500 mt-0.5">Monitor price changes across platforms</p>
+                <h2 className="text-lg font-bold text-slate-900">{t('recentProducts')}</h2>
+                <p className="text-sm text-slate-500 mt-0.5">{t('trackProductsDesc')}</p>
               </div>
               <button
                 onClick={() => navigate('/products')}
@@ -834,8 +834,8 @@ export default function Dashboard() {
                   <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Package className="w-8 h-8 text-slate-400" />
                   </div>
-                  <h3 className="text-lg font-medium text-slate-900 mb-1">No products tracked yet</h3>
-                  <p className="text-slate-500 mb-6">Start tracking products to see them here</p>
+                  <h3 className="text-lg font-medium text-slate-900 mb-1">{t('noProducts')}</h3>
+                  <p className="text-slate-500 mb-6">{t('noProducts')}</p>
                   <button
                     onClick={() => window.open('https://chrome.google.com/webstore', '_blank')}
                     className="inline-flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-xl font-medium shadow-lg shadow-slate-900/20 hover:bg-slate-800 transition-all"

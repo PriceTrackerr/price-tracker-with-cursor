@@ -224,15 +224,30 @@ router.post('/track-url', authMiddleware, async (req: AuthRequest, res: Response
     // Check subscription limits
     const user = await db.getUserById(userId);
     const subscriptionTier = user?.subscription_tier || 'free';
-    const productLimit = subscriptionTier === 'free' ? 5 : 999;
+    const dailyProductLimit = subscriptionTier === 'free' ? 5 : 999; // 5 per day for free, unlimited for pro
 
     const products = await db.getProducts(userId);
-    if (products.length >= productLimit) {
+
+    // For free users, count only products added TODAY (UTC)
+    let productsToday = 0;
+    if (subscriptionTier === 'free') {
+      const todayStart = new Date();
+      todayStart.setUTCHours(0, 0, 0, 0);
+      productsToday = products.filter((p: any) => {
+        const createdAt = new Date(p.created_at || p.createdAt);
+        return createdAt >= todayStart;
+      }).length;
+    }
+
+    const currentCount = subscriptionTier === 'free' ? productsToday : products.length;
+    if (currentCount >= dailyProductLimit) {
       return res.status(403).json({
         success: false,
-        error: `Product limit reached (${products.length}/${productLimit}). ${subscriptionTier === 'free' ? 'Upgrade to Pro to track more products.' : ''}`,
-        limit: productLimit,
-        current: products.length
+        error: subscriptionTier === 'free'
+          ? `Daily product limit reached (${productsToday}/${dailyProductLimit}). Try again tomorrow or upgrade to Pro for unlimited tracking.`
+          : `Product limit reached (${products.length}/${dailyProductLimit}).`,
+        limit: dailyProductLimit,
+        current: currentCount
       });
     }
 
@@ -359,16 +374,30 @@ router.post('/track', authMiddleware, validateProduct, async (req: AuthRequest, 
     // Check subscription limits before adding product
     const user = await db.getUserById(userId);
     const subscriptionTier = user?.subscription_tier || 'free';
-    const productLimit = subscriptionTier === 'free' ? 5 : 999;
+    const dailyProductLimit = subscriptionTier === 'free' ? 5 : 999; // 5 per day for free, unlimited for pro
 
     const products = await db.getProducts(userId);
 
-    if (products.length >= productLimit) {
+    // For free users, count only products added TODAY (UTC)
+    let productsToday = 0;
+    if (subscriptionTier === 'free') {
+      const todayStart = new Date();
+      todayStart.setUTCHours(0, 0, 0, 0);
+      productsToday = products.filter((p: any) => {
+        const createdAt = new Date(p.created_at || p.createdAt);
+        return createdAt >= todayStart;
+      }).length;
+    }
+
+    const currentCount = subscriptionTier === 'free' ? productsToday : products.length;
+    if (currentCount >= dailyProductLimit) {
       return res.status(403).json({
         success: false,
-        error: `Product limit reached. ${subscriptionTier === 'free' ? 'Upgrade to Pro to track more products.' : 'You have reached your product limit.'}`,
-        limit: productLimit,
-        current: products.length
+        error: subscriptionTier === 'free'
+          ? `Daily product limit reached (${productsToday}/${dailyProductLimit}). Try again tomorrow or upgrade to Pro for unlimited tracking.`
+          : `Product limit reached (${products.length}/${dailyProductLimit}).`,
+        limit: dailyProductLimit,
+        current: currentCount
       });
     }
     console.log(`[DEBUG] Checking for duplicates - User: ${userId}, URL: ${url}`);

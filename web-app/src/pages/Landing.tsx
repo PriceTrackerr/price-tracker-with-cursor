@@ -53,9 +53,9 @@ const DEFAULT_LANDING_PLANS: LandingPlan[] = [
     currency: 'USD',
     interval: 'monthly',
     features: {
-      maxTrackedProducts: 10,
+      maxTrackedProducts: 5,
       alertFrequency: 'daily',
-      priceHistoryDays: 30,
+      priceHistoryDays: 90,
       exportData: false,
       prioritySupport: false,
     },
@@ -619,7 +619,7 @@ function PricingSection({ plans }: { plans: LandingPlan[] }) {
               Get Started Free
             </Link>
             <ul className="mt-8 space-y-4">
-              {['10 Tracked Products', 'Daily Updates', '30-Day History', 'Basic Support'].map((feat, i) => (
+              {['5 Products Per Day', '1 Notification/Day', 'Price History', 'Basic Support'].map((feat, i) => (
                 <li key={i} className="flex items-center gap-3 text-sm text-slate-600">
                   <CheckCircle className="w-5 h-5 text-slate-400" />
                   {feat}
@@ -645,12 +645,12 @@ function PricingSection({ plans }: { plans: LandingPlan[] }) {
             </Link>
             <ul className="mt-8 space-y-4">
               {[
-                'Unlimited Tracked Products',
-                'Instant Updates',
-                '365-Day History',
-                'Data Export',
-                'Priority Support',
-                'AI Analysis'
+                'Unlimited Product Tracking',
+                'Unlimited Notifications',
+                'AI Smart Recommendations',
+                'Export Data (CSV)',
+                'Global Price Comparison',
+                'Email Alerts'
               ].map((feat, i) => (
                 <li key={i} className="flex items-center gap-3 text-sm text-slate-300">
                   <CheckCircle className="w-5 h-5 text-indigo-400" />
