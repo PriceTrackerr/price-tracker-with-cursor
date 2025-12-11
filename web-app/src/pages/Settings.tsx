@@ -23,7 +23,7 @@ const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001/api';
 
 export default function Settings() {
   const { t, i18n } = useTranslation();
-  const { user, logout, token } = useAuth();
+  const { user, logout, token, updateUser } = useAuth();
   const navigate = useNavigate();
   const { darkMode, toggleDarkMode } = useTheme();
 
@@ -147,6 +147,8 @@ export default function Settings() {
       const data = await res.json();
       if (data.success) {
         toast.success('Preference updated');
+        // Update the user state in AuthContext to persist the change
+        updateUser({ preferences: newPrefs });
         // Immediate update for language
         if (key === 'language') {
           i18n.changeLanguage(value);

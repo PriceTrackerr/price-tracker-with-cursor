@@ -36,6 +36,7 @@ interface AuthContextType {
   logout: () => void;
   getAuthHeaders: () => { Authorization: string } | {};
   bootstrapSession: (accessToken: string, refreshToken?: string | null) => Promise<void>;
+  updateUser: (updates: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -48,6 +49,7 @@ const AuthContext = createContext<AuthContextType>({
   logout: () => { },
   getAuthHeaders: () => ({}),
   bootstrapSession: async () => { },
+  updateUser: () => { },
 });
 
 // Reconnecting Indicator Component
@@ -355,6 +357,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
 
+  const updateUser = useCallback((updates: Partial<User>) => {
+    if (user) {
+      const updatedUser = { ...user, ...updates };
+      setUser(updatedUser);
+      // Persist updated user to localStorage
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+    }
+  }, [user]);
+
   // Remove periodic token validation to prevent unexpected logouts
   // Token will only be validated on initial load and when explicitly needed
   // useEffect(() => {
@@ -391,7 +402,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [token, user, loading, reconnecting]);
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, reconnecting, login, signup, logout, getAuthHeaders, bootstrapSession }}>
+    <AuthContext.Provider value={{ user, token, loading, reconnecting, login, signup, logout, getAuthHeaders, bootstrapSession, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

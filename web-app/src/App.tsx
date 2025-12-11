@@ -25,9 +25,20 @@ import { ThemeProvider } from './components/ThemeContext'
 import './i18n'
 import { I18nextProvider } from 'react-i18next'
 import i18n from './i18n'
+import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 
 function AppContent() {
-  const { reconnecting } = useAuth();
+  const { reconnecting, user } = useAuth();
+  const { i18n } = useTranslation();
+
+  // Sync language from user preferences on load
+  useEffect(() => {
+    const savedLanguage = user?.preferences?.language;
+    if (savedLanguage && i18n.language !== savedLanguage) {
+      i18n.changeLanguage(savedLanguage);
+    }
+  }, [user?.preferences?.language, i18n]);
 
   return (
     <I18nextProvider i18n={i18n}>
