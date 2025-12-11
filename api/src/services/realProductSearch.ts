@@ -290,10 +290,12 @@ function parseBrightDataCredentials(credentials: string) {
 function extractCoreQuery(q: string): string {
   const s = (q || '').toLowerCase();
   const tokens = s.replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(Boolean);
-  const brandList = ['apple', 'samsung', 'sony', 'xiaomi', 'oneplus', 'huawei', 'google', 'lenovo', 'dell', 'hp', 'asus', 'acer', 'msi', 'bose', 'jbl', 'beats'];
+  const brandList = ['apple', 'samsung', 'sony', 'xiaomi', 'oneplus', 'huawei', 'google', 'lenovo', 'dell', 'hp', 'asus', 'acer', 'msi', 'bose', 'jbl', 'beats', 'shark', 'instant', 'ninja', 'kitchenaid'];
   const brand = tokens.find(t => brandList.includes(t));
-  const keywords = tokens.filter(t => t.length > 2 && !['with', 'and', 'for', 'the', 'new', 'pro', 'max', 'gen', 'generation', 'edition'].includes(t));
-  const core = [brand, ...keywords].filter(Boolean).slice(0, 4).join(' ');
+  // Only filter truly useless words - keep 'pro', 'max', 'gen', 'plus', 'edition' as they're model identifiers
+  const stopWords = ['with', 'and', 'for', 'the', 'a', 'an', 'in', 'on', 'by', 'to', 'of', 'from'];
+  const keywords = tokens.filter(t => t.length > 1 && !stopWords.includes(t));
+  const core = [brand, ...keywords.filter(t => t !== brand)].filter(Boolean).slice(0, 6).join(' ');
   return core || q;
 }
 

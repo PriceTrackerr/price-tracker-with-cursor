@@ -46,31 +46,52 @@ function getRotatedSerperKey(): string {
 function extractSearchQuery(title: string): string {
     if (!title) return '';
 
-    // Remove common noise words and extract core product name
-    const cleaned = title
-        .replace(/\(.*?\)/g, '') // Remove parentheses content
-        .replace(/\[.*?\]/g, '') // Remove bracket content
-        .replace(/For Original|Original/gi, '') // Remove "For Original"
-        .replace(/Renewed|Refurbished/gi, '') // Keep these but clean
+    // Clean up the title but preserve important model identifiers
+    let cleaned = title
+        .replace(/\(.*?\)/g, ' ')        // Remove parentheses content like "(Renewed)"
+        .replace(/\[.*?\]/g, ' ')        // Remove bracket content
+        .replace(/["']/g, '')            // Remove quotes
+        .replace(/[,;:!?]/g, ' ')       // Replace punctuation with spaces
+        .replace(/\s+/g, ' ')            // Normalize whitespace
         .trim();
 
-    // Extract brand keywords (common brands)
+    // Common brands to prioritize
     const brands = ['Apple', 'Samsung', 'Sony', 'Nike', 'Adidas', 'Dell', 'HP', 'Lenovo',
-        'Asus', 'Microsoft', 'Google', 'Amazon', 'Walmart', 'Target', 'Shark'];
+        'Asus', 'Microsoft', 'Google', 'Amazon', 'Shark', 'JBL', 'Bose', 'Nintendo',
+        'PlayStation', 'Xbox', 'LG', 'Panasonic', 'Philips', 'Instant Pot', 'Ninja', 'KitchenAid'];
+
     const words = cleaned.split(/\s+/);
-    const brand = words.find(w => brands.some(b => w.toLowerCase().includes(b.toLowerCase())));
 
-    // Take first 4-6 meaningful words
+    // Find brand (could be multi-word like "Instant Pot")
+    let brand = '';
+    for (const b of brands) {
+        if (cleaned.toLowerCase().includes(b.toLowerCase())) {
+            brand = b;
+            break;
+        }
+    }
+
+    // Only filter truly useless words - keep 'pro', 'max', 'plus' as they're model identifiers
+    const stopWords = ['with', 'and', 'for', 'the', 'a', 'an', 'in', 'on', 'by', 'to', 'of', 'from'];
+
     const meaningfulWords = words
-        .filter(w => w.length > 2) // Skip short words
-        .filter(w => !['with', 'and', 'for', 'the', 'new', 'pro', 'max'].includes(w.toLowerCase()))
-        .slice(0, 6);
+        .filter(w => w.length > 1)  // Allow short words like "4" or "XL"
+        .filter(w => !stopWords.includes(w.toLowerCase()));
 
-    const query = brand
-        ? `${brand} ${meaningfulWords.filter(w => w !== brand).slice(0, 4).join(' ')}`
-        : meaningfulWords.join(' ');
+    // Take brand + first 6 meaningful words for a good search query
+    let queryWords: string[];
+    if (brand) {
+        const nonBrandWords = meaningfulWords.filter(w =>
+            w.toLowerCase() !== brand.toLowerCase() &&
+            !brand.toLowerCase().includes(w.toLowerCase())
+        );
+        queryWords = [brand, ...nonBrandWords.slice(0, 5)];
+    } else {
+        queryWords = meaningfulWords.slice(0, 6);
+    }
 
-    return query.trim() || title.substring(0, 50); // Fallback to first 50 chars
+    const query = queryWords.join(' ').trim();
+    return query || title.substring(0, 60);  // Fallback to first 60 chars
 }
 
 router.get('/update-prices', async (req: Request, res: Response) => {
