@@ -714,8 +714,8 @@ export default function Dashboard() {
       </div>
 
       <main className="relative z-10 w-full px-4 sm:px-6 lg:px-8 py-8">
-        {/* Main Content Container with Blue Border */}
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border-2 border-blue-200 dark:border-blue-800 shadow-lg p-6 sm:p-8 space-y-8">
+        {/* Main Content Container with Slate Border */}
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border-2 border-slate-300 dark:border-slate-700 shadow-lg p-6 sm:p-8 space-y-8">
 
           {/* Banned User Banner */}
           {isBanned && (

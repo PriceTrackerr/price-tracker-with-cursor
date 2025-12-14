@@ -379,7 +379,7 @@ export default function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Sidebar (Desktop) */}
-      <aside className={`fixed left-4 top-4 bottom-4 bg-white dark:bg-gray-900 rounded-2xl border-2 border-blue-200 dark:border-blue-800 shadow-lg transition-all duration-300 z-50 hidden md:flex flex-col ${sidebarCollapsed ? "w-16" : "w-64"}`}>
+      <aside className={`fixed left-4 top-4 bottom-4 bg-white dark:bg-gray-900 rounded-2xl border-2 border-slate-300 dark:border-slate-700 shadow-lg transition-all duration-300 z-50 hidden md:flex flex-col ${sidebarCollapsed ? "w-16" : "w-64"}`}>
         {/* Header with Logo */}
         <div className={`${sidebarCollapsed ? 'p-3' : 'p-5'} border-b border-gray-100 dark:border-gray-800`}>
           {!sidebarCollapsed ? (
@@ -599,7 +599,7 @@ export default function Layout({ children }: LayoutProps) {
       <div className={`transition-all duration-300 min-h-screen ${sidebarCollapsed ? "md:ml-24" : "md:ml-[280px]"
         } ml-0 md:mr-4 flex flex-col gap-4 py-4`}>
         {/* Top Header */}
-        <header className="sticky top-4 z-40 bg-white dark:bg-gray-900 rounded-2xl border-2 border-blue-200 dark:border-blue-800 shadow-lg">
+        <header className="sticky top-4 z-40 bg-white dark:bg-gray-900 rounded-2xl border-2 border-slate-300 dark:border-slate-700 shadow-lg">
           <div className="flex h-16 items-center justify-between px-6">
             {/* Left side - Page title and breadcrumb */}
             <div className="flex items-center space-x-4">
@@ -626,7 +626,7 @@ export default function Layout({ children }: LayoutProps) {
                   placeholder="Search products..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className={`w-64 pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400 ${searchTerm.length >= 2 ? 'border-blue-300 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-600' : 'border-gray-200 dark:border-gray-600'
+                  className={`w-64 pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400 ${searchTerm.length >= 2 ? 'border-slate-300 bg-blue-50 dark:bg-blue-900/20 dark:border-slate-600' : 'border-gray-200 dark:border-gray-600'
                     }`}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
@@ -678,7 +678,7 @@ export default function Layout({ children }: LayoutProps) {
 
                 {/* Search Status Indicator */}
                 {searchTerm.length >= 2 && !showSuggestions && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-blue-50 border border-blue-200 rounded-lg p-2 text-xs text-blue-600">
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-blue-50 border border-slate-300 rounded-lg p-2 text-xs text-blue-600">
                     Searching for "{searchTerm}"...
                   </div>
                 )}

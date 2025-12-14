@@ -1327,7 +1327,7 @@ export default function Products() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-3 md:p-6">
-      <div className="max-w-7xl mx-auto bg-white dark:bg-gray-800 rounded-2xl border-2 border-blue-200 dark:border-blue-800 shadow-lg p-4 md:p-6 space-y-4 md:space-y-6">
+      <div className="max-w-7xl mx-auto bg-white dark:bg-gray-800 rounded-2xl border-2 border-slate-300 dark:border-slate-700 shadow-lg p-4 md:p-6 space-y-4 md:space-y-6">
         {/* Header */}
         <div className="flex flex-col gap-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -1400,7 +1400,7 @@ export default function Products() {
 
         {/* Search Bar */}
         {filters.search && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="bg-blue-50 border border-slate-300 rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium text-blue-800">Search Results:</span>

@@ -75,7 +75,7 @@ function AlertCard({
     <div className={`transition-all duration-300 border rounded-[0.625rem] p-4 ${isTargetReached
       ? 'border-green-200 dark:border-green-700/50 bg-green-50/50 dark:bg-green-900/20'
       : isActive
-        ? 'border-gray-300 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-400 bg-white dark:bg-gray-800 hover:shadow-md'
+        ? 'border-gray-300 dark:border-gray-600 hover:border-slate-500 dark:hover:border-slate-400 bg-white dark:bg-gray-800 hover:shadow-md'
         : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50'
       }`}>
       <div className="space-y-4">
@@ -100,7 +100,7 @@ function AlertCard({
               </span>
               <button
                 onClick={() => onToggleActive(id)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isActive ? 'bg-blue-600' : 'bg-gray-300'
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isActive ? 'bg-slate-900' : 'bg-gray-300'
                   }`}
               >
                 <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isActive ? 'translate-x-6' : 'translate-x-1'
@@ -255,7 +255,7 @@ function CreateAlertDialog({
                 <select
                   value={selectedProductId}
                   onChange={(e) => setSelectedProductId(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[0.625rem] bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[0.625rem] bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-slate-500"
                   required
                 >
                   <option value="">Select a product to track</option>
@@ -280,7 +280,7 @@ function CreateAlertDialog({
                     placeholder="0.00"
                     value={targetPrice}
                     onChange={(e) => setTargetPrice(e.target.value)}
-                    className="w-full pl-8 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[0.625rem] bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full pl-8 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-[0.625rem] bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-slate-500"
                     required
                   />
                 </div>
@@ -319,7 +319,7 @@ function CreateAlertDialog({
                   id="restock"
                   checked={notifyOnRestock}
                   onChange={(e) => setNotifyOnRestock(e.target.checked)}
-                  className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  className="h-4 w-4 text-slate-600 border-gray-300 rounded focus:ring-slate-500"
                 />
                 <label htmlFor="restock" className="text-sm text-gray-700 font-normal">
                   Notify me when restocked
@@ -549,7 +549,7 @@ export default function Alerts() {
   if (isLoading || authLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-600"></div>
       </div>
     );
   }
@@ -592,7 +592,7 @@ export default function Alerts() {
             <select
               value={filterBy}
               onChange={(e) => setFilterBy(e.target.value)}
-              className="w-full sm:w-48 pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-[0.625rem] bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full sm:w-48 pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-[0.625rem] bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-slate-500"
             >
               <option value="all">All Alerts</option>
               <option value="active">Active Only</option>
@@ -606,7 +606,7 @@ export default function Alerts() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="w-full sm:w-48 pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-[0.625rem] bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full sm:w-48 pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-[0.625rem] bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-slate-500"
             >
               <option value="newest">Newest First</option>
               <option value="oldest">Oldest First</option>

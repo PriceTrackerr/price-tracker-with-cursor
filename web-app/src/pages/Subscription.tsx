@@ -106,7 +106,7 @@ const Subscription: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600"></div>
       </div>
     );
   }
@@ -213,7 +213,7 @@ const Subscription: React.FC = () => {
               <div
                 key={plan.id}
                 className={`relative rounded-2xl shadow-xl overflow-hidden transition-transform hover:scale-105 border-2 ${isMonthly
-                  ? 'bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 border-blue-700 text-white'
+                  ? 'bg-gradient-to-br from-gray-900 via-slate-800 to-gray-900 border-slate-700 text-white'
                   : 'bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 border-purple-700 text-white'
                   }`}
               >
@@ -318,7 +318,7 @@ const Subscription: React.FC = () => {
                   >
                     {processingPlan === plan.id ? (
                       <span className="flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mr-2"></div>
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
                         Processing...
                       </span>
                     ) : isCurrentPlan ? (

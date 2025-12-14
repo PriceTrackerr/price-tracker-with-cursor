@@ -288,7 +288,7 @@ export default function ProductDetails() {
       <div className="max-w-2xl mx-auto p-6">
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600 mb-4"></div>
             <p className="text-gray-600">Loading product details...</p>
           </div>
         </div>
@@ -382,7 +382,7 @@ export default function ProductDetails() {
           <button
             onClick={() => setActiveTab('ai')}
             className={`${activeTab === 'ai'
-              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              ? 'border-slate-800 text-slate-800 dark:text-slate-200'
               : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
               } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
           >
@@ -396,7 +396,7 @@ export default function ProductDetails() {
               }
             }}
             className={`${activeTab === 'coupons'
-              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              ? 'border-slate-800 text-slate-800 dark:text-slate-200'
               : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
               } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
           >
@@ -410,7 +410,7 @@ export default function ProductDetails() {
               }
             }}
             className={`${activeTab === 'global'
-              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              ? 'border-slate-800 text-slate-800 dark:text-slate-200'
               : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
               } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
           >
@@ -419,7 +419,7 @@ export default function ProductDetails() {
           <button
             onClick={() => setActiveTab('community')}
             className={`${activeTab === 'community'
-              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              ? 'border-slate-800 text-slate-800 dark:text-slate-200'
               : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
               } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
           >
@@ -440,7 +440,7 @@ export default function ProductDetails() {
           <div className="space-y-4">
             {loadingCoupons ? (
               <div className="flex items-center justify-center py-12">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-slate-600"></div>
                 <span className="ml-3 text-gray-600 dark:text-gray-400">Finding coupons...</span>
               </div>
             ) : coupons.length > 0 ? (
@@ -515,7 +515,7 @@ export default function ProductDetails() {
           <div className="space-y-4">
             {loadingGlobal ? (
               <div className="flex items-center justify-center py-12">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-slate-600"></div>
                 <span className="ml-3 text-gray-600 dark:text-gray-400">Calculating global prices...</span>
               </div>
             ) : globalData && globalData.countries && Array.isArray(globalData.countries) ? (

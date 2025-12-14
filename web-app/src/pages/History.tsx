@@ -534,7 +534,7 @@ export default function History() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-600"></div>
       </div>
     );
   }
@@ -543,7 +543,7 @@ export default function History() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-600 mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-300">Loading price history...</p>
         </div>
       </div>
@@ -672,7 +672,7 @@ export default function History() {
                 <select
                   value={selectedProduct}
                   onChange={(e) => handleProductSelection(e.target.value)}
-                  className="w-48 px-3 py-2 border-0 bg-gray-50/50 dark:bg-gray-700/50 backdrop-blur-sm rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
+                  className="w-48 px-3 py-2 border-0 bg-gray-50/50 dark:bg-gray-700/50 backdrop-blur-sm rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-500 appearance-none"
                 >
                   <option value="">Select Product</option>
                   <option value="all">All Products</option>
@@ -713,7 +713,7 @@ export default function History() {
               <select
                 value={timeRange}
                 onChange={(e) => setTimeRange(e.target.value)}
-                className="w-32 px-3 py-2 border-0 bg-gray-50/50 dark:bg-gray-700/50 backdrop-blur-sm text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-32 px-3 py-2 border-0 bg-gray-50/50 dark:bg-gray-700/50 backdrop-blur-sm text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500"
               >
                 <option value="7d">7 Days</option>
                 <option value="30d">30 Days</option>
@@ -724,7 +724,7 @@ export default function History() {
               <select
                 value={chartType}
                 onChange={(e) => setChartType(e.target.value)}
-                className="w-32 px-3 py-2 border-0 bg-gray-50/50 dark:bg-gray-700/50 backdrop-blur-sm text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-32 px-3 py-2 border-0 bg-gray-50/50 dark:bg-gray-700/50 backdrop-blur-sm text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500"
               >
                 <option value="line">Line</option>
                 <option value="area">Area</option>
