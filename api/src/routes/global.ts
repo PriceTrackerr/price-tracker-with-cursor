@@ -58,38 +58,41 @@ const COUNTRIES = [
 ];
 
 // Get currency conversion rates using ExchangeRate.host
-async function getCurrencyRates(): Promise<Record<string, number>> {
+async function getCurrencyRates(): Promise<Record<string, number> & { usingFallback?: boolean }> {
     try {
         const apiKey = process.env.EXCHANGERATE_API_KEY;
-        const url = apiKey
-            ? `http://api.exchangerate.host/live?access_key=${apiKey}&source=USD&currencies=EUR,GBP,JPY,CAD,AUD`
-            : 'https://api.exchangerate.host/latest?base=USD&symbols=EUR,GBP,JPY,CAD,AUD';
+        if (!apiKey) {
+            console.warn('[GLOBAL] ExchangeRate API key not configured, using fallback');
+        } else {
+            const url = `http://api.exchangerate.host/live?access_key=${apiKey}&source=USD&currencies=EUR,GBP,JPY,CAD,AUD`;
+            const response = await axios.get(url, { timeout: 8000 });
 
-        const response = await axios.get(url, { timeout: 5000 });
-
-        if (response.data?.quotes) {
-            // Paid API response format
-            return {
-                USD: 1,
-                EUR: response.data.quotes.USDEUR,
-                GBP: response.data.quotes.USDGBP,
-                JPY: response.data.quotes.USDJPY,
-                CAD: response.data.quotes.USDCAD,
-                AUD: response.data.quotes.USDAUD
-            };
-        } else if (response.data?.rates) {
-            // Free API response format
-            return {
-                USD: 1,
-                EUR: response.data.rates.EUR,
-                GBP: response.data.rates.GBP,
-                JPY: response.data.rates.JPY,
-                CAD: response.data.rates.CAD,
-                AUD: response.data.rates.AUD
-            };
+            if (response.data?.quotes) {
+                // Paid API response format
+                return {
+                    USD: 1,
+                    EUR: response.data.quotes.USDEUR,
+                    GBP: response.data.quotes.USDGBP,
+                    JPY: response.data.quotes.USDJPY,
+                    CAD: response.data.quotes.USDCAD,
+                    AUD: response.data.quotes.USDAUD,
+                    usingFallback: false
+                };
+            } else if (response.data?.rates) {
+                // Free API response format
+                return {
+                    USD: 1,
+                    EUR: response.data.rates.EUR,
+                    GBP: response.data.rates.GBP,
+                    JPY: response.data.rates.JPY,
+                    CAD: response.data.rates.CAD,
+                    AUD: response.data.rates.AUD,
+                    usingFallback: false
+                };
+            }
         }
     } catch (error) {
-        console.warn('ExchangeRate.host failed, using fallback rates');
+        console.warn('[GLOBAL] ExchangeRate.host failed, using fallback rates');
     }
 
     // Fallback to static rates (updated periodically)
@@ -99,7 +102,8 @@ async function getCurrencyRates(): Promise<Record<string, number>> {
         GBP: 0.79,
         JPY: 149.5,
         CAD: 1.36,
-        AUD: 1.53
+        AUD: 1.53,
+        usingFallback: true
     };
 }
 

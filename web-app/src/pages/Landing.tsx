@@ -216,7 +216,7 @@ function HeroSection() {
           </h1>
 
           <p className="text-xl text-slate-600 mb-10 max-w-2xl mx-auto leading-relaxed">
-            The all-in-one price tracker that uses AI to predict price drops, find hidden coupons, and track prices across Amazon, eBay, Walmart, and more.
+            The all-in-one price tracker that uses AI to predict price drops, find hidden coupons, calculates prices globally and track prices across Amazon, eBay, Walmart, and more.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -619,7 +619,7 @@ function PricingSection({ plans }: { plans: LandingPlan[] }) {
               Get Started Free
             </Link>
             <ul className="mt-8 space-y-4">
-              {['5 Products Per Day', '1 Notification/Day', 'Price History', 'Basic Support'].map((feat, i) => (
+              {['10 Products Per Month', '1 Notification/Day', 'Price History', 'Basic Support'].map((feat, i) => (
                 <li key={i} className="flex items-center gap-3 text-sm text-slate-600">
                   <CheckCircle className="w-5 h-5 text-slate-400" />
                   {feat}
@@ -669,9 +669,9 @@ function PricingSection({ plans }: { plans: LandingPlan[] }) {
 function FAQSection() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const faqs = [
-    { q: "Is Price Tracker really free?", a: "Yes! We have a generous free plan that lets you track up to 10 products forever." },
+    { q: "Is Price Tracker really free?", a: "Yes! We have a generous free plan that lets you track up to 10 Products per month." },
     { q: "How fast are the alerts?", a: "Premium users get instant alerts within seconds of a price drop. Free users get daily updates." },
-    { q: "Which sites do you support?", a: "We support all major retailers including Amazon, eBay, Walmart, Best Buy, Target, and AliExpress." },
+    { q: "Which sites do you support?", a: "We support most major retailers including Amazon, eBay, Walmart, Best Buy, Target, Shein and AliExpress." },
     { q: "Can I cancel anytime?", a: "Absolutely. There are no contracts and you can cancel your subscription with one click." }
   ];
 

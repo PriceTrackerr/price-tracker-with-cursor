@@ -106,7 +106,7 @@ const Contact = () => {
                                         <MapPin className="w-6 h-6" />
                                     </div>
                                     <div className="ml-4">
-                                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Global HQ</h3>
+                                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Office Address</h3>
                                         <p className="text-gray-500 dark:text-gray-400 mt-1">
                                             San Francisco, CA<br />
                                             United States
