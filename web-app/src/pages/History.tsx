@@ -498,27 +498,20 @@ export default function History() {
     return last && prev && last.price < prev.price;
   };
 
-  // Check if a product has price drops for dropdown highlighting
+  // Check if a product has price drops - uses the hasPriceDrop flag from API
   const productHasPriceDrop = (productId: string) => {
-    // Get price history from the global data instead of local state
     const product = products.find(p => p.id === productId);
-    const productHistory = product?.priceHistory || [];
+    if (!product) return false;
 
-    if (productHistory.length < 2) return false;
-
-    const sortedHistory = productHistory.sort((a, b) =>
-      new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-    );
-    const last = sortedHistory[sortedHistory.length - 1];
-    const prev = sortedHistory[sortedHistory.length - 2];
-
-    return last && prev && last.price < prev.price;
+    // Use the hasPriceDrop flag calculated by the backend
+    // This is more reliable than recalculating from priceHistory
+    return product.hasPriceDrop === true;
   };
 
   // Get products with price drops that haven't been seen
   const getUnseenProductsWithDrops = () => {
     return products.filter(product =>
-      productHasPriceDrop(product.id) && !seenPriceDropIds.includes(product.id)
+      product.hasPriceDrop === true && !seenPriceDropIds.includes(product.id)
     );
   };
 
@@ -578,14 +571,10 @@ export default function History() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-64 overflow-y-auto">
                           {unseenProductsWithDrops.map((product) => {
-                            const productHistory = product.priceHistory || [];
-                            const sortedHistory = productHistory.sort((a, b) =>
-                              new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-                            );
-                            const last = sortedHistory[sortedHistory.length - 1];
-                            const prev = sortedHistory[sortedHistory.length - 2];
-                            const dropAmount = prev.price - last.price;
-                            const dropPercent = ((dropAmount / prev.price) * 100).toFixed(1);
+                            // Use the pre-calculated priceDrop and priceDropPercent from API
+                            const dropAmount = product.priceDrop || 0;
+                            const dropPercent = (product.priceDropPercent || 0).toFixed(1);
+                            const currentPrice = product.price || 0;
 
                             return (
                               <div key={product.id}
@@ -598,7 +587,7 @@ export default function History() {
                                 <div className="flex-1 min-w-0">
                                   <p className="font-semibold text-emerald-900 text-sm truncate">{product.title}</p>
                                   <div className="flex items-center gap-2">
-                                    <span className="text-emerald-700 font-medium text-sm">${last.price}</span>
+                                    <span className="text-emerald-700 font-medium text-sm">${currentPrice}</span>
                                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-300">
                                       -{dropPercent}%
                                     </span>

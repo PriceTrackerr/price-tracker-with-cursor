@@ -635,18 +635,10 @@ export default function Dashboard() {
 
   // Handle price drops card click
   const handlePriceDropsClick = () => {
-    // Get products with price drops
-    const productsWithDrops = products.filter((p: any) => {
-      if (!p.priceHistory || p.priceHistory.length < 2) return false;
-      const sortedHistory = p.priceHistory.sort((a: any, b: any) =>
-        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-      );
-      const last = sortedHistory[sortedHistory.length - 1];
-      const prev = sortedHistory[sortedHistory.length - 2];
-      const hasDrop = last && prev && last.price < prev.price;
-      const isSeen = seenPriceDropIds.includes(p.id);
-      return hasDrop && !isSeen;
-    });
+    // Get UNSEEN products with price drops (matching the metrics calculation)
+    const productsWithDrops = products.filter((p: any) =>
+      p.hasPriceDrop === true && !seenPriceDropIds.includes(p.id)
+    );
 
     if (productsWithDrops.length > 0) {
       const dropIds = productsWithDrops.map((p: any) => p.id).join(',');
