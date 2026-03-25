@@ -51,6 +51,9 @@ interface Product {
   url?: string;
   stockStatus?: string;
   discountInfo?: string;
+  hasPriceDrop?: boolean;
+  priceDrop?: number;
+  priceDropPercent?: number;
 }
 
 interface PriceHistory {
