@@ -198,6 +198,7 @@ router.get('/landed-cost', authMiddleware, async (req: Request, res: Response) =
 
         // Fetch currency rates from ExchangeRate.host
         const rates = await getCurrencyRates();
+        const usingFallbackRates = rates.usingFallback || false;
 
         // Calculate for each country
         const countryData: CountryData[] = await Promise.all(
@@ -266,7 +267,8 @@ router.get('/landed-cost', authMiddleware, async (req: Request, res: Response) =
                 countries: countryData,
                 cheapest: countryData[cheapestIndex].countryCode,
                 basePrice: usdPrice,
-                trackedStore: storeConfig?.displayName || 'Unknown'
+                trackedStore: storeConfig?.displayName || 'Unknown',
+                usingFallbackRates // Tell frontend if using cached rates
             }
         });
 

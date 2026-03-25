@@ -520,9 +520,16 @@ export default function ProductDetails() {
               </div>
             ) : globalData && globalData.countries && Array.isArray(globalData.countries) ? (
               <>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  Compare landed costs across 6 countries (includes shipping, VAT, and import tariffs)
-                </p>
+                <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Compare landed costs across 6 countries (includes shipping, VAT, and import tariffs)
+                  </p>
+                  {globalData.usingFallbackRates && (
+                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-700" title="Using cached exchange rates - live API data unavailable">
+                      ⚠️ Using cached rates
+                    </span>
+                  )}
+                </div>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {globalData.countries.map((country: any, index: number) => {
                     try {
