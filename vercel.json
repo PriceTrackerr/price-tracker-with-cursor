@@ -1,0 +1,19 @@
+{
+  "projects": [
+    {
+      "path": "api",
+      "name": "price-tracker-with-cursor-backend",
+      "framework": "node"
+    },
+    {
+      "path": "web-app",
+      "name": "price-tracker-with-cursor-web-app",
+      "framework": "vite"
+    },
+    {
+      "path": "admin-dashboard",
+      "name": "price-tracker-with-cursor-admin",
+      "framework": "vite"
+    }
+  ]
+}
