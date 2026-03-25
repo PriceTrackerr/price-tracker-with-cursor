@@ -1,5 +1,7 @@
 {
   "version": 2,
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "functions": {
     "src/index.ts": {
       "includeFiles": "data/**"
@@ -16,5 +18,8 @@
       "path": "/api/cron/update-prices",
       "schedule": "0 */12 * * *"
     }
-  ]
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
 }
