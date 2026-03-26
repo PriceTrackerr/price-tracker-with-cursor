@@ -2,16 +2,19 @@
   "projects": [
     {
       "path": "api",
+      "projectId": "prj_wKJ9WZYjdNTt1S9rIWGEL6GSxnh0",
       "name": "price-tracker-with-cursor-backend",
       "framework": "node"
     },
     {
       "path": "web-app",
+      "projectId": "prj_OvpFV31iEvf1wfz10aKmWukYoJQN",
       "name": "price-tracker-with-cursor-web-app",
       "framework": "vite"
     },
     {
       "path": "admin-dashboard",
+      "projectId": "prj_DxQ44xzWB75r0L0fD4HsgGq2M6zS",
       "name": "price-tracker-with-cursor-admin",
       "framework": "vite"
     }
