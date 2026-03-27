@@ -338,23 +338,27 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'Email is required' });
     }
     if (!supabasePublic) {
-      throw new Error('Supabase public client is not configured');
+      console.error('[FORGOT-PASSWORD] supabasePublic is not configured');
+      return res.status(500).json({ success: false, message: 'Auth service not configured' });
     }
     const redirectUrl = `${frontendBaseUrl.replace(/\/$/, '')}/reset-password`;
+    console.log('[FORGOT-PASSWORD] Sending reset email to:', email, 'redirectUrl:', redirectUrl);
+    
     const { error } = await supabasePublic.auth.resetPasswordForEmail(email, {
       redirectTo: redirectUrl,
     });
     if (error) {
-      // Avoid leaking whether email exists; log internally
-      console.error('Forgot password error:', error.message);
+      console.error('[FORGOT-PASSWORD] Supabase error:', error.message, 'status:', error.status);
+      // Still return success to avoid leaking whether email exists
     }
+    console.log('[FORGOT-PASSWORD] Reset email request completed for:', email);
     return res.json({
       success: true,
       message: 'If an account exists for that email, a reset link has been sent.',
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
-    console.error('Forgot password failure:', message);
+    console.error('[FORGOT-PASSWORD] Exception:', message);
     return res.status(500).json({ success: false, message: 'Unable to process request at this time.' });
   }
 });
