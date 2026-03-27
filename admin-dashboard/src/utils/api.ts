@@ -7,9 +7,10 @@ const getApiBaseUrl = (): string => {
     return import.meta.env.VITE_API_URL;
   }
   
-  // In production (Vercel), use the production API URL
+  // In production (Vercel), use relative paths (/api/*) so requests go through
+  // the Vercel rewrite proxy to Render — avoids CORS issues
   if (import.meta.env.PROD) {
-    return 'https://price-tracker-with-cursor.onrender.com';
+    return '';  // relative paths, proxied by Vercel rewrites
   }
   
   // In development, use localhost with proxy or direct URL

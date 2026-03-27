@@ -11,7 +11,7 @@ const frontendBaseUrl =
   process.env.NEXT_PUBLIC_APP_URL ||
   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined) ||
   (process.env.SUPABASE_REDIRECT_TO as string | undefined) ||
-  'http://localhost:5173';
+  'https://price-tracker-with-cursor-web-app.vercel.app';
 
 interface UserData {
   email: string;
