@@ -32,6 +32,6 @@
     }
   ],
   "env": {
-    "VITE_API_URL": "https://price-tracker-with-cursor-web-app-s.vercel.app"
+    "VITE_API_URL": "https://price-tracker-with-cursor.onrender.com"
   }
 }

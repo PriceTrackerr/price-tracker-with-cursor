@@ -45,6 +45,7 @@ const allowedOrigins = [
   'https://price-tracker-with-cursor-web-app-s.vercel.app', // Web app (alternative)
   'https://price-tracker-with-cursor.vercel.app', // Admin dashboard
   'https://price-tracker-with-cursor-2am4ntk8x.vercel.app', // Admin dashboard (new deployment)
+  'https://price-tracker-with-cursor.onrender.com', // Render self-origin
   ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
   ...(process.env.ADMIN_DASHBOARD_URL ? [process.env.ADMIN_DASHBOARD_URL] : []),
 ];
@@ -57,6 +58,11 @@ app.use(
 
       // Check if origin is in allowed list
       if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      // Allow all Vercel preview deployments for this project
+      if (origin.match(/^https:\/\/price-tracker-with-cursor[\w-]*\.vercel\.app$/)) {
         return callback(null, true);
       }
 

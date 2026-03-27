@@ -9,7 +9,7 @@ const getApiBaseUrl = (): string => {
   
   // In production (Vercel), use the production API URL
   if (import.meta.env.PROD) {
-    return 'https://price-tracker-with-cursor-web-app-s.vercel.app';
+    return 'https://price-tracker-with-cursor.onrender.com';
   }
   
   // In development, use localhost with proxy or direct URL
