@@ -40,7 +40,5 @@
       ]
     }
   ],
-  "env": {
-    "VITE_API_URL": "https://price-tracker-with-cursor.onrender.com"
-  }
+  "env": {}
 }
