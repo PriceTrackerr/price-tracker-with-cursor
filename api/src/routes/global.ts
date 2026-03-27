@@ -25,6 +25,7 @@ interface CountryData {
     canBuyHere: boolean;                   // NEW
     storeName: string;                     // NEW
     savingsVsTracked: number;              // NEW
+    isOriginCountry?: boolean;             // NEW
 }
 
 // Static shipping costs per country (USD equivalent)
@@ -58,7 +59,11 @@ const COUNTRIES = [
 ];
 
 // Get currency conversion rates using ExchangeRate.host
-async function getCurrencyRates(): Promise<Record<string, number> & { usingFallback?: boolean }> {
+interface CurrencyRatesResult {
+    rates: Record<string, number>;
+    usingFallback: boolean;
+}
+async function getCurrencyRates(): Promise<CurrencyRatesResult> {
     try {
         const apiKey = process.env.EXCHANGERATE_API_KEY;
         if (!apiKey) {
@@ -68,25 +73,27 @@ async function getCurrencyRates(): Promise<Record<string, number> & { usingFallb
             const response = await axios.get(url, { timeout: 8000 });
 
             if (response.data?.quotes) {
-                // Paid API response format
                 return {
-                    USD: 1,
-                    EUR: response.data.quotes.USDEUR,
-                    GBP: response.data.quotes.USDGBP,
-                    JPY: response.data.quotes.USDJPY,
-                    CAD: response.data.quotes.USDCAD,
-                    AUD: response.data.quotes.USDAUD,
+                    rates: {
+                        USD: 1,
+                        EUR: response.data.quotes.USDEUR,
+                        GBP: response.data.quotes.USDGBP,
+                        JPY: response.data.quotes.USDJPY,
+                        CAD: response.data.quotes.USDCAD,
+                        AUD: response.data.quotes.USDAUD,
+                    },
                     usingFallback: false
                 };
             } else if (response.data?.rates) {
-                // Free API response format
                 return {
-                    USD: 1,
-                    EUR: response.data.rates.EUR,
-                    GBP: response.data.rates.GBP,
-                    JPY: response.data.rates.JPY,
-                    CAD: response.data.rates.CAD,
-                    AUD: response.data.rates.AUD,
+                    rates: {
+                        USD: 1,
+                        EUR: response.data.rates.EUR,
+                        GBP: response.data.rates.GBP,
+                        JPY: response.data.rates.JPY,
+                        CAD: response.data.rates.CAD,
+                        AUD: response.data.rates.AUD,
+                    },
                     usingFallback: false
                 };
             }
@@ -97,12 +104,14 @@ async function getCurrencyRates(): Promise<Record<string, number> & { usingFallb
 
     // Fallback to static rates (updated periodically)
     return {
-        USD: 1,
-        EUR: 0.92,
-        GBP: 0.79,
-        JPY: 149.5,
-        CAD: 1.36,
-        AUD: 1.53,
+        rates: {
+            USD: 1,
+            EUR: 0.92,
+            GBP: 0.79,
+            JPY: 149.5,
+            CAD: 1.36,
+            AUD: 1.53,
+        },
         usingFallback: true
     };
 }
@@ -197,8 +206,7 @@ router.get('/landed-cost', authMiddleware, async (req: Request, res: Response) =
         const storeItemId = (product as any).storeItemId;
 
         // Fetch currency rates from ExchangeRate.host
-        const rates = await getCurrencyRates();
-        const usingFallbackRates = rates.usingFallback || false;
+        const { rates, usingFallback: usingFallbackRates } = await getCurrencyRates();
 
         // Calculate for each country
         const countryData: CountryData[] = await Promise.all(
