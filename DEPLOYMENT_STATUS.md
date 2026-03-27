@@ -23,7 +23,7 @@ All three components of your Price Tracker are successfully deployed and running
   - Alert management
 
 ### 2. **API (Backend)** ✅
-- **URL**: https://price-tracker-with-cursor-web-app-s.vercel.app/api
+- **URL**: https://price-tracker-with-cursor.onrender.com/api
 - **Status**: 🟢 **LIVE**
 - **Framework**: Node.js + Express
 - **Available Routes**:
@@ -54,7 +54,7 @@ All three components of your Price Tracker are successfully deployed and running
 
 ### Frontend ↔ Backend
 - **Connection**: ✅ Configured
-- **API Base URL**: `https://price-tracker-with-cursor-web-app-s.vercel.app/api`
+- **API Base URL**: `https://price-tracker-with-cursor.onrender.com/api`
 - **Environment Variable**: `VITE_API_BASE` (set in `web-app/.env`)
 
 ### Backend ↔ Database

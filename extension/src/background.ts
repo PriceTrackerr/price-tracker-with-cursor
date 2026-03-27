@@ -50,7 +50,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // Handle product tracking via background to avoid CORS issues
   if (request.type === 'TRACK_PRODUCT') {
     const { token, productInfo } = request.payload || {};
-    const API_BASE_URL = 'https://price-tracker-with-cursor-web-app-s.vercel.app/api';
+    const API_BASE_URL = 'https://price-tracker-with-cursor.onrender.com/api';
     if (!token) {
       sendResponse({ success: false, error: 'Missing auth token' });
       return true;

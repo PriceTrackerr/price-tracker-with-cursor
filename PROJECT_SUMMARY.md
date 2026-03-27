@@ -19,7 +19,7 @@ Your **Price Tracker** is a fully-functional, production-ready application that'
    - Price history visualization
 
 2. **Live API Backend** ⚡
-   - URL: https://price-tracker-with-cursor-web-app-s.vercel.app/api
+   - URL: https://price-tracker-with-cursor.onrender.com/api
    - 9 API route groups operational
    - Connected to Supabase database
    - Email notifications configured

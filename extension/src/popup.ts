@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const savedCard = document.querySelector('.saved-card') as HTMLDivElement;
 
     // API base URL - use deployed backend
-    const API_BASE_URL = 'https://price-tracker-with-cursor-web-app-s.vercel.app/api';
+    const API_BASE_URL = 'https://price-tracker-with-cursor.onrender.com/api';
     const WEBAPP_BASE_URL = 'https://price-tracker-with-cursor-web-app.vercel.app';
 
     // Real data storage

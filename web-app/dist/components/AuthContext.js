@@ -29,7 +29,7 @@ export function AuthProvider({ children }) {
             setReconnecting(true);
         }
         try {
-            const res = await fetch('https://price-tracker-with-cursor-web-app-s.vercel.app/api/users/me', {
+            const res = await fetch('https://price-tracker-with-cursor.onrender.com/api/users/me', {
                 headers: { Authorization: `Bearer ${t}` },
             });
             const data = await res.json();
@@ -127,7 +127,7 @@ export function AuthProvider({ children }) {
             if (refreshToken) {
                 (async () => {
                     try {
-                        const resp = await fetch('https://price-tracker-with-cursor-web-app-s.vercel.app/api/users/refresh', {
+                        const resp = await fetch('https://price-tracker-with-cursor.onrender.com/api/users/refresh', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ refreshToken })
@@ -239,7 +239,7 @@ export function AuthProvider({ children }) {
     const login = async (email, password) => {
         setLoading(true);
         try {
-            const res = await fetch('https://price-tracker-with-cursor-web-app-s.vercel.app/api/users/login', {
+            const res = await fetch('https://price-tracker-with-cursor.onrender.com/api/users/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password }),
@@ -261,7 +261,7 @@ export function AuthProvider({ children }) {
     const signup = async (email, password) => {
         setLoading(true);
         try {
-            const res = await fetch('https://price-tracker-with-cursor-web-app-s.vercel.app/api/users/signup', {
+            const res = await fetch('https://price-tracker-with-cursor.onrender.com/api/users/signup', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password }),

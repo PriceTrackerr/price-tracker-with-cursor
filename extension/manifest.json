@@ -47,14 +47,14 @@
     "https://www.bestbuy.com/*",
     "https://www.target.com/*",
     "https://price-tracker-with-cursor-web-app.vercel.app/*",
-    "https://price-tracker-with-cursor-web-app-s.vercel.app/*",
+    "https://price-tracker-with-cursor.onrender.com/*",
     "http://localhost:3000/*",
     "http://localhost:5173/*"
   ],
   "externally_connectable": {
     "matches": [
       "https://price-tracker-with-cursor-web-app.vercel.app/*",
-      "https://price-tracker-with-cursor-web-app-s.vercel.app/*",
+      "https://price-tracker-with-cursor.onrender.com/*",
       "http://localhost:3000/*",
       "http://localhost:5173/*"
     ]

@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://price-tracker-with-cursor-web-app-s.vercel.app/api/$1"
+      "destination": "https://price-tracker-with-cursor.onrender.com/api/$1"
     },
     {
       "source": "/((?!assets|api|favicon\\.svg|extension-helper\\.js).*)",

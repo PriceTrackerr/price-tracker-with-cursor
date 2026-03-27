@@ -94,7 +94,7 @@ A full-stack price tracking application that helps users monitor prices across 7
 
 ### Current Setup:
 - **Frontend**: Vercel (`https://price-tracker-with-cursor-web-app.vercel.app`)
-- **Backend**: Vercel (`https://price-tracker-with-cursor-web-app-s.vercel.app/api`)
+- **Backend**: Vercel (`https://price-tracker-with-cursor.onrender.com/api`)
 - **Database**: Supabase Cloud
 
 ### Build Commands:

@@ -49,7 +49,7 @@ If you can't sign in after deployment:
 2. **Check Browser Console**: Look for CORS errors or API connection issues
 3. **Verify API Endpoint**: Test the login endpoint directly:
    ```
-   POST https://price-tracker-with-cursor-web-app-s.vercel.app/api/users/login
+   POST https://price-tracker-with-cursor.onrender.com/api/users/login
    ```
 4. **Check Network Tab**: Verify that API calls are going to the correct domain
 

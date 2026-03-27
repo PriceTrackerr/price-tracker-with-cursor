@@ -88,7 +88,7 @@ VITE_LEMONSQUEEZY_STORE_ID=212646
 2. Navigate to **Settings** → **Webhooks**
 3. Click **+ Add Webhook**
 4. Configure:
-   - **URL**: `https://price-tracker-with-cursor-web-app-s.vercel.app/api/subscriptions/webhook`
+   - **URL**: `https://price-tracker-with-cursor.onrender.com/api/subscriptions/webhook`
    - **Signing Secret**: `test_webhook`
    - **Events to subscribe**: Select ALL subscription events:
      - `subscription_created`
@@ -125,7 +125,7 @@ VITE_LEMONSQUEEZY_STORE_ID=212646
 3. User's `subscription_status` should be `'active'` or `'on_trial'`
 
 #### Test 4: Check Limits
-1. Go to: `https://price-tracker-with-cursor-web-app-s.vercel.app/api/subscriptions/limits?userId=YOUR_USER_ID`
+1. Go to: `https://price-tracker-with-cursor.onrender.com/api/subscriptions/limits?userId=YOUR_USER_ID`
 2. Should return:
 ```json
 {

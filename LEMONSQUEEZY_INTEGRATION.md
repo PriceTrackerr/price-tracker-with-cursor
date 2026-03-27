@@ -132,7 +132,7 @@ Make sure you've added these to BOTH:
 
 ### Webhook URL
 ```
-https://price-tracker-with-cursor-web-app-s.vercel.app/api/subscriptions/webhook
+https://price-tracker-with-cursor.onrender.com/api/subscriptions/webhook
 ```
 
 ### Webhook Secret
