@@ -1,18 +1,17 @@
 export interface PopularCoupon {
     code: string;
-    stores: string[]; // "amazon", "walmart", or "*" for all
+    stores: string[]; // specific store names only — NO wildcards
     desc: string;
 }
 
+// Only include store-specific codes that are well-known and periodically valid.
+// Do NOT add wildcard ('*') entries — they show up for every product and feel fake.
+// These should be periodically reviewed and pruned.
 export const POPULAR_COUPONS: PopularCoupon[] = [
-    { code: "SAVE20", stores: ["amazon", "walmart"], desc: "20% off select items" },
-    { code: "APPLE15", stores: ["amazon", "bestbuy"], desc: "$15 off Apple products" },
-    { code: "TECH10", stores: ["amazon", "ebay"], desc: "10% off electronics" },
-    { code: "WOWFRESH", stores: ["walmart"], desc: "$10 off + free shipping" },
-    { code: "PERFECT10", stores: ["ebay"], desc: "10% off $100+" },
-    { code: "FREESHIP", stores: ["*"], desc: "Free shipping on $35+" },
-    { code: "WELCOME15", stores: ["*"], desc: "15% off first order" },
-    { code: "BF25", stores: ["amazon", "bestbuy"], desc: "25% off Black Friday deals" },
-    { code: "STUDENT100", stores: ["bestbuy"], desc: "$100 off for students" },
-    { code: "HOME20", stores: ["walmart"], desc: "20% off home & tech" }
+    // NOTE: All entries below have been removed because they were either
+    // fabricated or outdated. When you have REAL verified coupon codes,
+    // add them here with the specific store they belong to.
+    //
+    // Example of a valid entry:
+    // { code: "HOLIDAY25", stores: ["amazon"], desc: "25% off holiday deals (Dec 2025)" },
 ];

@@ -27,7 +27,7 @@ class ProductExtractor {
   private detectPlatform(): 'amazon' | 'aliexpress' | 'ebay' | 'walmart' | 'shein' | 'bestbuy' | 'target' {
     const hostname = window.location.hostname.toLowerCase();
     console.log('🔍 [Platform Detection] Hostname:', hostname);
-    
+
     if (hostname.includes('amazon')) {
       console.log('🔍 [Platform Detection] Detected: Amazon');
       return 'amazon';
@@ -80,7 +80,7 @@ class ProductExtractor {
       console.log('🔍 [Amazon] Starting product extraction...');
       console.log('🔍 [Amazon] Current URL:', window.location.href);
       console.log('🔍 [Amazon] Current pathname:', window.location.pathname);
-      
+
       // Support multiple URL formats for ASIN
       let productId = null;
       const urlPatterns = [
@@ -89,7 +89,7 @@ class ProductExtractor {
         /\/product\/([A-Z0-9]{10})/i,
         /\/([A-Z0-9]{10})(?:[/?]|$)/i
       ];
-      
+
       for (const pattern of urlPatterns) {
         const match = window.location.pathname.match(pattern);
         if (match) {
@@ -98,7 +98,7 @@ class ProductExtractor {
           break;
         }
       }
-      
+
       // Fallback: try meta og:url
       if (!productId) {
         const ogUrl = document.querySelector('meta[property="og:url"]') as HTMLMetaElement;
@@ -111,7 +111,7 @@ class ProductExtractor {
           }
         }
       }
-      
+
       if (!productId) {
         console.error('🔍 [Amazon] No product ID found');
         return null;
@@ -131,7 +131,7 @@ class ProductExtractor {
         'meta[name="title"]',
         'meta[property="og:title"]'
       ];
-      
+
       for (const sel of titleSelectors) {
         const el = document.querySelector(sel) as HTMLElement | HTMLMetaElement;
         if (el) {
@@ -146,7 +146,7 @@ class ProductExtractor {
           }
         }
       }
-      
+
       if (!title) {
         // Fallback to page title
         title = document.title.replace(/ - Amazon.*$/, '').replace(/Amazon\.com : /, '').trim();
@@ -161,16 +161,16 @@ class ProductExtractor {
         '.a-price .a-offscreen:not([data-a-strike])',
         '.a-price.a-text-price .a-offscreen',
         '.a-price-whole',
-        '.a-price-fraction', 
+        '.a-price-fraction',
         '#apex_desktop .a-price .a-offscreen',
         '#priceblock_ourprice',
-        '#priceblock_dealprice', 
+        '#priceblock_dealprice',
         '#priceblock_saleprice',
         '.a-color-price:not(.a-text-strike)',
         '.a-size-medium.a-color-price',
         '.a-offscreen'
       ];
-      
+
       for (const sel of priceSelectors) {
         const el = document.querySelector(sel) as HTMLElement;
         if (el && el.textContent && el.offsetParent !== null) {
@@ -182,7 +182,7 @@ class ProductExtractor {
           }
         }
       }
-      
+
       // Enhanced fallback: scan all .a-offscreen for price patterns
       if (!priceString) {
         console.log('🔍 [Amazon] No price found with selectors, trying fallback...');
@@ -198,7 +198,7 @@ class ProductExtractor {
           }
         }
       }
-      
+
       // Try to build price from separate whole and fraction parts
       if (!priceString) {
         const priceWhole = document.querySelector('.a-price-whole')?.textContent?.replace(/[^0-9]/g, '');
@@ -208,10 +208,10 @@ class ProductExtractor {
           console.log('🔍 [Amazon] Built price from parts:', priceString);
         }
       }
-      
+
       const price = priceString ? parseFloat(priceString.replace(/[^0-9.]/g, '')) : null;
       console.log('🔍 [Amazon] Final price:', price, 'from string:', priceString);
-      
+
       if (price === null || isNaN(price) || price <= 0) {
         console.warn('🔍 [Amazon] Could not extract a valid price from string:', priceString);
         return null;
@@ -229,7 +229,7 @@ class ProductExtractor {
         'img[src*="images/I/"]',
         'meta[property="og:image"]'
       ];
-      
+
       for (const sel of imageSelectors) {
         const el = document.querySelector(sel) as HTMLImageElement | HTMLMetaElement;
         if (el) {
@@ -354,9 +354,9 @@ class ProductExtractor {
         stockStatus,
         discountInfo: discountInfo || undefined,
       };
-      
+
       console.log('🔍 [Amazon] Final extraction result:', result);
-      
+
       // Validate required fields
       if (!result.id || !result.title || !result.price) {
         console.error('🔍 [Amazon] Missing required fields:', {
@@ -366,7 +366,7 @@ class ProductExtractor {
         });
         return null;
       }
-      
+
       return result;
     } catch (error) {
       console.error('🔍 [Amazon] Error extracting product info:', error);
@@ -374,267 +374,205 @@ class ProductExtractor {
     }
   }
 
-  // AliExpress extraction is now async and uses waitForElement
+  // AliExpress extraction - Updated for 2026 page structure
   public async extractAliExpressProductInfo(): Promise<ProductInfo | null> {
     try {
-      console.log('[Injected] Starting AliExpress extraction...');
-      console.log('[Injected] Current URL:', window.location.href);
-      
+      console.log('🔍 [AliExpress] Starting extraction...');
+      console.log('🔍 [AliExpress] URL:', window.location.href);
+
+      // Extract product ID from URL
       const urlMatch = window.location.pathname.match(/\/item\/(\d+)\.html/);
       if (!urlMatch) {
-        console.log('[Injected] No product ID found in URL');
+        console.error('🔍 [AliExpress] No product ID in URL');
         return null;
       }
       const productId = urlMatch[1];
-      console.log('[Injected] Extracted product ID:', productId);
+      console.log('🔍 [AliExpress] Product ID:', productId);
 
-      // Wait for the title element
-      console.log('[Injected] Looking for title element...');
-      const titleEl =
-        (await waitForElement('h1[data-pl="product-title"]')) ||
-        (await waitForElement('.product-title-text')) ||
-        (await waitForElement('h1.product-title')) ||
-        (await waitForElement('div.product-title')) ||
-        (await waitForElement('h1'));
+      // Wait for page to fully load (AliExpress is SPA)
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
-      console.log('[Injected] Title element found:', !!titleEl);
-      const title = titleEl?.innerText?.trim() || '';
-      console.log('[Injected] Extracted AliExpress product title:', title);
-      
+      // === TITLE EXTRACTION ===
+      let title = '';
+      const titleSelectors = [
+        'h1[data-pl="product-title"]',
+        '.product-title-text',
+        'h1.product-title',
+        '.product-title',
+        'h1',
+        'meta[property="og:title"]'
+      ];
+
+      for (const sel of titleSelectors) {
+        const el = document.querySelector(sel) as HTMLElement | HTMLMetaElement;
+        if (el) {
+          if (el.tagName === 'META') {
+            title = (el as HTMLMetaElement).content?.trim() || '';
+          } else {
+            title = el.innerText?.trim() || el.textContent?.trim() || '';
+          }
+          if (title && title.length > 5) {
+            console.log('🔍 [AliExpress] Found title:', title.substring(0, 50));
+            break;
+          }
+        }
+      }
+
       if (!title) {
-        console.log('[Injected] No title found, trying fallback...');
-        // Fallback: try to get title from page title
-        const pageTitle = document.title.replace(/ - AliExpress$/, '').trim();
-        console.log('[Injected] Fallback title from page title:', pageTitle);
+        title = document.title.replace(/ - AliExpress$/, '').replace(/ - AliExpress Mobile$/, '').trim();
+        console.log('🔍 [AliExpress] Using page title:', title.substring(0, 50));
       }
 
-      // Enhanced price extraction for AliExpress
+      if (!title || title.length < 3) {
+        console.error('🔍 [AliExpress] Could not extract title');
+        return null;
+      }
+
+      // === PRICE EXTRACTION ===
       let priceString = '';
-      
-      // Wait for price elements to load
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Try multiple selectors for price - updated for current AliExpress structure
+      let currency = 'US $';
+
+      // Modern AliExpress price selectors (2026)
       const priceSelectors = [
-        '[data-pl="product-price"] .product-price-value',
-        '.product-price-value',
-        '.product-price-current', 
-        '.price-current',
-        '.price-value',
         '[data-pl="product-price"]',
-        '.snow-price',
-        '.snow-price .notranslate',
-        '.product-price .notranslate',
-        '.product-price-current .notranslate',
-        '.uniform-banner-box-price .notranslate',
-        '.product-info-price .price',
-        '.product-price-info .price',
-        '.price-box .price',
-        '.product-price-box .price'
+        '.product-price-value',
+        '.product-price-current',
+        '.price-current',
+        '.product-price',
+        '.sale-price',
+        '.original-price',
+        '.discount-price',
+        'span[class*="price"]',
+        'div[class*="price"]'
       ];
-      
-      for (const selector of priceSelectors) {
-        const element = document.querySelector(selector) as HTMLElement;
-        if (element?.textContent) {
-          const text = element.textContent.trim();
-          if (text.match(/[\d\.,]+/) && text.length < 50) {
+
+      for (const sel of priceSelectors) {
+        const elements = document.querySelectorAll(sel);
+        for (const el of Array.from(elements) as HTMLElement[]) {
+          const text = el.textContent?.trim() || '';
+          // Look for price patterns
+          const priceMatch = text.match(/(?:US\s*\$|\$|€|£|¥|₹)\s*([\d,]+\.?\d*)/);
+          if (priceMatch && text.length < 50) {
             priceString = text;
-            console.log(`🔍 [AliExpress] Found price with selector ${selector}:`, priceString);
+            const currMatch = text.match(/(US\s*\$|\$|€|£|¥|₹)/);
+            if (currMatch) currency = currMatch[1].trim();
+            console.log('🔍 [AliExpress] Found price:', priceString);
             break;
           }
         }
+        if (priceString) break;
       }
-      
-      // If still no price, try to find any element with price-like text
+
+      // Fallback: scan all text for price patterns
       if (!priceString) {
-        const allElements = Array.from(document.querySelectorAll('*')) as HTMLElement[];
-        for (const element of allElements) {
-          const text = element.textContent?.trim() || '';
-          // Look for patterns like "US $0.30" or "$0.30" or "0.30"
-          const priceMatch = text.match(/(?:US\s*\$|[\$€£¥₹])\s*([\d,]+\.?\d*)/);
-          if (priceMatch && text.length < 50) { // Avoid very long text
-            priceString = priceMatch[0];
-            console.log('[Injected] Found price in text:', priceString);
+        console.log('🔍 [AliExpress] Scanning page for price...');
+        const allText = document.body.innerText;
+        const pricePatterns = [
+          /US\s*\$\s*([\d,]+\.?\d*)/,
+          /\$\s*([\d,]+\.?\d*)/,
+          /€\s*([\d,]+\.?\d*)/,
+          /£\s*([\d,]+\.?\d*)/,
+        ];
+
+        for (const pattern of pricePatterns) {
+          const match = allText.match(pattern);
+          if (match) {
+            priceString = match[0];
+            const currMatch = priceString.match(/(US\s*\$|\$|€|£|¥|₹)/);
+            if (currMatch) currency = currMatch[1].trim();
+            console.log('🔍 [AliExpress] Found price in text:', priceString);
             break;
           }
         }
       }
-      
-      console.log('[Injected] Final AliExpress price string:', priceString);
 
-      const price = priceString ? parseFloat(priceString.replace(/[^0-9.]/g, '')) : null;
-      console.log('[Injected] Parsed price number:', price);
-      
-      if (!price || isNaN(price)) {
-        console.log('[Injected] No valid price found, trying fallback...');
-        // Fallback: look for any number that looks like a price
-        const allText = document.body.textContent || '';
-        const priceMatches = allText.match(/(?:US\s*\$|[\$€£¥₹])\s*([\d,]+\.?\d*)/g);
-        console.log('[Injected] All price matches found:', priceMatches);
-        if (priceMatches && priceMatches.length > 0) {
-          const fallbackPrice = parseFloat(priceMatches[0].replace(/[^0-9.]/g, ''));
-          console.log('[Injected] Using fallback price:', fallbackPrice);
+      // Parse price
+      let price: number | null = null;
+      if (priceString) {
+        const numericMatch = priceString.match(/([\d,]+\.?\d*)/);
+        if (numericMatch) {
+          price = parseFloat(numericMatch[1].replace(/,/g, ''));
+          if (isNaN(price) || price <= 0) price = null;
         }
       }
 
-      // Improved image extraction: get the currently visible main product image
-      function getVisibleImage(selector: string): string | undefined {
-        const imgs = Array.from(document.querySelectorAll(selector)) as HTMLImageElement[];
-        const visible = imgs.find(img => img.offsetParent !== null && img.src);
-        return visible?.src;
+      console.log('🔍 [AliExpress] Parsed price:', price);
+
+      if (!price) {
+        console.error('🔍 [AliExpress] Could not extract price');
+        return null;
       }
 
-      let imageUrl =
-        getVisibleImage('.magnifier-image') ||
-        getVisibleImage('.product-main-image-wrapper img') ||
-        getVisibleImage('.images-view-list .images-view-item.selected img') ||
-        getVisibleImage('.images-view-list .images-view-item img') ||
-        getVisibleImage('.product-image img') ||
-        getVisibleImage('img[src*=".jpg"]') ||
-        getVisibleImage('img[src*=".jpeg"]') ||
-        getVisibleImage('img[src*=".png"]') ||
-        getVisibleImage('img') ||
-        '';
-      // Remove thumbnail or unrelated images by checking for gallery or main image classes
-      if (imageUrl && imageUrl.includes('_50x50.jpg')) {
-        // Try to get the larger version
-        imageUrl = imageUrl.replace('_50x50.jpg', '');
-      }
-
-      const currencyMatch = priceString.match(/[$€£¥₹]/);
-      const currency = currencyMatch ? currencyMatch[0] : '$';
-
-      // Stock/availability extraction for AliExpress
-      let stockStatus: 'in_stock' | 'out_of_stock' | 'unknown' = 'unknown';
-      // Check stock status - simplified logging
-      const allSpans = Array.from(document.querySelectorAll('span')) as HTMLElement[];
-      let foundStock = false;
-      for (const span of allSpans) {
-        const text = span.textContent?.trim().toLowerCase() || '';
-        const match = text.match(/only\s*(\d+)\s*left/);
-        if (match) {
-          const qty = parseInt(match[1], 10);
-          stockStatus = qty > 0 ? 'in_stock' : 'out_of_stock';
-          foundStock = true;
-          break;
-        }
-        const availableMatch = text.match(/(\d+)\s*available/);
-        if (availableMatch) {
-          const qty = parseInt(availableMatch[1], 10);
-          stockStatus = qty > 0 ? 'in_stock' : 'out_of_stock';
-          foundStock = true;
-          break;
-        }
-        if (text.includes('sold out')) {
-          stockStatus = 'out_of_stock';
-          foundStock = true;
-          break;
-        }
-      }
-      
-      if (!foundStock) {
-        // Fallback stock check
-        const stockSelectors = [
-          '.product-quantity-tip',
-          '.product-quantity-info', 
-          '.product-quantity',
-          '.product-status',
-          '.product-availability'
-        ];
-        for (const sel of stockSelectors) {
-          const el = document.querySelector(sel) as HTMLElement;
-          if (el && el.textContent) {
-            const text = el.textContent.trim().toLowerCase();
-            if (text.includes('in stock') || text.includes('available')) {
-              stockStatus = 'in_stock';
-              break;
-            } else if (text.includes('out of stock') || text.includes('unavailable') || text.includes('sold out')) {
-              stockStatus = 'out_of_stock';
-              break;
-            }
-          }
-        }
-      }
-
-      // Discount & promotion extraction for AliExpress
-      let discountInfo = '';
-      const discountSelectors = [
-        '.product-discount',
-        '.product-promotion',
-        '.store-promotion-tag',
-        '.store-promotion-content',
-        '.product-promotion-tag',
-        '.product-promotion-content',
-        '.product-coupon',
-        '.product-coupon-tag',
-        '.product-coupon-content',
-        '.product-coupon-info',
-        '.product-coupon-desc',
-        '.product-coupon-title',
-        '.product-coupon-value',
-        '.product-coupon-amount',
-        '.product-coupon-label',
-        '.product-coupon-text',
-        '.product-coupon-discount',
-        '.product-coupon-promo',
-        '.product-coupon-saving',
-        '.product-coupon-off',
-        '.product-coupon-save',
-        '.product-coupon-promotion',
-        '.product-coupon-cashback',
-        '.product-coupon-bonus',
-        '.product-coupon-reward',
-        '.product-coupon-voucher',
-        '.product-coupon-gift',
+      // === IMAGE EXTRACTION ===
+      let imageUrl = '';
+      const imageSelectors = [
+        'img.magnifier-image',
+        '.product-main-image img',
+        '.product-image img',
+        'img[src*=".jpg"]',
+        'img[src*=".jpeg"]',
+        'img[src*=".png"]',
+        'meta[property="og:image"]'
       ];
-      for (const sel of discountSelectors) {
-        const el = document.querySelector(sel) as HTMLElement;
-        if (el && el.textContent && el.offsetParent !== null) {
-          discountInfo = el.textContent.trim();
-          if (discountInfo) break;
-        }
-      }
-      // Fallback: look for keywords in all visible elements
-      if (!discountInfo) {
-        const allEls = Array.from(document.querySelectorAll('body *')) as HTMLElement[];
-        for (const el of allEls) {
-          if (el.offsetParent !== null && el.textContent) {
-            const text = el.textContent.trim();
-            if (/% off|save|coupon|deal|promotion|discount|off|cashback|bonus|reward|voucher|gift/i.test(text) && text.length < 64) {
-              discountInfo = text;
-              break;
-            }
+
+      for (const sel of imageSelectors) {
+        const el = document.querySelector(sel) as HTMLImageElement | HTMLMetaElement;
+        if (el) {
+          if (el.tagName === 'META') {
+            imageUrl = (el as HTMLMetaElement).content || '';
+          } else {
+            imageUrl = (el as HTMLImageElement).src || '';
+          }
+          if (imageUrl && !imageUrl.includes('placeholder')) {
+            // Clean up thumbnail URLs
+            imageUrl = imageUrl.replace('_50x50.jpg', '.jpg').replace('_60x60.jpg', '.jpg');
+            console.log('🔍 [AliExpress] Found image:', imageUrl.substring(0, 80));
+            break;
           }
         }
       }
 
+      // === STOCK STATUS ===
+      let stockStatus: 'in_stock' | 'out_of_stock' | 'unknown' = 'in_stock'; // Default to in_stock
+
+      const stockText = document.body.innerText.toLowerCase();
+      if (stockText.includes('sold out') || stockText.includes('unavailable')) {
+        stockStatus = 'out_of_stock';
+      } else if (stockText.match(/only\s*\d+\s+left/)) {
+        stockStatus = 'in_stock';
+      }
+
+      console.log('🔍 [AliExpress] Stock status:', stockStatus);
+
+      // === BUILD RESULT ===
       const result: ProductInfo = {
         id: productId,
         url: window.location.href,
-        title: title || document.title.replace(/ - AliExpress$/, '').trim(),
-        price: price && !isNaN(price) ? price : null,
-        currency,
+        title,
+        price,
+        currency: currency || 'US $',
         platform: 'aliexpress' as const,
         imageUrl: imageUrl || undefined,
         stockStatus,
-        discountInfo: discountInfo || undefined,
+        discountInfo: undefined
       };
-      
-      console.log('🔍 [AliExpress] Final extraction result:', result);
-      
-      // Validate required fields
+
+      console.log('🔍 [AliExpress] ✅ Extraction successful:', {
+        id: result.id,
+        title: result.title.substring(0, 50),
+        price: result.price,
+        currency: result.currency
+      });
+
+      // Validate
       if (!result.id || !result.title || !result.price) {
-        console.error('🔍 [AliExpress] Missing required fields:', {
-          id: !!result.id,
-          title: !!result.title,
-          price: !!result.price
-        });
+        console.error('🔍 [AliExpress] Missing required fields');
         return null;
       }
-      
+
       return result;
-    } catch (error) {
-      console.error('Error extracting AliExpress product info:', error);
+    } catch (error: any) {
+      console.error('🔍 [AliExpress] Extraction error:', error.message);
       return null;
     }
   }
@@ -643,11 +581,11 @@ class ProductExtractor {
     try {
       console.log('🔍 [eBay] Starting product extraction...');
       console.log('🔍 [eBay] Current URL:', window.location.href);
-      
+
       const match = window.location.pathname.match(/\/itm\/(\d+)/);
       const productId = match ? match[1] : window.location.pathname;
       console.log('🔍 [eBay] Product ID:', productId);
-      
+
       // Enhanced title extraction
       let title = '';
       const titleSelectors = [
@@ -658,7 +596,7 @@ class ProductExtractor {
         'h1',
         'meta[property="og:title"]'
       ];
-      
+
       for (const sel of titleSelectors) {
         const el = document.querySelector(sel) as HTMLElement | HTMLMetaElement;
         if (el) {
@@ -674,7 +612,7 @@ class ProductExtractor {
           }
         }
       }
-      
+
       if (!title) {
         title = document.title.replace(/ \| eBay$/, '').trim();
         console.log('🔍 [eBay] Using page title as fallback:', title);
@@ -712,13 +650,13 @@ class ProductExtractor {
       }
       // Improved image extraction for eBay
       let imageUrl = '';
-      
+
       // First, try to get the main product image with data-zoom-src (highest quality)
       const mainImg = document.querySelector('img[data-zoom-src*="ebayimg.com"]') as HTMLImageElement;
       if (mainImg && mainImg.dataset.zoomSrc) {
         imageUrl = mainImg.dataset.zoomSrc;
       }
-      
+
       // If no data-zoom-src, try to get the highest quality from srcset
       if (!imageUrl) {
         const imgWithSrcset = document.querySelector('img[srcset*="ebayimg.com"]') as HTMLImageElement;
@@ -731,12 +669,12 @@ class ProductExtractor {
           }
         }
       }
-      
+
       // Fallback to any eBay image with alt text (product images usually have descriptive alt)
       if (!imageUrl) {
         const productImgs = Array.from(document.querySelectorAll('img[src*="ebayimg.com"]')) as HTMLImageElement[];
-        const mainProductImg = productImgs.find(img => 
-          img.alt && 
+        const mainProductImg = productImgs.find(img =>
+          img.alt &&
           img.alt.length > 10 && // Descriptive alt text
           img.offsetParent !== null && // Visible
           !img.src.includes('_50x50') && // Not thumbnail
@@ -746,7 +684,7 @@ class ProductExtractor {
           imageUrl = mainProductImg.src;
         }
       }
-      
+
       // Final fallback to meta og:image
       if (!imageUrl) {
         const metaImg = document.querySelector('meta[property="og:image"]') as HTMLMetaElement;
@@ -814,9 +752,9 @@ class ProductExtractor {
         imageUrl: imageUrl || undefined,
         stockStatus,
       };
-      
+
       console.log('🔍 [eBay] Final extraction result:', result);
-      
+
       // Validate required fields
       if (!result.id || !result.title || !result.price) {
         console.error('🔍 [eBay] Missing required fields:', {
@@ -826,7 +764,7 @@ class ProductExtractor {
         });
         return null;
       }
-      
+
       return result;
     } catch (error) {
       console.error('🔍 [eBay] Error extracting product info:', error);
@@ -838,11 +776,11 @@ class ProductExtractor {
     try {
       console.log('🔍 [Walmart] Starting product extraction...');
       console.log('🔍 [Walmart] Current URL:', window.location.href);
-      
+
       const match = window.location.pathname.match(/\/ip\/(\d+)/);
       const productId = match ? match[1] : window.location.pathname;
       console.log('🔍 [Walmart] Product ID:', productId);
-      
+
       // Enhanced title extraction
       let title = '';
       const titleSelectors = [
@@ -851,7 +789,7 @@ class ProductExtractor {
         'h1',
         'meta[property="og:title"]'
       ];
-      
+
       for (const sel of titleSelectors) {
         const el = document.querySelector(sel) as HTMLElement | HTMLMetaElement;
         if (el) {
@@ -866,7 +804,7 @@ class ProductExtractor {
           }
         }
       }
-      
+
       if (!title) {
         title = document.title.replace(/ - Walmart.*$/, '').trim();
         console.log('🔍 [Walmart] Using page title as fallback:', title);
@@ -902,13 +840,13 @@ class ProductExtractor {
       }
       // Improved image extraction for Walmart
       let imageUrl = '';
-      
+
       // First, try to get the main product image with class="db" (main product image)
       const mainImg = document.querySelector('img.db[src*="walmartimages.com"]') as HTMLImageElement;
       if (mainImg && mainImg.src) {
         imageUrl = mainImg.src;
       }
-      
+
       // If no class="db" image, try to find the hero image (main product image)
       if (!imageUrl) {
         // Look for images near the hero image span
@@ -921,7 +859,7 @@ class ProductExtractor {
           }
         }
       }
-      
+
       // Try other specific selectors
       if (!imageUrl) {
         const specificImgs = [
@@ -930,7 +868,7 @@ class ProductExtractor {
           document.querySelector('img[data-testid="product-image"]') as HTMLImageElement,
           document.querySelector('img[data-fs-element="media-image-primary"]') as HTMLImageElement
         ];
-        
+
         for (const img of specificImgs) {
           if (img && img.src && img.offsetParent !== null) {
             imageUrl = img.src;
@@ -938,12 +876,12 @@ class ProductExtractor {
           }
         }
       }
-      
+
       // Fallback: find any Walmart image with descriptive alt text and proper format
       if (!imageUrl) {
         const walmartImgs = Array.from(document.querySelectorAll('img[src*="walmartimages.com"]')) as HTMLImageElement[];
-        const mainProductImg = walmartImgs.find(img => 
-          img.alt && 
+        const mainProductImg = walmartImgs.find(img =>
+          img.alt &&
           img.alt.length > 10 && // Descriptive alt text
           img.offsetParent !== null && // Visible
           !img.src.includes('_50x50') && // Not thumbnail
@@ -956,7 +894,7 @@ class ProductExtractor {
           imageUrl = mainProductImg.src;
         }
       }
-      
+
       // Final fallback to meta og:image
       if (!imageUrl) {
         const metaImg = document.querySelector('meta[property="og:image"]') as HTMLMetaElement;
@@ -1038,9 +976,9 @@ class ProductExtractor {
         imageUrl: imageUrl || undefined,
         stockStatus,
       };
-      
+
       console.log('🔍 [Walmart] Final extraction result:', result);
-      
+
       // Validate required fields
       if (!result.id || !result.title || !result.price) {
         console.error('🔍 [Walmart] Missing required fields:', {
@@ -1050,7 +988,7 @@ class ProductExtractor {
         });
         return null;
       }
-      
+
       return result;
     } catch (error) {
       console.error('🔍 [Walmart] Error extracting product info:', error);
@@ -1062,11 +1000,11 @@ class ProductExtractor {
     try {
       console.log('🔍 [Shein] Starting product extraction...');
       console.log('🔍 [Shein] Current URL:', window.location.href);
-      
+
       const match = window.location.pathname.match(/\/item\/(\d+)\.html/);
       const productId = match ? match[1] : window.location.pathname;
       console.log('🔍 [Shein] Product ID:', productId);
-      
+
       // Enhanced title extraction
       let title = '';
       const titleSelectors = [
@@ -1075,7 +1013,7 @@ class ProductExtractor {
         'h1',
         'meta[property="og:title"]'
       ];
-      
+
       for (const sel of titleSelectors) {
         const el = document.querySelector(sel) as HTMLElement | HTMLMetaElement;
         if (el) {
@@ -1090,7 +1028,7 @@ class ProductExtractor {
           }
         }
       }
-      
+
       if (!title) {
         title = document.title.replace(/ - SHEIN.*$/, '').trim();
         console.log('🔍 [Shein] Using page title as fallback:', title);
@@ -1189,9 +1127,9 @@ class ProductExtractor {
         imageUrl: imageUrl || undefined,
         stockStatus,
       };
-      
+
       console.log('🔍 [Shein] Final extraction result:', result);
-      
+
       // Validate required fields
       if (!result.id || !result.title || !result.price) {
         console.error('🔍 [Shein] Missing required fields:', {
@@ -1201,7 +1139,7 @@ class ProductExtractor {
         });
         return null;
       }
-      
+
       return result;
     } catch (error) {
       console.error('🔍 [Shein] Error extracting product info:', error);
@@ -1272,7 +1210,7 @@ class ProductExtractor {
       '.price-current .price',
       '.price-value .price'
     ];
-    
+
     for (const selector of priceSelectors) {
       const element = document.querySelector(selector) as HTMLElement;
       if (element?.textContent) {
@@ -1283,7 +1221,7 @@ class ProductExtractor {
         }
       }
     }
-    
+
     // Fallback: search all elements for price patterns
     const allElements = Array.from(document.querySelectorAll('*')) as HTMLElement[];
     for (const element of allElements) {
@@ -1293,7 +1231,7 @@ class ProductExtractor {
         return parseFloat(priceMatch[1].replace(/,/g, ''));
       }
     }
-    
+
     return null;
   }
 
@@ -1301,10 +1239,10 @@ class ProductExtractor {
   public async extractBestBuyProductInfo(): Promise<ProductInfo | null> {
     try {
       console.log('🔍 [Best Buy] Starting product extraction...');
-      
+
       // Wait for page to load completely
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       // Extract product ID from URL
       const productId = this.extractBestBuyProductId();
       console.log('🔍 [Best Buy] Product ID:', productId);
@@ -1347,7 +1285,7 @@ class ProductExtractor {
         imageUrl: imageUrl,
         stockStatus: stockStatus
       };
-      
+
       console.log('✅ [Best Buy] Successfully extracted product:', productInfo);
       return productInfo;
     } catch (error) {
@@ -1399,7 +1337,7 @@ class ProductExtractor {
     const urlParams = new URLSearchParams(window.location.search);
     const skuId = urlParams.get('skuId');
     if (skuId) return skuId;
-    
+
     // Fallback to path extraction
     const match = window.location.pathname.match(/\/site\/[^\/]+\/(\d+)/);
     return match ? match[1] : null;
@@ -1432,7 +1370,7 @@ class ProductExtractor {
 
   private extractBestBuyPrice(): number | null {
     console.log('🔍 [Best Buy] Starting price extraction...');
-    
+
     const priceSelectors = [
       '[data-testid="customer-price"]',
       '.priceView-customer-price span',
@@ -1466,7 +1404,7 @@ class ProductExtractor {
         }
       }
     }
-    
+
     // Enhanced fallback: search for any price pattern in the page
     console.log('🔍 [Best Buy] Trying fallback price extraction...');
     const allElements = Array.from(document.querySelectorAll('*')) as HTMLElement[];
@@ -1480,7 +1418,7 @@ class ProductExtractor {
         }
       }
     }
-    
+
     console.log('❌ [Best Buy] No valid price found');
     return null;
   }
@@ -1509,16 +1447,16 @@ class ProductExtractor {
           console.log(`🚫 [Best Buy] Skipping promotional image: ${element.alt}`);
           continue; // Try next selector
         }
-        
+
         console.log(`🔍 [Best Buy] Found potential main image with selector: ${selector}`);
         console.log(`🔍 [Best Buy] Image alt: ${element.alt}`);
         console.log(`🔍 [Best Buy] Image src: ${element.src}`);
-        
+
         // Best Buy images have srcset with multiple resolutions, get the highest quality
         if (element.srcset) {
           const srcset = element.srcset;
           console.log(`🔍 [Best Buy] Found srcset: ${srcset}`);
-          
+
           // Parse srcset to find highest resolution
           const srcsetEntries = srcset.split(',').map(s => {
             const parts = s.trim().split(' ');
@@ -1526,41 +1464,41 @@ class ProductExtractor {
             const multiplier = parts[1] ? parseFloat(parts[1].replace('x', '')) : 1;
             return { url, multiplier };
           });
-          
+
           console.log(`🔍 [Best Buy] Parsed srcset entries:`, srcsetEntries);
-          
+
           // Sort by multiplier (highest first) and get the best quality
           srcsetEntries.sort((a, b) => b.multiplier - a.multiplier);
-          
+
           // Get the highest resolution image
-          const bestImage = srcsetEntries.find(entry => 
-            entry.url.includes('bbystatic.com') && 
-            !entry.url.includes('placeholder') && 
+          const bestImage = srcsetEntries.find(entry =>
+            entry.url.includes('bbystatic.com') &&
+            !entry.url.includes('placeholder') &&
             !entry.url.includes('default')
           );
-          
+
           if (bestImage) {
             console.log(`🖼️ [Best Buy] Selected image: ${bestImage.multiplier}x resolution`);
             console.log(`🔍 [Best Buy] Original URL: ${bestImage.url}`);
-            
+
             // Best Buy already provides the highest resolution in srcset
             // The 2x version (1920x900) is already the best quality
             console.log(`🖼️ [Best Buy] Using highest available resolution: ${bestImage.url}`);
             return bestImage.url;
           }
         }
-        
+
         // Fallback to src attribute - Best Buy often puts highest resolution here
         if (element.src && element.src.includes('bbystatic.com')) {
           console.log(`🔍 [Best Buy] Found src: ${element.src}`);
-          
+
           // Best Buy's src attribute often has the highest resolution
           // Check if it already has maxHeight=1920 (which is the highest)
           if (element.src.includes('maxHeight=1920')) {
             console.log(`🖼️ [Best Buy] Src already has highest resolution: ${element.src}`);
             return element.src;
           }
-          
+
           // If not, try to enhance it
           const baseUrl = element.src.split(';')[0]; // Remove resolution parameters
           if (baseUrl) {
@@ -1598,17 +1536,17 @@ class ProductExtractor {
         }
       }
     }
-    
+
     // Final fallback: find any Best Buy product image
     const images = Array.from(document.querySelectorAll('img')) as HTMLImageElement[];
     console.log(`🔍 [Best Buy] Found ${images.length} total images on page`);
-    
+
     // First, try to find the main product image with specific Best Buy patterns
     for (const img of images) {
       const src = img.src;
       if (src && src.includes('bbystatic.com') && !src.includes('placeholder') && !src.includes('default')) {
         console.log(`🔍 [Best Buy] Found bbystatic image: ${src}`);
-        
+
         // Enhanced Best Buy image URL optimization
         if (src.includes(';maxHeight=') || src.includes(';maxWidth=')) {
           // Already has resolution parameters, maximize them
@@ -1617,7 +1555,7 @@ class ProductExtractor {
           console.log(`🖼️ [Best Buy] Enhanced resolution: ${highResUrl}`);
           return highResUrl;
         }
-        
+
         // If no resolution parameters, add high-res ones
         if (src.includes('.jpg') || src.includes('.png') || src.includes('bbystatic.com')) {
           const baseUrl = src.split('?')[0]; // Remove query parameters
@@ -1625,11 +1563,11 @@ class ProductExtractor {
           console.log(`🖼️ [Best Buy] Added high-res parameters: ${enhancedUrl}`);
           return enhancedUrl;
         }
-        
+
         return src;
       }
     }
-    
+
     // If no bbystatic images found, try to find any product image
     for (const img of images) {
       const src = img.src;
@@ -1638,7 +1576,7 @@ class ProductExtractor {
         return src;
       }
     }
-    
+
     console.log(`❌ [Best Buy] No suitable images found`);
     return undefined;
   }
@@ -1659,14 +1597,14 @@ class ProductExtractor {
         const text = element.textContent?.toLowerCase() || '';
         if (text.includes('add to cart') || text.includes('add to cart')) {
           return 'in_stock';
-        } else if (text.includes('sold out') || text.includes('out of stock') || 
-                   element.classList.contains('c-button-disabled') ||
-                   element.classList.contains('add-to-cart-button-disabled')) {
+        } else if (text.includes('sold out') || text.includes('out of stock') ||
+          element.classList.contains('c-button-disabled') ||
+          element.classList.contains('add-to-cart-button-disabled')) {
           return 'out_of_stock';
         }
       }
     }
-    
+
     // Check for availability text
     const availabilitySelectors = [
       '[data-testid="availability-message"]',
@@ -1674,7 +1612,7 @@ class ProductExtractor {
       '.product-availability',
       '.availability'
     ];
-    
+
     for (const selector of availabilitySelectors) {
       const element = document.querySelector(selector) as HTMLElement;
       if (element) {
@@ -1686,7 +1624,7 @@ class ProductExtractor {
         }
       }
     }
-    
+
     return 'unknown';
   }
 
@@ -1743,7 +1681,7 @@ class ProductExtractor {
 
   private extractTargetImage(): string | undefined {
     console.log(`🔍 [Target] Extracting image for: ${document.title}`);
-    
+
     // First, try to find the main product image with specific Target selectors
     const mainImageSelectors = [
       'img[data-test="product-image"]',
@@ -1760,61 +1698,61 @@ class ProductExtractor {
         console.log(`🔍 [Target] Found image with selector: ${selector}`);
         console.log(`🔍 [Target] Image src: ${element.src}`);
         console.log(`🔍 [Target] Image alt: ${element.alt}`);
-        
+
         // Verify this is actually a product image, not a generic one
-        if (element.alt && !element.alt.toLowerCase().includes('logo') && 
-            !element.alt.toLowerCase().includes('icon') && 
-            !element.alt.toLowerCase().includes('banner')) {
+        if (element.alt && !element.alt.toLowerCase().includes('logo') &&
+          !element.alt.toLowerCase().includes('icon') &&
+          !element.alt.toLowerCase().includes('banner')) {
           console.log(`🖼️ [Target] Using product image: ${element.src}`);
           return element.src;
         }
       }
     }
-    
+
     // Fallback to meta tags, but be more selective
     const metaSelectors = [
       'meta[property="og:image"]',
       'meta[property="product:image"]',
       'meta[name="image"]'
     ];
-    
+
     for (const selector of metaSelectors) {
       const element = document.querySelector(selector) as HTMLMetaElement;
       if (element && element.content) {
         console.log(`🔍 [Target] Found meta image: ${element.content}`);
         // Only use if it's not a generic Target image
-        if (!element.content.includes('target.com/logo') && 
-            !element.content.includes('target.com/icon')) {
+        if (!element.content.includes('target.com/logo') &&
+          !element.content.includes('target.com/icon')) {
           console.log(`🖼️ [Target] Using meta image: ${element.content}`);
           return element.content;
         }
       }
     }
-    
+
     // Final fallback: find any image that looks like a product image
     const allImages = Array.from(document.querySelectorAll('img')) as HTMLImageElement[];
     console.log(`🔍 [Target] Found ${allImages.length} total images`);
-    
+
     for (const img of allImages) {
       if (img.src && img.alt) {
         const alt = img.alt.toLowerCase();
         const src = img.src.toLowerCase();
-        
+
         // Skip generic images
         if (alt.includes('logo') || alt.includes('icon') || alt.includes('banner') ||
-            alt.includes('search') || alt.includes('menu') || alt.includes('cart')) {
+          alt.includes('search') || alt.includes('menu') || alt.includes('cart')) {
           continue;
         }
-        
+
         // Look for product-like images
-        if (alt.includes('product') || alt.includes('main') || 
-            (src.includes('target') && src.includes('product'))) {
+        if (alt.includes('product') || alt.includes('main') ||
+          (src.includes('target') && src.includes('product'))) {
           console.log(`🖼️ [Target] Using fallback image: ${img.src}`);
           return img.src;
         }
       }
     }
-    
+
     console.log(`❌ [Target] No suitable product image found`);
     return undefined;
   }
@@ -1830,7 +1768,7 @@ class ProductExtractor {
       const element = document.querySelector(selector) as HTMLElement;
       if (element) {
         if (element.textContent?.toLowerCase().includes('add to cart') ||
-            element.textContent?.toLowerCase().includes('ship it')) {
+          element.textContent?.toLowerCase().includes('ship it')) {
           return 'in_stock';
         } else if (element.textContent?.toLowerCase().includes('out of stock')) {
           return 'out_of_stock';
@@ -1849,7 +1787,7 @@ window.addEventListener('message', async (event) => {
   console.log('🔍 [Injected Script] Received message:', event.data);
   console.log('🔍 [Injected Script] Event source:', event.source);
   console.log('🔍 [Injected Script] Window source:', window);
-  
+
   if (event.source !== window) {
     console.log('🔍 [Injected Script] Ignoring message from different source');
     return;
@@ -1859,12 +1797,12 @@ window.addEventListener('message', async (event) => {
   if (event.data.action === 'trackProduct') {
     console.log('🔍 [Injected Script] Processing trackProduct request');
     console.log('🔍 [Injected Script] Request data:', event.data);
-    
+
     let productInfo: ProductInfo | null = null;
     const platform = (productExtractor as any)['platform'];
     console.log('🔍 [Extension] Detected platform:', platform);
     console.log('🔍 [Extension] Current URL:', window.location.href);
-    
+
     if (platform === 'aliexpress') {
       console.log('🔍 [Extension] Using AliExpress extraction');
       productInfo = await productExtractor.extractAliExpressProductInfo();
@@ -1881,9 +1819,9 @@ window.addEventListener('message', async (event) => {
       console.log('🔍 [Extension] Using generic extraction');
       productInfo = await productExtractor.extractProductInfo();
     }
-    
+
     console.log('🔍 [Extension] Extraction result:', productInfo);
-    
+
     // Send response back to popup
     const response = {
       type: 'TRACK_PRODUCT_RESPONSE',
@@ -1891,7 +1829,7 @@ window.addEventListener('message', async (event) => {
       data: productInfo,
       message: productInfo ? 'Product tracked successfully!' : 'Failed to extract product information'
     };
-    
+
     console.log('🔍 [Extension] Sending response:', response);
     window.postMessage(response, '*');
   }
@@ -1902,7 +1840,7 @@ window.addEventListener('message', async (event) => {
     let productInfo: ProductInfo | null = null;
     const platform = (productExtractor as any)['platform'];
     console.log('🔍 [Extension] Detected platform:', platform);
-    
+
     if (platform === 'aliexpress') {
       console.log('🔍 [Extension] Using AliExpress extraction');
       productInfo = await productExtractor.extractAliExpressProductInfo();
@@ -1919,9 +1857,9 @@ window.addEventListener('message', async (event) => {
       console.log('🔍 [Extension] Using generic extraction');
       productInfo = await productExtractor.extractProductInfo();
     }
-    
+
     console.log('🔍 [Extension] Extraction result:', productInfo);
-    
+
     window.postMessage({
       type: 'PRODUCT_INFO_RESPONSE',
       success: !!productInfo,

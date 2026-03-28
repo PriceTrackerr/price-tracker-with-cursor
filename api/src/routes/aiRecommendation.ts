@@ -90,13 +90,42 @@ router.post('/recommendation', authMiddleware, async (req: AuthRequest, res: Res
       });
     }
 
+    // ===== Data Sufficiency Check =====
+    // If we don't have enough data, be honest about it instead of generating misleading AI recommendations
+    const safePriceHistory = (priceHistory && Array.isArray(priceHistory)) ? priceHistory : [];
+
+    if (safePriceHistory.length < 3) {
+      console.log(`⚠️ Insufficient price history (${safePriceHistory.length} points) for product: ${title}`);
+
+      const recommendation = {
+        verdict: 'WAIT',
+        confidence: 30,
+        risk: 'Unknown',
+        reason: `Not enough price data yet (only ${safePriceHistory.length} data point${safePriceHistory.length !== 1 ? 's' : ''}). We need at least a few days of tracking before we can make a data-driven recommendation. Keep tracking and check back soon.`,
+        action: 'Keep tracking this product — we\'ll have a useful recommendation once enough price data is collected.',
+        alternative: 'Check price comparison sites or camelcamelcamel for historical pricing in the meantime.',
+        priceAnalysis: {
+          savingsVsAverage: 0,
+          trend: 'unknown',
+          volatility: 0,
+          predictedDrop: 'Not enough data to predict'
+        },
+        cached: false,
+        insufficientData: true
+      };
+
+      return res.json({
+        success: true,
+        data: recommendation
+      });
+    }
+
     // ===== Enhanced Data Analysis =====
 
     // Ensure all price values have safe defaults to prevent undefined errors
     const safeCurrentPrice = currentPrice || 0;
     const safeLowestPrice = lowestPrice || safeCurrentPrice;
     const safeGlobalCheapest = globalCheapest || safeCurrentPrice;
-    const safePriceHistory = (priceHistory && Array.isArray(priceHistory)) ? priceHistory : [];
 
     // 1. Calculate price volatility and trends
     const calculateVolatility = (history: Array<{ price: number; timestamp: string }>) => {
@@ -184,26 +213,36 @@ router.post('/recommendation', authMiddleware, async (req: AuthRequest, res: Res
     const savingsVsAvg = ((priceAnalysis.avgPrice - safeCurrentPrice) / priceAnalysis.avgPrice) * 100;
     const savingsVsLowest = safeLowestPrice !== 0 ? ((safeCurrentPrice - safeLowestPrice) / safeLowestPrice) * 100 : 0;
 
+    // Calculate how many days of data we actually have
+    const sortedHistory = [...safePriceHistory].sort((a, b) =>
+      new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
+    const firstDate = sortedHistory.length > 0 ? new Date(sortedHistory[0].timestamp) : new Date();
+    const lastDate = sortedHistory.length > 0 ? new Date(sortedHistory[sortedHistory.length - 1].timestamp) : new Date();
+    const daysCovered = Math.max(1, Math.ceil((lastDate.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24)));
+
     // 4. Determine risk level
     let risk = 'Low';
     if (priceAnalysis.volatility > 15) risk = 'High';
     else if (priceAnalysis.volatility > 8) risk = 'Medium';
 
-    // Build enhanced prompt with all data
+    // Build enhanced prompt with HONEST data labels
     const prompt = `You are a brutally honest shopping expert who helps people save money by analyzing data.
 
 Product: ${title}
 Current price: $${safeCurrentPrice.toFixed(2)}
-30-day lowest: $${safeLowestPrice.toFixed(2)}
-30-day highest: $${priceAnalysis.highestPrice.toFixed(2)}
-Average price (30d): $${priceAnalysis.avgPrice.toFixed(2)}
-Global cheapest (with shipping): $${safeGlobalCheapest.toFixed(2)}
+
+Price tracking data (${safePriceHistory.length} data points over ${daysCovered} day${daysCovered !== 1 ? 's' : ''}):
+- Tracked lowest: $${safeLowestPrice.toFixed(2)}
+- Tracked highest: $${priceAnalysis.highestPrice.toFixed(2)}
+- Average tracked price: $${priceAnalysis.avgPrice.toFixed(2)}
+- Global cheapest (with shipping): $${safeGlobalCheapest.toFixed(2)}
 
 Price Analysis:
-- Savings vs highest: ${savingsVsHigh.toFixed(1)}%
-- Savings vs average: ${savingsVsAvg.toFixed(1)}%
-- Distance from 30-day low: ${savingsVsLowest > 0 ? '+' : ''}${savingsVsLowest.toFixed(1)}%
-- Recent trend (7 days): ${priceAnalysis.trend === 'rising' ? '📈 Rising' : priceAnalysis.trend === 'falling' ? '📉 Falling' : '➡️ Flat'}
+- Savings vs highest tracked: ${savingsVsHigh.toFixed(1)}%
+- Savings vs average tracked: ${savingsVsAvg.toFixed(1)}%
+- Distance from tracked low: ${savingsVsLowest > 0 ? '+' : ''}${savingsVsLowest.toFixed(1)}%
+- Recent trend: ${priceAnalysis.trend === 'rising' ? '📈 Rising' : priceAnalysis.trend === 'falling' ? '📉 Falling' : '➡️ Flat'}
 - Price volatility: ${priceAnalysis.volatility.toFixed(1)}% (${risk} risk)
 - Days since last price drop: ${priceAnalysis.daysSinceLastDrop}
 - Predicted drop: ${priceAnalysis.predictedDrop}
@@ -212,6 +251,8 @@ Additional Context:
 - Working coupon: ${hasCoupon ? 'Yes ✅' : 'No'}
 - Reddit sentiment: ${redditSentiment} ${redditSentiment === 'positive' ? '👍' : redditSentiment === 'negative' ? '👎' : '👌'}
 ${conditionClues.length > 0 ? `- Product notes: ${conditionClues.join(', ')}` : ''}
+
+IMPORTANT: We only have ${safePriceHistory.length} data points over ${daysCovered} days. ${daysCovered < 7 ? 'This is very limited data — be cautious and transparent about low confidence.' : daysCovered < 30 ? 'This is moderate data — give a reasonably confident recommendation.' : 'This is good data coverage.'}
 
 Give a verdict in this EXACT format (don't add extra text):
 VERDICT: STRONG BUY / BUY / WAIT / AVOID
@@ -222,12 +263,12 @@ Action: One clear next step (e.g., "Buy now", "Set alert for $X", "Wait 5 days")
 Alternative: If not buying, suggest what to do instead
 
 IMPORTANT: Vary your verdicts based on the data - don't always say STRONG BUY. Use:
-- STRONG BUY: Only when price is 15%+ below average AND trend is flat/falling
+- STRONG BUY: Only when price is 15%+ below average AND trend is flat/falling AND you have at least 14 days of data
 - BUY: When price is 8-15% below average OR has good coupon
-- WAIT: When price is near average OR rising trend
+- WAIT: When price is near average OR rising trend OR you have less than 7 days of data
 - AVOID: When price is above average OR high volatility + rising trend
 
-Be honest and data-driven. Users trust you to save them money.`;
+Be honest and data-driven. If data is limited, say so. Users trust you to save them money.`;
 
     console.log(`🤖 Calling Groq AI for product: ${title}`);
     console.log(`📊 Analysis: ${savingsVsAvg.toFixed(1)}% vs avg, trend: ${priceAnalysis.trend}, volatility: ${priceAnalysis.volatility.toFixed(1)}%`);

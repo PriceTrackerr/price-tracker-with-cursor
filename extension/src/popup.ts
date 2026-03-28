@@ -300,18 +300,19 @@ document.addEventListener('DOMContentLoaded', function () {
                     console.log('Authentication check: User not logged in');
                     await clearExtensionData();
                 } else {
+                    // Non-401/403 error (e.g. 500, timeout) — keep token, don't wipe data
+                    // The server might be temporarily down; wiping data forces unnecessary re-login
                     isUserLoggedIn = false;
-                    console.log('Authentication check: User not logged in');
-                    await clearExtensionData();
+                    console.log('Authentication check: Server error (status ' + response.status + '), keeping token');
                 }
             } else {
                 isUserLoggedIn = false;
                 console.log('No token found');
             }
         } catch (error) {
-            console.error('Error checking authentication:', error);
+            // Network error — keep existing token, don't wipe data
+            console.error('Error checking authentication (network issue, keeping token):', error);
             isUserLoggedIn = false;
-            await clearExtensionData();
         }
     }
 
@@ -361,78 +362,53 @@ document.addEventListener('DOMContentLoaded', function () {
         return null;
     }
 
-    // Manual token sync function
+    // Manual token sync function — only syncs from already-open web-app tabs (no background tab creation)
     async function syncTokenFromWebApp() {
         try {
             console.log('Attempting to sync token from web app...');
 
-            // Ensure we have host permission for the web app origin
+            // Only look for already-open web app tabs — do NOT create a new one
+            // Creating a background tab causes a 6+ second delay every popup open
+            let tabs: chrome.tabs.Tab[] = [];
             try {
-                const granted = await (chrome.permissions as any).request?.({
-                    origins: [`${WEBAPP_BASE_URL}/*`]
-                });
-                if (granted) {
-                    console.log('Host permission granted for web app');
-                }
+                tabs = await chrome.tabs.query({ url: `${WEBAPP_BASE_URL}/*` });
             } catch (e) {
-                console.log('Permission request failed or not supported:', e);
+                console.log('Tab query failed:', e);
+                return null;
             }
-
-            // Try to get token from web app's localStorage via content script
-            let tabs = await chrome.tabs.query({ url: `${WEBAPP_BASE_URL}/*` });
 
             if (tabs.length === 0) {
-                console.log('No existing web app tab found, opening background tab...');
-                const created = await chrome.tabs.create({ url: WEBAPP_BASE_URL, active: false });
-                // Wait for page to finish loading (up to ~6s)
-                for (let i = 0; i < 24; i++) {
-                    try {
-                        const info = await chrome.tabs.get(created.id!);
-                        if ((info as any).status === 'complete') break;
-                    } catch { }
-                    await new Promise(r => setTimeout(r, 250));
-                }
-                tabs = [created];
+                console.log('No web app tab open — using stored token (skipping background tab to avoid delay)');
+                return null;
             }
 
-            if (tabs.length > 0) {
-                const tab = tabs[0];
-                try {
-                    const result = await chrome.scripting.executeScript({
-                        target: { tabId: tab.id! },
-                        func: () => {
-                            const token = localStorage.getItem('token');
-                            const refreshToken = localStorage.getItem('refreshToken');
-                            const user = localStorage.getItem('user');
-                            return { token, refreshToken, user };
-                        }
-                    });
-                    if (result && result[0] && result[0].result) {
-                        const { token, refreshToken, user } = result[0].result;
-                        if (token) {
-                            await chrome.storage.local.set({
-                                authToken: token,
-                                refreshToken,
-                                userData: user
-                            });
-                            console.log('Token and user data synced from web app');
-                            // If we created this tab, close it quietly
-                            if (tabs.length === 1 && tab.active === false) {
-                                try { await chrome.tabs.remove(tab.id!); } catch { }
-                            }
-                            return token;
-                        }
+            const tab = tabs[0];
+            try {
+                const result = await chrome.scripting.executeScript({
+                    target: { tabId: tab.id! },
+                    func: () => {
+                        const token = localStorage.getItem('token');
+                        const refreshToken = localStorage.getItem('refreshToken');
+                        const user = localStorage.getItem('user');
+                        return { token, refreshToken, user };
                     }
-                    // Close background tab if we created it and failed to read token
-                    if (tabs.length === 1 && tab.active === false) {
-                        try { await chrome.tabs.remove(tab.id!); } catch { }
+                });
+                if (result && result[0] && result[0].result) {
+                    const { token, refreshToken, user } = result[0].result;
+                    if (token) {
+                        await chrome.storage.local.set({
+                            authToken: token,
+                            refreshToken,
+                            userData: user
+                        });
+                        console.log('Token and user data synced from open web app tab');
+                        return token;
                     }
-                } catch (error) {
-                    console.log('Could not access web app tab:', error);
                 }
+            } catch (error) {
+                console.log('Could not access web app tab:', error);
             }
 
-            console.log('No web app tab found or could not access localStorage');
             return null;
         } catch (error) {
             console.error('Error syncing token:', error);
@@ -487,7 +463,7 @@ document.addEventListener('DOMContentLoaded', function () {
             } else {
                 console.error('Failed to fetch products:', productsResponse.status);
                 if (productsResponse.status === 401) {
-                    // Token is invalid, clear it and show login prompt
+                    // Token is genuinely invalid — clear and prompt login
                     await clearExtensionData();
                     showLoginPrompt();
                     return;
@@ -497,6 +473,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     showBannedUserMessage();
                     return;
                 }
+                // For 5xx/other errors: keep existing data, don't wipe
+                console.log('Server error fetching products, keeping cached data');
             }
 
             // Fetch alerts count
@@ -522,8 +500,8 @@ document.addEventListener('DOMContentLoaded', function () {
             userStats.totalSaved = 0; // Will be calculated from actual price drops
             console.log('Total saved calculated:', userStats.totalSaved);
         } catch (error) {
-            console.error('Error fetching user stats:', error);
-            userStats = { trackedProducts: 0, activeAlerts: 0, totalSaved: 0 };
+            // Network error — keep existing stats instead of resetting to 0
+            console.error('Error fetching user stats (keeping cached):', error);
         }
     }
 
@@ -553,22 +531,26 @@ document.addEventListener('DOMContentLoaded', function () {
                     .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
                     .slice(0, 10);
             } else {
-                allProducts = [];
-                recentProducts = [];
                 if (response.status === 401) {
-                    // Token is invalid, clear it and show login prompt
+                    // Token is genuinely invalid — clear and prompt login
+                    allProducts = [];
+                    recentProducts = [];
                     await clearExtensionData();
                     showLoginPrompt();
                 } else if (response.status === 403) {
                     // User is banned
+                    allProducts = [];
+                    recentProducts = [];
                     await clearExtensionData();
                     showBannedUserMessage();
+                } else {
+                    // For 5xx/other errors: keep existing data
+                    console.log('Server error fetching products, keeping cached data');
                 }
             }
         } catch (error) {
-            console.error('Error fetching recent products:', error);
-            allProducts = [];
-            recentProducts = [];
+            // Network error — keep existing product data
+            console.error('Error fetching recent products (keeping cached):', error);
         }
     }
 

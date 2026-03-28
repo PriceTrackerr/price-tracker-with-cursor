@@ -236,7 +236,7 @@ export class FreeCouponService {
   private async scrapeSlickdeals(query: string): Promise<Coupon[]> {
     try {
       // Shorten query: use first part before comma for better RSS results
-      const shortQuery = query.split(',')[0].trim(); // "Apple iPhone 15" instead of "Apple iPhone 15, 128GB, Black"
+      const shortQuery = query.split(',')[0].trim();
       const encodedQuery = encodeURIComponent(shortQuery);
       const rssUrl = `https://slickdeals.net/newsearch.php?searcharea=deals&searchin=first&rss=1&query=${encodedQuery}`;
 
@@ -254,69 +254,51 @@ export class FreeCouponService {
       const coupons: Coupon[] = [];
       console.log(`📦 Slickdeals returned ${items.length} items for "${shortQuery}"`);
 
-      // Extract brand keywords from original query for relevance checking
-      const queryLower = query.toLowerCase();
-      const brandKeywords = ['apple', 'iphone', 'samsung', 'walmart', 'amazon', 'target', 'nike', 'adidas'];
-      const queryBrands = brandKeywords.filter(brand => queryLower.includes(brand));
-
-      for (const item of items.slice(0, 25)) { // Process more items for better results
+      for (const item of items.slice(0, 25)) {
         const title = item.title?.[0] || '';
         const description = item.description?.[0] || '';
         const link = item.link?.[0] || '';
         const fullText = `${title} ${description}`;
-        const fullTextLower = fullText.toLowerCase();
 
-        let extractedCode = null;
-        let discount = undefined;
+        // Only extract REAL coupon codes — must be explicitly called out as a code
+        // Patterns like "use code SAVE20", "promo code: HOLIDAY", "coupon: DEAL15", "[CODE] XYZ"
+        const codePatterns = [
+          /(?:use|with|enter|apply|try)\s+(?:code|promo|coupon)\s*:?\s*([A-Z0-9]{3,20})/gi,
+          /(?:code|promo|coupon)\s*:?\s*([A-Z0-9]{3,20})/gi,
+          /\[([A-Z0-9]{4,15})\]/g, // codes in brackets
+        ];
 
-        // Much broader regex: Match SAVE, OFF, coupon codes, percentages, etc.
-        const broadMatches = fullText.matchAll(/([A-Z0-9]{3,}|SAVE|OFF|BF|FREE|COUPON|PROMO|DISCOUNT|%OFF|\$OFF|(\d+%?\s*off))/gi);
+        let extractedCode: string | null = null;
 
-        for (const match of broadMatches) {
-          const potentialCode = match[0].toUpperCase();
-
-          // Skip noise words
-          if (['THE', 'AND', 'FOR', 'WITH', 'THIS'].includes(potentialCode)) continue;
-
-          // Accept if it looks like a code pattern
-          if (/^(SAVE\d+|OFF\d+|\d+OFF|FREESHIP|WELCOME|BF\d+|CYBER|DEAL)$/i.test(potentialCode)) {
-            extractedCode = potentialCode;
-            break;
+        for (const pattern of codePatterns) {
+          const match = pattern.exec(fullText);
+          if (match && match[1]) {
+            const code = match[1].toUpperCase();
+            // Skip noise words that aren't real codes
+            const noiseWords = ['THE', 'AND', 'FOR', 'WITH', 'THIS', 'EDIT', 'LINK', 'POST', 'TODAY', 'DEAL', 'MORE', 'CLICK', 'HERE', 'READ', 'VIEW', 'OFF', 'FREE', 'SAVE', 'NEW', 'HOT', 'NOW'];
+            if (!noiseWords.includes(code) && code.length >= 4) {
+              extractedCode = code;
+              break;
+            }
           }
         }
 
-        // Extract discount from text
-        const percentMatch = fullText.match(/(\d+)%\s*off/i);
-        const dollarMatch = fullText.match(/\$(\d+)\s*off/i);
-
-        if (percentMatch) {
-          discount = `${percentMatch[1]}% off`;
-          if (!extractedCode) {
-            extractedCode = `${percentMatch[1]}OFF`; // Generate code from percentage
-          }
-        } else if (dollarMatch) {
-          discount = `$${dollarMatch[1]} off`;
-          if (!extractedCode) {
-            extractedCode = `SAVE${dollarMatch[1]}`;
-          }
-        }
-
-        // Check relevance: Has discount/code AND matches query brands (or is generic)
-        const hasBrandMatch = queryBrands.length === 0 || queryBrands.some(brand => fullTextLower.includes(brand));
-        const hasDiscount = discount || extractedCode;
-
-        // Accept if semi-relevant: has discount and brand match (looser than before)
-        if (hasDiscount && hasBrandMatch) {
-          const finalCode = extractedCode || 'DEAL';
+        // Only add if we found an ACTUAL coupon code explicitly mentioned
+        if (extractedCode) {
+          // Extract discount info for display
+          const percentMatch = fullText.match(/(\d+)%\s*off/i);
+          const dollarMatch = fullText.match(/\$(\d+)\s*off/i);
+          const discount = percentMatch ? `${percentMatch[1]}% off` :
+                           dollarMatch ? `$${dollarMatch[1]} off` : undefined;
 
           coupons.push({
-            code: finalCode,
+            code: extractedCode,
             description: title.substring(0, 100),
             discount,
             source: 'Slickdeals' as const,
             link: link || undefined
           });
-          console.log(`✅ Extracted: ${finalCode} ${discount ? '(' + discount + ')' : ''} - ${title.substring(0, 50)}...`);
+          console.log(`✅ Extracted real code: ${extractedCode} ${discount ? '(' + discount + ')' : ''} - ${title.substring(0, 50)}...`);
         }
       }
 
