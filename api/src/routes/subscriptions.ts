@@ -17,9 +17,11 @@ const supabase = createClient(
 router.post('/create-checkout', async (req: Request, res: Response) => {
     try {
         const { planId, userId, email } = req.body;
+        console.log('[CHECKOUT] Request received:', { planId, userId, email: email ? '***' : 'missing' });
 
         if (!planId || !userId || !email) {
             return res.status(400).json({
+                success: false,
                 error: 'Missing required fields: planId, userId, email',
             });
         }
@@ -30,16 +32,19 @@ router.post('/create-checkout', async (req: Request, res: Response) => {
             email
         );
 
-        res.json({
+        console.log('[CHECKOUT] Checkout created successfully:', { checkoutUrl: checkout.checkoutUrl ? 'yes' : 'no', checkoutId: checkout.checkoutId });
+
+        return res.status(200).json({
             success: true,
             checkoutUrl: checkout.checkoutUrl,
             checkoutId: checkout.checkoutId,
         });
     } catch (error: any) {
-        console.error('Error creating checkout:', error);
-        res.status(500).json({
+        console.error('[CHECKOUT] Error creating checkout:', error?.message || error);
+        return res.status(500).json({
+            success: false,
             error: 'Failed to create checkout session',
-            message: error.message,
+            message: error?.message || 'Unknown error',
         });
     }
 });
