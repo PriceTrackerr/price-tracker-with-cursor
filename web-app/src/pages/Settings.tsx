@@ -19,7 +19,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../components/ThemeContext';
 import { useTranslation } from 'react-i18next';
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001/api';
+const API_BASE = import.meta.env.VITE_API_BASE || '/api';
 
 export default function Settings() {
   const { t, i18n } = useTranslation();
